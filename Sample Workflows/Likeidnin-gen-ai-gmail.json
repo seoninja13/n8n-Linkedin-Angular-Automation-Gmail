@@ -1,0 +1,880 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-80, -3040],
+      "id": "e53a485f-e0c1-468c-af5c-ff1bb9d97813",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Below is a block of context of my skills based on which you have to match against a job description. \n\nContext:\n### Core Competencies\n\n* **Software Development & Architecture**: Full-Stack Development, Backend Development, Frontend Development, Microservices Architecture, Event-Driven Systems, Distributed Systems, Asynchronous I/O, Monolithic to Microservices Migration.\n* **Programming Languages**: C#, Python, JavaScript, TypeScript, PHP, .NET Framework, ASP.NET MVC, .NET Core 3+, .NET 5, .NET 6, .NET 8.\n* **Cloud Computing & DevOps**: Google Cloud Platform (GCP), AWS Cloud, Azure DevOps, Cloud Modernization, Cloud Migration, CI/CD Pipelines, Infrastructure-as-Code (IaC), Terraform, Docker, Kubernetes, Serverless Architecture (AWS Lambda, GCP Cloud Functions), Containerization, Cloud Security.\n* **Databases**: SQL, SQL Server, MSSQL, MySQL, PostgreSQL, Oracle, MongoDB, DynamoDB.\n* **AI, Machine Learning, & Search**: Generative AI (GenAI), Vertex AI, RAG (Retrieval-Augmented Generation), Large Language Models (LLMs), AI-Powered Applications, NLP (Natural Language Processing), Text Analytics, Enterprise Search, Elasticsearch, Apache Solr, Lucidworks Fusion.\n* **Web Technologies & Frameworks**: Angular (10-18), Next.js, React.js, Node.js, Express.js, Angular Flex-Layout, Angular Material, Angular PrimeNg, jQuery, Bootstrap (3, 4, 5), HTML5, CSS3, SCSS.\n* **APIs & Integrations**: RESTful APIs, Web API, GraphQL API, Swagger Open API, ServiceStack, RabbitMQ, Temporal.io, Microsoft Graph, third-party API Integration, API design.\n* **Quality Assurance & Testing**: Automated Software Unit Testing, Regression Testing, TDD (Test-Driven Development), Cypress, Selenium, Protractor.\n* **Leadership & Project Management**: Lead Capacity, Product Ownership, Business Analysis, Technical Roadmaps, Scrum, Agile Methodologies, Technical Documentation, Code Reviews, Workflow Automation.\n* **Security & Compliance**: Cloud Security, PCI Compliance, Web Accessibility (ADA, WCAG 2.0/2.1), NIST SP 800-53, NIST SP 800-37, Security Assessment & Authorization (SA&A), Risk Management.\n* **Data & Analytics**: BigQuery, Data Analytics, Data Integration (ETL), Power BI.\n* **Miscellaneous**: SEO (Search Engine Optimization), SEM (Search Engine Marketing), CMS (Drupal, Wordpress), Microsoft Bot Framework, Google Charts, Visual Studio, Visual Studio Code, Git, TFS, SVN, Jira, GitHub.\n\nHere is the Job Description:\n{{ $('Limit Apify results - 313').item.json.descriptionHtml }}\n\nRate is the resume on the 0-100% how good of a match they are in a JSON format. \n\nI want you to NOT use the backslash in the text that makes it very hard to extract different properties. Goal for me is to want to extract the \"score\" property value. \n\n\nReturn a poprety \"isMatch\". If score > 93 return true else false.\n\nrespond in this format:\n{\"isMatch\":\"true\" or \"false\"}. IsMatch value should be a string.\nif it is a match return true, else return false.\n\n\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [1168, -3040],
+      "id": "3ba59628-b7c8-4c12-96ef-075a36788a3a",
+      "name": "All Text Matched Score above 90",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/hKByXkMQaC5Qt9UMN/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_APIFY_API_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"count\": 300,\n  \"scrapeCompany\": true,\n  \"urls\": [\n    \"https://www.linkedin.com/jobs/search/?currentJobId=4284636920&distance=25&f_TPR=r86400&f_WT=2&geoId=103644278&keywords=gen%20ai&origin=JOB_SEARCH_PAGE_JOB_FILTER&refresh=true\"\n  ]\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [368, -3040],
+      "id": "44f946e4-56ff-47aa-8a52-29ffa23e0a80",
+      "name": "HTTP Request Apify"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9d0807fb-e753-4e3a-9552-42f0e4c37c12",
+              "name": "markdownContent",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "61ec5de1-1efb-4492-853b-bde2e33b7c1a",
+              "name": "documentTitle",
+              "value": "=Ivo_Dachev_ {{ $('Limit Apify results - 313').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f97dff20-4da4-48ae-83e0-d16b1877212b",
+              "name": "folderId",
+              "value": "1uS2AMpLBg8F743OHyLwZSVi8yJ86yLak",
+              "type": "string"
+            },
+            {
+              "id": "d6abc0a7-3c57-45ac-994e-cb6610cc6e5e",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [288, -2768],
+      "id": "463b3f6d-e399-499a-8552-767d0e42861b",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert resume writer and career strategist. Your primary task is to aggressively rewrite the provided resume to maximize its keyword density and alignment for the target Job Description, aiming for a 90-95% match to pass automated screening systems (ATS) and appeal to hiring managers.\n\n**Core Directives:**\n1.  **Keyword Infusion:** First, identify all critical keywords, skills, and qualifications from the Job Description (e.g., \"medical clients,\" \"technical optimization,\" \"reporting KPIs,\" \"Google Analytics,\" \"Ahrefs,\" \"account management\"). You MUST infuse these keywords naturally throughout the ENTIRE resume, including the Summary, Technical Skills, and especially the bullet points under each job in the Experience section.\n2.  **Comprehensive Rewrite:** Do not just rewrite the Summary. You MUST analyze EACH job role in the `## **EXPERIENCE**` section. Rewrite the responsibilities and accomplishments for each role to reflect the priorities of the Job Description. **This is the most important instruction.**\n3.  **Reframe Accomplishments:** To achieve this, you will reframe and repurpose accomplishments from the original resume. For example, take a specific SEO achievement from the \"Web/SEO/SEM Consultant\" role and use it to rewrite a bullet point under a more recent role, making it relevant to that position's context. The goal is to show a consistent career story that leads directly to this new role.\n4.  **Quantify Results:** Start every bullet point with a strong action verb (e.g., 'Managed,' 'Optimized,' 'Increased,' 'Analyzed'). Quantify results with numbers and metrics whenever possible, drawing from the original resume.\n\nYou must use the following context about my skills as the source of truth.\n\n**Context: Core Competencies**\n* **Software Development & Architecture**: Full-Stack Development, Backend Development, Frontend Development, Microservices Architecture, Event-Driven Systems, Distributed Systems, Asynchronous I/O, Monolithic to Microservices Migration.\n* **Programming Languages**: C#, Python, JavaScript, TypeScript, PHP, .NET Framework, ASP.NET MVC, .NET Core 3+, .NET 5, .NET 6, .NET 8.\n* **Cloud Computing & DevOps**: Google Cloud Platform (GCP), AWS Cloud, Azure DevOps, Cloud Modernization, Cloud Migration, CI/CD Pipelines, Infrastructure-as-Code (IaC), Terraform, Docker, Kubernetes, Serverless Architecture (AWS Lambda, GCP Cloud Functions), Containerization, Cloud Security.\n* **Databases**: SQL, SQL Server, MSSQL, MySQL, PostgreSQL, Oracle, MongoDB, DynamoDB.\n* **AI, Machine Learning, & Search**: Generative AI (GenAI), Vertex AI, RAG (Retrieval-Augmented Generation), Large Language Models (LLMs), AI-Powered Applications, NLP (Natural Language Processing), Text Analytics, Enterprise Search, Elasticsearch, Apache Solr, Lucidworks Fusion.\n* **Web Technologies & Frameworks**: Angular (10-18), Next.js, React.js, Node.js, Express.js, Angular Flex-Layout, Angular Material, Angular PrimeNg, jQuery, Bootstrap (3, 4, 5), HTML5, CSS3, SCSS.\n* **APIs & Integrations**: RESTful APIs, Web API, GraphQL API, Swagger Open API, ServiceStack, RabbitMQ, Temporal.io, Microsoft Graph, third-party API Integration, API design.\n* **Quality Assurance & Testing**: Automated Software Unit Testing, Regression Testing, TDD (Test-Driven Development), Cypress, Selenium, Protractor.\n* **Leadership & Project Management**: Lead Capacity, Product Ownership, Business Analysis, Technical Roadmaps, Scrum, Agile Methodologies, Technical Documentation, Code Reviews, Workflow Automation.\n* **Security & Compliance**: Cloud Security, PCI Compliance, Web Accessibility (ADA, WCAG 2.0/2.1), NIST SP 800-53, NIST SP 800-37, Security Assessment & Authorization (SA&A), Risk Management.\n* **Data & Analytics**: BigQuery, Data Analytics, Data Integration (ETL), Power BI.\n* **Miscellaneous**: SEO (Search Engine Optimization), SEM (Search Engine Marketing), CMS (Drupal, Wordpress), Microsoft Bot Framework, Google Charts, Visual Studio, Visual Studio Code, Git, TFS, SVN, Jira, GitHub.\n\n\n---\n\n**Input Data:**\n* **Job Description:** `{{ $('Limit Apify results - 313').item.json.descriptionHtml }}`\n* **My Resume:** `{{ $('Seed Resume').item.json.content }}`\n\n**Output Requirements:**\n1.  The output MUST be only the updated resume.\n2.  The output MUST be in perfect Markdown format.\n3.  You MUST follow these formatting rules precisely:\n    * **Header Rule:** The resume header MUST be two separate lines. The first line is the name ONLY, as a level 2 heading. The second line contains the location and contact info. For example:\n        ## IVO DACHEV\n        Sacramento, CA | (650) 222-7923 | dachevivo@gmail.com\n    * **Main Headings Rule:** All main headings (SUMMARY, TECHNICAL SKILLS, etc.) MUST be formatted like this: `## **SUMMARY**`\n    * **Job Titles Rule:** All job title lines (which include the title, date, company, and location) MUST be formatted as a single, continuous line of bolded text. For example: `**Product Owner/Architect/Developer 01/2024 – Present 1BuilderMedia Marketing LLC/ Consulting for the CA Public sector Sacramento, Ca**`\n4.  Do not include any other notes, explanations, backslashes, or backticks in your response."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-64, -2768],
+      "id": "923fe5fb-0d4f-42b1-bade-4c930d1e301b",
+      "name": "Customize Resume - Hybrid approach2",
+      "notesInFlow": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.markdownContent }}",
+        "destinationKey": "htmlContent",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [512, -2768],
+      "id": "c309c634-c652-400d-9617-2e7d9863a9db",
+      "name": "Markdown to HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- The Final, Corrected Code for Your n8n Environment ---\n\n// This will hold the results for every job processed.\nconst results = [];\n\n// This loop will run once for every job that comes from the previous node.\n// CORRECTION: The entire logic is now correctly placed within the function,\n// allowing it to access the 'items' array provided by n8n.\nfor (const item of items) {\n  const boundary = 'divider';\n\n  // Get the data for the current job inside the loop.\n  const docTitle = item.json.documentTitle;\n  const folderId = item.json.folderId;\n  let htmlContent = item.json.htmlContent;\n\n  // This formatting correction for the header remains the same.\n  htmlContent = htmlContent.replace('IVO DACHEV\\nSacramento', 'IVO DACHEV<br>Sacramento');\n\n  const metadata = JSON.stringify({\n    name: docTitle,\n    mimeType: \"application/vnd.google-apps.document\",\n    parents: [folderId]\n  });\n\n  const htmlWithStyles = `\n  <!DOCTYPE html>\n  <html>\n  <head>\n    <meta charset=\"UTF-8\">\n    <style>\n      body { font-family: Arial, sans-serif; line-height: 1.4; font-size: 11pt; }\n      h2 { margin-top: 16pt; margin-bottom: 10pt; font-size: 13pt; color: #333333; border-bottom: 1px solid #cccccc; padding-bottom: 3pt; }\n      strong { font-size: 13pt; }\n      p { margin-bottom: 10pt; }\n      ul { margin-top: 0; margin-bottom: 10pt; padding-left: 20pt; }\n      li { margin-bottom: 4pt; }\n    </style>\n  </head>\n  <body>\n    ${htmlContent}\n  </body>\n  </html>\n  `;\n\n  let body = `--${boundary}\\r\\n`;\n  body += `Content-Type: application/json; charset=UTF-8\\r\\n\\r\\n`;\n  body += `${metadata}\\r\\n`;\n  body += `--${boundary}\\r\\n`;\n  body += `Content-Type: text/html\\r\\n\\r\\n`;\n  body += `${htmlWithStyles}\\r\\n`;\n  body += `--${boundary}--`;\n\n  // We add the result for this job to our list, making sure to include\n  // the original 'json' data so that 'companyWebsite' is available for the next step.\n  results.push({\n    json: {\n      ...item.json, // This carries all original data forward\n      rawData: body,\n    }\n  });\n}\n\n// Return the full list of processed jobs.\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [736, -2768],
+      "id": "e504cd01-db2c-4621-b6ec-c26eda66c3eb",
+      "name": "HTMl Styling"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "uploadType",
+              "value": "multipart"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "multipart/related; boundary=divider",
+        "body": "={{ $json.rawData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, -2768],
+      "id": "59e4cddf-efcf-49f4-a185-d1a89aeaafad",
+      "name": "POST to GDocs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "nrRB0AHydhQRDsRy",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4ab75e1b-676f-48bf-b5bf-2cf6d043701b",
+              "leftValue": "={{ $('Limit Apify results - 313').item.json.companyWebsite }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7bc7130c-e897-49be-b08d-0edf3c9ed318",
+              "leftValue": "={{ $('Limit Apify results - 313').item.json.companyWebsite }}",
+              "rightValue": "dice.com",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "0ff27dae-bf25-4e38-b1b0-1e34ad45a010",
+              "leftValue": "={{ $json.content.parts[0].text.parseJson().isMatch }}\n",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [1520, -3040],
+      "id": "5d1de974-c7ac-4834-90b6-1416fca8314c",
+      "name": "Filter - noEmpty no dice.com"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=The Right Fit: {{ $('Limit Apify results - 313').item.json.title }}!",
+        "message": "={{ $json.content.parts[0].text }}\n\nLet me know what you would like to do next!\n\n\nBest,\n\nIvo\n\n ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [416, -2192],
+      "id": "e732f73f-636c-448f-8a49-121d4869cadc",
+      "name": "Create a draft",
+      "webhookId": "50e4b9e6-4a27-47c9-9a93-c56eb62bb35f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rEDqr1LkX2ZgxHLO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get ALL items from the previous node.\nconst items = $('HTTP Request Apify').all();\n\n// Initialize an array to store the final list of cleaned domains.\nlet organizationDomainList = [];\n\n// Loop through each item to process its companyWebsite field.\nfor (const item of items) {\n  // Get the company website from the current item in the loop.\n  const companyWebsite = item.json.companyWebsite;\n\n  // Process only if companyWebsite is a non-empty string.\n  if (typeof companyWebsite === 'string' && companyWebsite.trim() !== '') {\n\n    // Clean the URL by removing prefixes and unwanted characters.\n    const cleanedUrlFragment = companyWebsite\n      .replace(/^(https?:\\/\\/)?(www\\.)?/, '')\n      .replace('@', '');\n\n    // Isolate the domain from any sub-paths.\n    const domainPartsArray = cleanedUrlFragment.split('/');\n    const cleanedDomain = domainPartsArray[0].trim();\n\n    // MODIFICATION: Add the domain to the list ONLY if it's not empty AND not 'dice.com'.\n    if (cleanedDomain && cleanedDomain !== 'dice.com') {\n      organizationDomainList.push({ companyWebsite: cleanedDomain });\n    }\n  }\n}\n\n// Return a single item containing the filtered list.\nreturn [{ json: { organizationDomainList: organizationDomainList } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1184, -2768],
+      "id": "76d73948-504e-4684-99af-044b5363d90f",
+      "name": "Array of companyWebsite filter dice.com"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI agent whose job is **to create Apollo.io people search URLs**. Your **only output must be a single, unnested JSON object**. You will not include any conversational text, explanations, or additional formatting.\n\nHere are your instructions for generating the JSON output:\n\n1.  **JSON Structure**: Your output will always be a JSON object containing three keys: `clean_output`, `URL`, and `total_records`.\n\n2.  **`clean_output`**: Set this value to `false`.\n\n3.  **`total_records`**: Set this value to a minimum of `500`. If a higher value is provided in the input, use that value instead.\n\n4.  **`URL` Construction**:\n\n      * The base URL is `https://app.apollo.io/#/people?`.\n      * Always include these fixed parameters: `finderViewId=5b8050d050a3893c382e9360`, `page=1`, and `sortByField=recommendations_score`.\n      * You will be given several inputs to build the final URL. Only include parameters if their corresponding input is provided. URL-encode all parameter values.\n\n-----\n\n### **Parameter Mapping**\n  * **`organizationDomainList`**:\n{{ $json.organizationDomainList }}\n\n      * **Input**: You will receive an input named `organizationDomainList`. This is an array of objects, where each object contains a **pre-cleaned, ready-to-use company domain**.\n          * *Example Input*: `[ { \"companyWebsite\": \"bolt.com\" }, { \"companyWebsite\": \"oracle.com\" } ]`\n      * **Action**: Take the `companyWebsite` value from **each** object in the array. For each domain, append a separate `&organizationDomainList[]=` parameter to the URL. **Do not perform any cleaning on these domains.**\n     \n\n  * **Other Parameters**:\n\n      * **`jobTitle`**: Maps to `person_titles[]`.\n      * **`personLocation`**: Maps to `person_locations[]`.\n      * **`jobSeniority`**: Maps to `seniorities[]` (e.g., 'senior', 'director', 'vp').\n      * **`companyEmployees`**: Maps to `organizationNumEmployeesRanges[]` (e.g., '10000%2C100000').\n      * **`emailStatus`**: Maps to `emailStatuses[]` (e.g., 'verified').\n\n-----\n\n### **Example Final Output**\n\nGiven an `organizationDomainList` and other filters like `jobTitle: [\"Data Scientist\"]` and `personLocation: [\"California, US\"]`, your final output should look like this:\n\n```json\n{\n  \"clean_output\": false,\n  \"URL\": \"https://app.apollo.io/#/people?finderViewId=5b8050d050a3893c382e9360&page=1&sortByField=recommendations_score&organizationDomainList[]=bolt.com&organizationDomainList[]=blackmorepartnersinc.com&organizationDomainList[]=mygwork.com&person_titles[]=Data%20Scientist&person_locations[]=California%2C%20US\",\n  \"total_records\": 500\n}\n```"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [1408, -2768],
+      "id": "ac918f56-17af-4ebd-a061-75c69bf1d135",
+      "name": "Build Apolo URL - Multiple companies",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [720, -2448],
+      "id": "3812bc23-0f4f-4631-9db4-86e25e65305f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [960, -2464],
+      "id": "b3171b13-3732-4ddf-ae98-dcde83f4de9a",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.random()* 60 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1312, -2464],
+      "id": "97122bc3-30b9-4c88-b0af-efbd00d8f798",
+      "name": "Wait",
+      "webhookId": "e814f29d-f529-4fa8-a5f3-1ea4f8b6c016"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Run an Actor and get email enirched').item.json.email }}",
+        "subject": "=The Right Fit: {{ $('Limit Apify results - 313').item.json.title }}!",
+        "emailType": "text",
+        "message": "=Hi  {{ $('Run an Actor and get email enirched').item.json.first_name }}!\n\nI just wanted to let you know that I'm the right fit for the position of {{ $('Limit Apify results - 313').item.json.title }}. I will be upfront: I actually used AI to scrape this job, customize my resume, and then automatically get your contact details. \n\nI would be happy to run you and any of your hiring managers here through the system. I could also implement even more efficient cost saving systems for {{ $('Run an Actor and get email enirched').item.json.employment_history[0].organization_name }},\n\nSee the link to my Resume: \nhttps://docs.google.com/document/d/{{ $('POST to GDocs').item.json.id }}/edit?tab=t.0\n\nLet me know what you would like to do next!\n\n\nBest,\n\nIvo\n\n ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [704, -2192],
+      "id": "a7221a19-98c3-46d4-b383-bb54f3babf2c",
+      "name": "Send Email",
+      "webhookId": "50e4b9e6-4a27-47c9-9a93-c56eb62bb35f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rEDqr1LkX2ZgxHLO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "741f00c0-e45a-4889-b4cb-e002980dc9d1",
+              "leftValue": "={{ $json.email_status }}",
+              "rightValue": "verified",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [-32, -2464],
+      "id": "22469936-6a62-452a-b79a-b80cc0a77a6c",
+      "name": "Verified Email Only"
+    },
+    {
+      "parameters": {
+        "maxItems": 333
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [592, -3040],
+      "id": "af107fed-1c71-4c46-b6c5-af041f43769a",
+      "name": "Limit Apify results - 313"
+    },
+    {
+      "parameters": {
+        "maxItems": 313
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [1744, -3040],
+      "id": "542df7a8-9ed5-4a18-afb4-f0f9b1783a7e",
+      "name": "Limit Matched Resumes - 313"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "395101e9-1f12-4bfc-bd7a-523b0ae11c3e",
+              "leftValue": "={{ $json.result }}",
+              "rightValue": "valid",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [416, -2464],
+      "id": "e31a63ac-5ddc-4dd6-87dd-c7d906ca1118",
+      "name": "Verified Email ONLY"
+    },
+    {
+      "parameters": {
+        "url": "https://api.neverbounce.com/v4/single/check",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "private_6635897607b6fbcab58db75cffad6cb4"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [192, -2464],
+      "id": "65abcd3c-9092-430b-820f-d731219bb607",
+      "name": "Neverbounce Email Verfication"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "1_ipN7oOtDQlytBARapdxjJytUNuyCb4CvZfzfA8gAFs"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [144, -3040],
+      "id": "9825ba73-ed9c-4d9c-9d7d-7e8016f8c1c7",
+      "name": "Seed Resume",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "nrRB0AHydhQRDsRy",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert data extraction agent. Your task is to analyze the provided JSON of a scraped job posting and extract specific pieces of information. Respond ONLY with a single, clean JSON object containing the extracted variables.\n\nHere is the data for the job posting:\n{{$json.descriptionText}}\n\nBased on the text above, extract the following variables. If a value cannot be found, return an empty string \"\" or `false` for booleans.\n\n1.  **`job_title`**: The official job title.\n2.  **`theme`**: The primary theme of the job. Choose one: \"SEO\", \"GenAI\", \"Data Engineering\", \"Full Stack Development\", \"Project Management\", \"Marketing\".\n3.  **`keyword_1`**: The most important skill, responsibility, or qualification mentioned. Should be a short phrase (2-4 words).\n4.  **`keyword_2`**: The second most important skill or responsibility. Should be a short phrase (2-4 words).\n5.  **`industry_focus`**: The specific industry the job is in (e.g., \"medical clients,\" \"fintech,\" \"e-commerce\").\n6.  **`tool_1`**: The most prominent software, tool, or platform mentioned (e.g., \"Google Analytics,\" \"Ahrefs,\" \"AWS SageMaker,\" \"HubSpot\").\n7.  **`performance_metric`**: A specific performance goal or metric mentioned (e.g., \"Core Web Vitals\", \"increase organic traffic\", \"reporting KPIs\", \"drive tangible results\").\n8.  **`cms_platform`**: Any Content Management System mentioned by name (e.g., \"WordPress\", \"Drupal\", \"Sitecore\").\n9.  **`seo_focus`**: The primary type of SEO work. Choose one: \"Technical\", \"Content\", \"Strategy\", \"Local\", \"E-commerce\", or \"General\".\n10. **`client_facing`**: A boolean (`true` or `false`) indicating if the role involves managing or communicating directly with clients. Look for terms like \"account management\", \"client goals\", \"stakeholder management\".\n\n**Example of the desired output format:**\n\n{\n  \"job_title\": \"SEO Account Manager\",\n  \"theme\": \"SEO\",\n  \"keyword_1\": \"digital marketing strategy\",\n  \"keyword_2\": \"technical optimization\",\n  \"industry_focus\": \"medical clients\",\n  \"tool_1\": \"Google Analytics\",\n  \"performance_metric\": \"reporting KPIs\",\n  \"cms_platform\": \"\",\n  \"seo_focus\": \"Strategy\",\n  \"client_facing\": true\n}\n\nDo not include any other text, explanations, or formatting. Your entire response must be only the JSON object."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [816, -3040],
+      "id": "3cc60d68-c55a-426e-9d2a-46c367b60605",
+      "name": "Extract Job Characteristics and Kws",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "jljBwyyQakqrL1wae",
+          "mode": "list",
+          "cachedResultName": "🔥Apollo Scraper - Scrape upto 50k Leads (code_crafter/apollo-io-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/jljBwyyQakqrL1wae/input"
+        },
+        "customBody": "={{ $json.content.parts[0].text }}",
+        "timeout": {}
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [1760, -2768],
+      "id": "68761cc4-763c-436e-a5dc-4edf31d618c8",
+      "name": "Run an Actor and get email enirched",
+      "credentials": {
+        "apifyApi": {
+          "id": "wI68UXmrV57w78X2",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert career coach and copywriter specializing in crafting compelling, personalized outreach emails for job applications. Your task is to generate the body of an email based on a set of provided variables. The email must be personable, confident, and highly customized to show genuine interest and highlight me as the perfect candidate.\n\n**Use the following variables to construct the email:**\n* **hiring_manager_name:** `{{ $('Run an Actor and get email enirched').item.json.first_name }}`\n* **company_name:** `{{ $('Run an Actor and get email enirched').item.json.employment_history[0].organization_name }}`\n* **job_title:** `{{ $('Run an Actor and get email enirched').item.json.title }}`\n\n* **resume_link:** `https://docs.google.com/document/d/{{ $('POST to GDocs').item.json.id }}/edit`\n\n* **theme:** `{{ $('Extract Job Characteristics and Kws').item.json.content.parts[0].text.parseJson().theme }}`\n\n\n\n* **keyword_1:** `{{ $('Extract Job Characteristics and Kws').item.json.content.parts[0].text.parseJson().keyword_1 }}`\n\n* **keyword_2:** `{{ $('Extract Job Characteristics and Kws').item.json.content.parts[0].text.parseJson().keyword_2 }}`\n* **industry_focus:** `{{ $('Extract Job Characteristics and Kws').item.json.content.parts[0].text.parseJson().industry_focus }}`\n* **performance_metric:** `{{ $('Extract Job Characteristics and Kws').item.json.content.parts[0].text.parseJson().performance_metric }}`\n\n**Instructions for Generating the Email Body:**\n\n1.  **Opening:** Start with a personalized greeting to the `hiring_manager_name`. In the first sentence, mention your excitement for the `job_title` role at `company_name`. If `industry_focus` is available, incorporate it to show you've done your research. For example: \"I've been following \n{{ $('Limit Apify results - 313').item.json.companyName }}'s impressive work in the {{ $('Extract Job Characteristics and Kws').item.json.content.parts[0].text.parseJson().industry_focus }} space...\"\n\n\n2.  **The Hook (Connect to the JD):** In the second paragraph, seamlessly weave `keyword_1` and `keyword_2` into a sentence that shows you've analyzed their needs. If a `performance_metric` was identified, connect your interest to that goal.\n    * *Example:* \"The job description's emphasis on `{{keyword_1}}` particularly caught my eye, as it directly relates to achieving key objectives like `{{performance_metric}}`.\"\n\n3.  **The Proof (Connect Your Experience):** Write one powerful sentence that connects my past accomplishments to their needs, based on the job `theme`.\n    * If **theme** is \"SEO\": Mention a specific, quantifiable achievement from my past, such as \"increasing organic rankings by 73%\" or \"managing end-to-end SEO/SEM strategy for over 55+ client websites.\"\n    * If **theme** is \"GenAI\": Reference my experience in \"architecting RAG-based solutions\" or \"deploying scalable, AI-powered applications in AWS/GCP environments.\"\n    * If **theme** is \"Project Management\": Highlight my experience in \"leading Agile transformation initiatives\" or \"collaborating with stakeholders to align business goals with emerging technology.\"\n\n4.  **Call to Action:** In the third paragraph, state that the attached resume is tailored for the role. Use the `theme` variable to describe my background (e.g., \"my background in `{{theme}}`\"). Then, insert the `resume_link`.\n\n5.  **Closing:** Write a confident and polite closing, expressing eagerness to discuss the opportunity further.\n\n**Final Rules:**\n* Keep the tone professional yet personable and confident.\n* The entire email body should be concise (4-5 short paragraphs).\n* Do NOT use placeholders like `[Keyword 1]` in the final output; you must use the actual variable values provided.\n* Output ONLY the complete email body text. Do not include \"Subject:\" or any other text outside the email body itself.\n* Do not use the term \"find resume tailored to this position\". We do want to leave the impression that the resume was tailored just for this position. \n* Your entire response MUST be ONLY the final email body text, ready to be sent. Do not wrap it in JSON, markdown backticks, or include any other notes, titles, or explanations like \"Here is the email body:\". Put a line break at the end of the resume_link. "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [16, -2192],
+      "id": "fd5e1d80-fe77-4c7e-958f-bc6ef85d2f6d",
+      "name": "Write the custom Email Body",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "======> TO DO\n",
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [64, -3264],
+      "typeVersion": 1,
+      "id": "0f0258e8-e2a8-4716-ba46-98db2a5a79ec",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Seed Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Text Matched Score above 90": {
+      "main": [
+        [
+          {
+            "node": "Filter - noEmpty no dice.com",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Apify": {
+      "main": [
+        [
+          {
+            "node": "Limit Apify results - 313",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Markdown to HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customize Resume - Hybrid approach2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown to HTML": {
+      "main": [
+        [
+          {
+            "node": "HTMl Styling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTMl Styling": {
+      "main": [
+        [
+          {
+            "node": "POST to GDocs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST to GDocs": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Array of companyWebsite filter dice.com",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - noEmpty no dice.com": {
+      "main": [
+        [
+          {
+            "node": "Limit Matched Resumes - 313",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Array of companyWebsite filter dice.com": {
+      "main": [
+        [
+          {
+            "node": "Build Apolo URL - Multiple companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Apolo URL - Multiple companies": {
+      "main": [
+        [
+          {
+            "node": "Run an Actor and get email enirched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Write the custom Email Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verified Email Only": {
+      "main": [
+        [
+          {
+            "node": "Neverbounce Email Verfication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit Apify results - 313": {
+      "main": [
+        [
+          {
+            "node": "Extract Job Characteristics and Kws",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit Matched Resumes - 313": {
+      "main": [
+        [
+          {
+            "node": "Customize Resume - Hybrid approach2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verified Email ONLY": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neverbounce Email Verfication": {
+      "main": [
+        [
+          {
+            "node": "Verified Email ONLY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seed Resume": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Job Characteristics and Kws": {
+      "main": [
+        [
+          {
+            "node": "All Text Matched Score above 90",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor and get email enirched": {
+      "main": [
+        [
+          {
+            "node": "Verified Email Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write the custom Email Body": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a02c5ffd88865af83d53faf4becd2bff31912fb1f816639f33606241c691c12b"
+  }
+}
