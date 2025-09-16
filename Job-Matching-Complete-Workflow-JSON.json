@@ -1,0 +1,168 @@
+{
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatching--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-480, -48],
+      "id": "trigger-from-orchestrator",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JOB MATCHING - INPUT PROCESSING\n// Processes job data and resume for compatibility analysis\n\nconst inputData = $json;\nconst jobData = inputData.jobData || inputData;\nconst resumeData = inputData.resumeData || null;\n\n// Validate required inputs\nif (!jobData || !jobData.title || !jobData.companyName) {\n  throw new Error('Invalid job data: missing required fields (title, companyName)');\n}\n\nif (!resumeData || !resumeData.content) {\n  throw new Error('Invalid resume data: missing resume content');\n}\n\n// Extract key job requirements for matching analysis\nconst jobRequirements = {\n  title: jobData.title,\n  company: jobData.companyName,\n  location: jobData.location || 'Not specified',\n  description: jobData.descriptionText || jobData.descriptionHtml || '',\n  requirements: jobData.requirements || '',\n  skills: jobData.skills || [],\n  experience: jobData.experienceLevel || 'Not specified'\n};\n\n// Extract resume content for analysis\nconst resumeContent = {\n  fullText: resumeData.content,\n  skills: resumeData.skills || [],\n  experience: resumeData.experience || [],\n  education: resumeData.education || [],\n  summary: resumeData.summary || ''\n};\n\n// Prepare data for AI analysis\nconst analysisInput = {\n  job: jobRequirements,\n  resume: resumeContent,\n  analysisType: 'job-resume-compatibility',\n  timestamp: new Date().toISOString()\n};\n\nconsole.log(`Job Matching Analysis: ${jobData.title} at ${jobData.companyName}`);\nconsole.log(`Resume length: ${resumeContent.fullText.length} characters`);\n\nreturn [{ json: analysisInput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-280, -48],
+      "id": "input-processing",
+      "name": "Job-Resume Input Processing"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Job Matching AI that analyzes job-resume compatibility. Your task is to provide a comprehensive compatibility analysis between a job posting and a candidate's resume.\n\n**INPUT DATA:**\nJob Information: {{ $json.job }}\nResume Information: {{ $json.resume }}\n\n**ANALYSIS REQUIREMENTS:**\n\n1. **Compatibility Score** (0-100): Overall match percentage\n2. **Skills Match Analysis**: \n   - Required skills present in resume\n   - Missing critical skills\n   - Additional relevant skills from resume\n3. **Experience Alignment**:\n   - Years of experience match\n   - Industry experience relevance\n   - Role progression alignment\n4. **Education Requirements**:\n   - Degree requirements met\n   - Relevant certifications\n   - Educational background alignment\n5. **Key Strengths**: Top 3 reasons this candidate is a good fit\n6. **Potential Concerns**: Top 3 areas that might need addressing\n7. **Recommendation**: STRONG_MATCH (90-100), GOOD_MATCH (70-89), MODERATE_MATCH (50-69), WEAK_MATCH (0-49)\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"compatibilityScore\": 85,\n  \"recommendation\": \"GOOD_MATCH\",\n  \"skillsAnalysis\": {\n    \"requiredSkillsPresent\": [\"skill1\", \"skill2\"],\n    \"missingCriticalSkills\": [\"skill3\"],\n    \"additionalRelevantSkills\": [\"skill4\", \"skill5\"]\n  },\n  \"experienceAlignment\": {\n    \"yearsMatch\": true,\n    \"industryRelevance\": \"high\",\n    \"roleProgression\": \"appropriate\"\n  },\n  \"educationAlignment\": {\n    \"degreeRequirementsMet\": true,\n    \"relevantCertifications\": [\"cert1\"],\n    \"educationScore\": 90\n  },\n  \"keyStrengths\": [\n    \"Strong technical background in required technologies\",\n    \"Relevant industry experience\",\n    \"Leadership experience aligns with role requirements\"\n  ],\n  \"potentialConcerns\": [\n    \"Limited experience with specific tool X\",\n    \"Geographic location may require relocation\"\n  ],\n  \"detailedAnalysis\": \"Comprehensive analysis text...\",\n  \"matchingKeywords\": [\"keyword1\", \"keyword2\"],\n  \"confidenceLevel\": \"high\"\n}\n```\n\nProvide thorough, accurate analysis focusing on genuine job-resume compatibility."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-80, -48],
+      "id": "ai-job-matching-analysis",
+      "name": "AI Job Matching Analysis",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "match-threshold-filter",
+              "leftValue": "={{ $json.content.parts[0].text.compatibilityScore }}",
+              "rightValue": 70,
+              "operator": {
+                "type": "number",
+                "operation": "gte",
+                "name": "filter.operator.gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [120, -48],
+      "id": "compatibility-threshold-filter",
+      "name": "Compatibility Threshold Filter (≥70%)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JOB MATCHING - OUTPUT FORMATTING\n// Formats job matching results for orchestrator integration\n\nconst matchingResults = $json.content.parts[0].text;\nconst originalJobData = $('Job-Resume Input Processing').item.json.job;\nconst originalResumeData = $('Job-Resume Input Processing').item.json.resume;\n\n// Parse AI analysis results\nlet analysisData;\ntry {\n  analysisData = typeof matchingResults === 'string' ? JSON.parse(matchingResults) : matchingResults;\n} catch (error) {\n  console.error('Failed to parse AI analysis results:', error);\n  analysisData = {\n    compatibilityScore: 0,\n    recommendation: 'PARSING_ERROR',\n    error: 'Failed to parse AI analysis results'\n  };\n}\n\n// Format final output for orchestrator\nconst finalOutput = {\n  jobData: {\n    title: originalJobData.title,\n    company: originalJobData.company,\n    location: originalJobData.location,\n    description: originalJobData.description\n  },\n  jobMatching: {\n    compatibilityScore: analysisData.compatibilityScore || 0,\n    recommendation: analysisData.recommendation || 'UNKNOWN',\n    skillsAnalysis: analysisData.skillsAnalysis || {},\n    experienceAlignment: analysisData.experienceAlignment || {},\n    educationAlignment: analysisData.educationAlignment || {},\n    keyStrengths: analysisData.keyStrengths || [],\n    potentialConcerns: analysisData.potentialConcerns || [],\n    detailedAnalysis: analysisData.detailedAnalysis || '',\n    matchingKeywords: analysisData.matchingKeywords || [],\n    confidenceLevel: analysisData.confidenceLevel || 'unknown',\n    passedThreshold: analysisData.compatibilityScore >= 70\n  },\n  processingMetadata: {\n    workflowId: \"job-matching-augment\",\n    workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatching--Augment\",\n    processedAt: new Date().toISOString(),\n    status: \"job_matching_complete\",\n    version: \"1.0.0\",\n    executionId: $executionId,\n    analysisType: \"job-resume-compatibility\"\n  }\n};\n\nconsole.log(`Job Matching completed: ${analysisData.compatibilityScore}% compatibility`);\nconsole.log(`Recommendation: ${analysisData.recommendation}`);\nconsole.log(`Passed threshold (≥70%): ${analysisData.compatibilityScore >= 70}`);\n\nreturn [{ json: finalOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, -48],
+      "id": "output-formatting",
+      "name": "Job Matching Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Job-Resume Input Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job-Resume Input Processing": {
+      "main": [
+        [
+          {
+            "node": "AI Job Matching Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Job Matching Analysis": {
+      "main": [
+        [
+          {
+            "node": "Compatibility Threshold Filter (≥70%)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compatibility Threshold Filter (≥70%)": {
+      "main": [
+        [
+          {
+            "node": "Job Matching Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "active": false,
+  "tags": [
+    {
+      "name": "Augment Code"
+    },
+    {
+      "name": "sub-flow"
+    },
+    {
+      "name": "job-matching"
+    }
+  ]
+}

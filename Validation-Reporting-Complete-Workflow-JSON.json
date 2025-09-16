@@ -1,0 +1,168 @@
+{
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ValidationReporting--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-480, -48],
+      "id": "trigger-from-orchestrator",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// VALIDATION REPORTING - INPUT PROCESSING\n// Processes complete automation pipeline results for validation and reporting\n\nconst inputData = $json;\nconst jobData = inputData.jobData || {};\nconst jobMatching = inputData.jobMatching || {};\nconst resumeGeneration = inputData.resumeGeneration || {};\nconst contactEnrichment = inputData.contactEnrichment || {};\nconst outreachTracking = inputData.outreachTracking || {};\n\n// Validate pipeline completeness\nconst validationChecks = {\n  jobDataValid: !!(jobData.title && jobData.companyName),\n  jobMatchingValid: !!(jobMatching.compatibilityScore && jobMatching.recommendation),\n  resumeGenerationValid: !!(resumeGeneration.customizedResume && resumeGeneration.atsScore),\n  contactEnrichmentValid: !!(contactEnrichment.primaryContact && contactEnrichment.primaryContact.email),\n  outreachTrackingValid: !!(outreachTracking.emailSent && outreachTracking.emailId)\n};\n\n// Calculate overall pipeline success rate\nconst totalChecks = Object.keys(validationChecks).length;\nconst passedChecks = Object.values(validationChecks).filter(check => check).length;\nconst successRate = Math.round((passedChecks / totalChecks) * 100);\n\n// Prepare validation data\nconst validationData = {\n  pipelineResults: {\n    jobData,\n    jobMatching,\n    resumeGeneration,\n    contactEnrichment,\n    outreachTracking\n  },\n  validationChecks,\n  metrics: {\n    successRate,\n    totalChecks,\n    passedChecks,\n    failedChecks: totalChecks - passedChecks\n  },\n  validationType: 'complete-pipeline-validation',\n  timestamp: new Date().toISOString()\n};\n\nconsole.log(`Validation Reporting: ${jobData.title} at ${jobData.companyName}`);\nconsole.log(`Pipeline Success Rate: ${successRate}% (${passedChecks}/${totalChecks} checks passed)`);\n\nreturn [{ json: validationData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-280, -48],
+      "id": "input-processing",
+      "name": "Validation Input Processing"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Validation Reporting AI that analyzes LinkedIn automation pipeline results. Your task is to create comprehensive validation reports with quality assessments and recommendations.\n\n**INPUT DATA:**\nPipeline Results: {{ $json.pipelineResults }}\nValidation Checks: {{ $json.validationChecks }}\nMetrics: {{ $json.metrics }}\n\n**VALIDATION REQUIREMENTS:**\n\n1. **Quality Assessment**: Evaluate each pipeline component's performance\n2. **Success Metrics**: Calculate success rates and identify bottlenecks\n3. **Error Analysis**: Identify failures and their root causes\n4. **Performance Benchmarks**: Compare against expected standards\n5. **Improvement Recommendations**: Suggest optimizations and fixes\n6. **Compliance Check**: Ensure all components meet quality standards\n\n**VALIDATION CRITERIA:**\n- **Job Matching**: Compatibility score ≥70%, valid recommendation\n- **Resume Generation**: ATS score ≥80%, customization quality\n- **Contact Enrichment**: Valid email, verification status\n- **Outreach Tracking**: Email sent successfully, tracking active\n- **Overall Pipeline**: End-to-end completion without critical failures\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"validationSummary\": {\n    \"overallStatus\": \"PASS|FAIL|WARNING\",\n    \"successRate\": 85,\n    \"qualityScore\": 88,\n    \"pipelineHealth\": \"HEALTHY|DEGRADED|CRITICAL\"\n  },\n  \"componentAnalysis\": {\n    \"jobMatching\": {\n      \"status\": \"PASS\",\n      \"score\": 85,\n      \"issues\": [],\n      \"recommendations\": []\n    },\n    \"resumeGeneration\": {\n      \"status\": \"PASS\",\n      \"score\": 90,\n      \"issues\": [],\n      \"recommendations\": []\n    }\n  },\n  \"performanceMetrics\": {\n    \"processingTime\": \"2.5 minutes\",\n    \"apiCallsUsed\": 15,\n    \"creditsConsumed\": 8\n  },\n  \"recommendations\": [\n    \"Improve job matching threshold\",\n    \"Optimize resume customization\"\n  ],\n  \"nextActions\": [\n    \"Monitor email response rate\",\n    \"Schedule follow-up in 7 days\"\n  ]\n}\n```\n\nProvide comprehensive validation analysis with actionable insights for pipeline optimization."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-80, -48],
+      "id": "ai-validation-analysis",
+      "name": "AI Validation Analysis",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "validation-success-filter",
+              "leftValue": "={{ $json.content.parts[0].text.validationSummary.successRate }}",
+              "rightValue": 70,
+              "operator": {
+                "type": "number",
+                "operation": "gte",
+                "name": "filter.operator.gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [120, -48],
+      "id": "validation-success-filter",
+      "name": "Validation Success Filter (≥70%)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// VALIDATION REPORTING - OUTPUT FORMATTING\n// Formats validation results and generates comprehensive reports\n\nconst validationResults = $json.content.parts[0].text;\nconst originalValidationData = $('Validation Input Processing').item.json;\n\n// Parse AI validation analysis results\nlet analysisData;\ntry {\n  analysisData = typeof validationResults === 'string' ? JSON.parse(validationResults) : validationResults;\n} catch (error) {\n  console.error('Failed to parse AI validation results:', error);\n  analysisData = {\n    validationSummary: {\n      overallStatus: 'ERROR',\n      successRate: 0,\n      qualityScore: 0,\n      pipelineHealth: 'CRITICAL'\n    },\n    componentAnalysis: {},\n    recommendations: ['Fix validation analysis parsing error']\n  };\n}\n\n// Generate comprehensive validation report\nconst validationReport = {\n  reportId: `validation-${Date.now()}`,\n  generatedAt: new Date().toISOString(),\n  jobReference: {\n    title: originalValidationData.pipelineResults.jobData.title,\n    company: originalValidationData.pipelineResults.jobData.companyName,\n    jobUrl: originalValidationData.pipelineResults.jobData.jobUrl\n  },\n  validationSummary: analysisData.validationSummary || {},\n  componentAnalysis: analysisData.componentAnalysis || {},\n  performanceMetrics: analysisData.performanceMetrics || {},\n  qualityAssessment: {\n    pipelineCompleteness: originalValidationData.metrics.successRate,\n    componentHealth: analysisData.validationSummary?.pipelineHealth || 'UNKNOWN',\n    overallQuality: analysisData.validationSummary?.qualityScore || 0,\n    criticalIssues: (analysisData.componentAnalysis && Object.values(analysisData.componentAnalysis).filter(comp => comp.status === 'FAIL').length) || 0\n  },\n  recommendations: analysisData.recommendations || [],\n  nextActions: analysisData.nextActions || []\n};\n\n// Format final output for orchestrator\nconst finalOutput = {\n  jobData: originalValidationData.pipelineResults.jobData,\n  validationReporting: validationReport,\n  processingMetadata: {\n    workflowId: \"validation-reporting-augment\",\n    workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-ValidationReporting--Augment\",\n    processedAt: new Date().toISOString(),\n    status: \"validation_reporting_complete\",\n    version: \"1.0.0\",\n    executionId: $executionId,\n    validationType: \"complete-pipeline-validation\"\n  }\n};\n\nconsole.log(`Validation Reporting completed: ${validationReport.validationSummary.overallStatus}`);\nconsole.log(`Success Rate: ${validationReport.qualityAssessment.pipelineCompleteness}%`);\nconsole.log(`Quality Score: ${validationReport.qualityAssessment.overallQuality}%`);\nconsole.log(`Critical Issues: ${validationReport.qualityAssessment.criticalIssues}`);\n\nreturn [{ json: finalOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, -48],
+      "id": "output-formatting",
+      "name": "Validation Reporting Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Validation Input Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Input Processing": {
+      "main": [
+        [
+          {
+            "node": "AI Validation Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Validation Analysis": {
+      "main": [
+        [
+          {
+            "node": "Validation Success Filter (≥70%)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Success Filter (≥70%)": {
+      "main": [
+        [
+          {
+            "node": "Validation Reporting Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "active": false,
+  "tags": [
+    {
+      "name": "Augment Code"
+    },
+    {
+      "name": "sub-flow"
+    },
+    {
+      "name": "validation-reporting"
+    }
+  ]
+}

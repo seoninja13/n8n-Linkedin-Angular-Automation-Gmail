@@ -1,0 +1,173 @@
+{
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobDiscovery--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-480, -48],
+      "id": "trigger-from-orchestrator",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JOB DISCOVERY - INPUT PROCESSING\n// Processes search criteria for job discovery\n\nconst inputData = $json;\nconst searchCriteria = inputData.searchCriteria || inputData;\n\n// Validate required inputs\nif (!searchCriteria || !searchCriteria.keywords) {\n  throw new Error('Invalid search criteria: missing required keywords');\n}\n\n// Extract and format search parameters\nconst jobSearchParams = {\n  keywords: searchCriteria.keywords || 'automation specialist',\n  location: searchCriteria.location || 'United States',\n  experienceLevel: searchCriteria.experienceLevel || 'mid-senior',\n  jobType: searchCriteria.jobType || 'full-time',\n  datePosted: searchCriteria.datePosted || 'past-week',\n  companySize: searchCriteria.companySize || 'any',\n  industry: searchCriteria.industry || 'technology',\n  salaryRange: searchCriteria.salaryRange || 'any',\n  remoteWork: searchCriteria.remoteWork || 'hybrid'\n};\n\n// Prepare data for external job discovery service\nconst discoveryInput = {\n  searchParams: jobSearchParams,\n  discoveryType: 'linkedin-job-search',\n  maxResults: searchCriteria.maxResults || 100,\n  timestamp: new Date().toISOString()\n};\n\nconsole.log(`Job Discovery: Searching for \"${jobSearchParams.keywords}\" in ${jobSearchParams.location}`);\nconsole.log(`Experience Level: ${jobSearchParams.experienceLevel}, Type: ${jobSearchParams.jobType}`);\n\nreturn [{ json: discoveryInput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-280, -48],
+      "id": "input-processing",
+      "name": "Job Search Input Processing"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "misceres/linkedin-jobs-scraper",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Jobs Scraper (misceres/linkedin-jobs-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/misceres~linkedin-jobs-scraper/input"
+        },
+        "customBody": "={\n  \"queries\": [\"{{ $json.searchParams.keywords }}\"],\n  \"locationId\": \"{{ $json.searchParams.location }}\",\n  \"maxItems\": {{ $json.maxResults }},\n  \"datePosted\": \"{{ $json.searchParams.datePosted }}\",\n  \"experienceLevel\": \"{{ $json.searchParams.experienceLevel }}\",\n  \"jobType\": \"{{ $json.searchParams.jobType }}\"\n}",
+        "timeout": {}
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [-80, -48],
+      "id": "apify-job-scraper",
+      "name": "LinkedIn Jobs Scraper",
+      "credentials": {
+        "apifyApi": {
+          "id": "wI68UXmrV57w78X2",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "job-quality-filter",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty",
+                "name": "filter.operator.isNotEmpty"
+              }
+            },
+            {
+              "id": "company-filter",
+              "leftValue": "={{ $json.companyName }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty",
+                "name": "filter.operator.isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [120, -48],
+      "id": "job-quality-filter",
+      "name": "Job Quality Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JOB DISCOVERY - OUTPUT FORMATTING\n// Formats discovered jobs for orchestrator integration\n\nconst jobData = $json;\nconst originalSearchParams = $('Job Search Input Processing').item.json.searchParams;\n\n// Format job data for orchestrator compatibility\nconst formattedJob = {\n  title: jobData.title || 'Unknown Title',\n  companyName: jobData.companyName || 'Unknown Company',\n  companyWebsite: jobData.companyUrl || jobData.companyWebsite || '',\n  location: jobData.location || originalSearchParams.location,\n  descriptionHtml: jobData.descriptionHtml || '',\n  descriptionText: jobData.description || jobData.descriptionText || '',\n  jobUrl: jobData.jobUrl || jobData.url || '',\n  salary: jobData.salary || 'Not specified',\n  experienceLevel: jobData.seniority || originalSearchParams.experienceLevel,\n  jobType: jobData.workType || originalSearchParams.jobType,\n  datePosted: jobData.postedAt || jobData.datePosted || new Date().toISOString(),\n  applicantCount: jobData.applicantCount || 0,\n  skills: jobData.skills || [],\n  requirements: jobData.requirements || ''\n};\n\n// Format final output for orchestrator\nconst finalOutput = {\n  jobData: formattedJob,\n  jobDiscovery: {\n    searchKeywords: originalSearchParams.keywords,\n    searchLocation: originalSearchParams.location,\n    discoveryMethod: 'linkedin-apify-scraper',\n    discoveredAt: new Date().toISOString(),\n    qualityScore: 85, // Based on having title and company\n    sourceUrl: jobData.jobUrl || jobData.url || ''\n  },\n  processingMetadata: {\n    workflowId: \"job-discovery-augment\",\n    workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-JobDiscovery--Augment\",\n    processedAt: new Date().toISOString(),\n    status: \"job_discovery_complete\",\n    version: \"1.0.0\",\n    executionId: $executionId,\n    discoveryType: \"linkedin-job-search\"\n  }\n};\n\nconsole.log(`Job Discovery completed: ${formattedJob.title} at ${formattedJob.companyName}`);\nconsole.log(`Location: ${formattedJob.location}, Type: ${formattedJob.jobType}`);\n\nreturn [{ json: finalOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, -48],
+      "id": "output-formatting",
+      "name": "Job Discovery Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Job Search Input Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Search Input Processing": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Jobs Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Jobs Scraper": {
+      "main": [
+        [
+          {
+            "node": "Job Quality Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Quality Filter": {
+      "main": [
+        [
+          {
+            "node": "Job Discovery Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "active": false,
+  "tags": [
+    {
+      "name": "Augment Code"
+    },
+    {
+      "name": "sub-flow"
+    },
+    {
+      "name": "job-discovery"
+    }
+  ]
+}

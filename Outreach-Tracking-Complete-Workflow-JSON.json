@@ -1,0 +1,158 @@
+{
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-OutreachTracking--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-480, -48],
+      "id": "trigger-from-orchestrator",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// OUTREACH TRACKING - INPUT PROCESSING\n// Processes job data, contact, and resume for outreach email creation\n\nconst inputData = $json;\nconst jobData = inputData.jobData || {};\nconst contactEnrichment = inputData.contactEnrichment || {};\nconst resumeGeneration = inputData.resumeGeneration || {};\n\n// Validate required inputs\nif (!jobData.title || !jobData.companyName) {\n  throw new Error('Invalid job data: missing required fields (title, companyName)');\n}\n\nif (!contactEnrichment.primaryContact || !contactEnrichment.primaryContact.email) {\n  throw new Error('Invalid contact data: missing primary contact email');\n}\n\nif (!resumeGeneration.customizedResume) {\n  throw new Error('Invalid resume data: missing customized resume');\n}\n\n// Extract outreach components\nconst outreachData = {\n  job: {\n    title: jobData.title,\n    company: jobData.companyName,\n    location: jobData.location,\n    jobUrl: jobData.jobUrl\n  },\n  contact: {\n    firstName: contactEnrichment.primaryContact.firstName,\n    lastName: contactEnrichment.primaryContact.lastName,\n    email: contactEnrichment.primaryContact.email,\n    jobTitle: contactEnrichment.primaryContact.jobTitle,\n    company: contactEnrichment.primaryContact.company\n  },\n  resume: {\n    customizedContent: resumeGeneration.customizedResume,\n    atsScore: resumeGeneration.atsScore || 0,\n    relevanceScore: resumeGeneration.relevanceScore || 0\n  },\n  outreachType: 'job-application-email',\n  timestamp: new Date().toISOString()\n};\n\nconsole.log(`Outreach Tracking: ${jobData.title} at ${jobData.companyName}`);\nconsole.log(`Contact: ${contactEnrichment.primaryContact.firstName} ${contactEnrichment.primaryContact.lastName} (${contactEnrichment.primaryContact.email})`);\n\nreturn [{ json: outreachData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-280, -48],
+      "id": "input-processing",
+      "name": "Outreach Input Processing"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Email Outreach AI that creates personalized job application emails. Your task is to create a compelling, professional email that highlights the candidate's qualifications.\n\n**INPUT DATA:**\nJob Information: {{ $json.job }}\nContact Information: {{ $json.contact }}\nResume Data: {{ $json.resume }}\n\n**EMAIL REQUIREMENTS:**\n\n1. **Professional Tone**: Formal but engaging business communication\n2. **Personalization**: Address recipient by name, reference their role\n3. **Value Proposition**: Clearly articulate candidate's value to the company\n4. **Specific Examples**: Include relevant achievements and skills\n5. **Call to Action**: Request for interview or further discussion\n6. **Proper Structure**: Subject line, greeting, body, closing, signature\n\n**EMAIL STRUCTURE:**\n- **Subject Line**: Compelling and specific to the role\n- **Greeting**: Professional salutation with recipient's name\n- **Opening**: Brief introduction and purpose\n- **Body**: Qualifications, achievements, and value proposition\n- **Closing**: Call to action and professional sign-off\n- **Signature**: Contact information\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"emailSubject\": \"Application for [Position] - [Candidate Name]\",\n  \"emailBody\": \"Full email content...\",\n  \"emailMetadata\": {\n    \"tone\": \"professional\",\n    \"personalizationLevel\": \"high\",\n    \"wordCount\": 250,\n    \"readabilityScore\": 85\n  },\n  \"attachments\": [\n    {\n      \"name\": \"Resume_[CandidateName]_[Position].pdf\",\n      \"type\": \"resume\",\n      \"required\": true\n    }\n  ],\n  \"followUpSchedule\": {\n    \"firstFollowUp\": \"7 days\",\n    \"secondFollowUp\": \"14 days\"\n  }\n}\n```\n\nCreate a professional, personalized job application email that maximizes response potential."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-80, -48],
+      "id": "ai-email-generation",
+      "name": "AI Email Generation",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "={{ $('Outreach Input Processing').item.json.contact.email }}",
+        "subject": "={{ $json.content.parts[0].text.emailSubject }}",
+        "emailType": "html",
+        "message": "={{ $json.content.parts[0].text.emailBody }}",
+        "attachments": "={{ $('Outreach Input Processing').item.json.resume.customizedContent }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [120, -48],
+      "id": "gmail-send",
+      "name": "Send Gmail",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-oauth-credential",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// OUTREACH TRACKING - OUTPUT FORMATTING\n// Formats outreach results and tracking data for orchestrator integration\n\nconst emailResults = $('AI Email Generation').item.json.content.parts[0].text;\nconst gmailResults = $json;\nconst originalOutreachData = $('Outreach Input Processing').item.json;\n\n// Parse AI email generation results\nlet emailData;\ntry {\n  emailData = typeof emailResults === 'string' ? JSON.parse(emailResults) : emailResults;\n} catch (error) {\n  console.error('Failed to parse AI email results:', error);\n  emailData = {\n    emailSubject: 'Error: Failed to generate email',\n    emailBody: 'Error: Failed to generate email content',\n    emailMetadata: { error: 'Parsing failed' }\n  };\n}\n\n// Format final output for orchestrator\nconst finalOutput = {\n  jobData: originalOutreachData.job,\n  outreachTracking: {\n    emailSent: true,\n    emailId: gmailResults.id || 'unknown',\n    threadId: gmailResults.threadId || 'unknown',\n    sentAt: new Date().toISOString(),\n    recipient: {\n      name: `${originalOutreachData.contact.firstName} ${originalOutreachData.contact.lastName}`,\n      email: originalOutreachData.contact.email,\n      jobTitle: originalOutreachData.contact.jobTitle,\n      company: originalOutreachData.contact.company\n    },\n    emailContent: {\n      subject: emailData.emailSubject || 'Unknown Subject',\n      body: emailData.emailBody || 'Unknown Body',\n      wordCount: emailData.emailMetadata?.wordCount || 0,\n      tone: emailData.emailMetadata?.tone || 'professional'\n    },\n    followUpSchedule: emailData.followUpSchedule || {},\n    trackingStatus: 'sent',\n    nextAction: 'await_response',\n    nextFollowUp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now\n  },\n  processingMetadata: {\n    workflowId: \"outreach-tracking-augment\",\n    workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-OutreachTracking--Augment\",\n    processedAt: new Date().toISOString(),\n    status: \"outreach_tracking_complete\",\n    version: \"1.0.0\",\n    executionId: $executionId,\n    outreachType: \"job-application-email\"\n  }\n};\n\nconsole.log(`Outreach Tracking completed: Email sent to ${originalOutreachData.contact.email}`);\nconsole.log(`Subject: ${emailData.emailSubject}`);\nconsole.log(`Next follow-up scheduled: ${finalOutput.outreachTracking.nextFollowUp}`);\n\nreturn [{ json: finalOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, -48],
+      "id": "output-formatting",
+      "name": "Outreach Tracking Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Outreach Input Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outreach Input Processing": {
+      "main": [
+        [
+          {
+            "node": "AI Email Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Generation": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Gmail": {
+      "main": [
+        [
+          {
+            "node": "Outreach Tracking Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "active": false,
+  "tags": [
+    {
+      "name": "Augment Code"
+    },
+    {
+      "name": "sub-flow"
+    },
+    {
+      "name": "outreach-tracking"
+    }
+  ]
+}

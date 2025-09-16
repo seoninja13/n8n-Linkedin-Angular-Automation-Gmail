@@ -1,0 +1,280 @@
+{
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactEnrichment--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-480, -48],
+      "id": "trigger-from-orchestrator",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// CONTACT ENRICHMENT - COMPANY DOMAIN PROCESSING\n// Adapted from 33-node workflow for single job processing\n\nconst jobData = $json;\nlet organizationDomainList = [];\n\n// Process the single job's company website\nconst companyWebsite = jobData.companyWebsite;\n\n// Process only if companyWebsite is a non-empty string\nif (typeof companyWebsite === 'string' && companyWebsite.trim() !== '') {\n  \n  // Clean the URL by removing prefixes and unwanted characters\n  const cleanedUrlFragment = companyWebsite\n    .replace(/^(https?:\\/\\/)?(www\\.)?/, '')\n    .replace('@', '');\n\n  // Isolate the domain from any sub-paths\n  const domainPartsArray = cleanedUrlFragment.split('/');\n  const cleanedDomain = domainPartsArray[0].trim();\n\n  // Add the domain to the list ONLY if it's not empty AND not blacklisted\n  if (cleanedDomain && \n      cleanedDomain !== 'dice.com' && \n      cleanedDomain !== 'sibelco.com') {\n    organizationDomainList.push(cleanedDomain);\n  }\n}\n\nconsole.log(`Processing company domain: ${organizationDomainList[0] || 'None found'}`);\nconsole.log(`Original job: ${jobData.title} at ${jobData.companyName}`);\n\n// Return the domain list in the same format expected by Apollo URL builder\nreturn [{ \n  json: { \n    organizationDomainList: organizationDomainList,\n    originalJobData: jobData\n  } \n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-280, -48],
+      "id": "company-domain-processing",
+      "name": "Company Domain Processing"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI agent whose job is **to create Apollo.io people search URLs**. Your **only output must be a single, unnested JSON object**. You will not include any conversational text, explanations, or additional formatting.\n\nHere are your instructions for generating the JSON output:\n\n1.  **JSON Structure**: Your output will always be a JSON object containing three keys: `clean_output`, `URL`, and `total_records`.\n\n2.  **`clean_output`**: Set this value to `false`.\n\n3.  **`total_records`**: Set this value to a minimum of `500`. If a higher value is provided in the input, use that value instead.\n\n4.  **`URL` Construction**:\n\n      * The base URL is `https://app.apollo.io/#/people?`.\n      * Always include these fixed parameters: `finderViewId=5b8050d050a3893c382e9360`, `page=1`, and `sortByField=recommendations_score`.\n      * You will be given several inputs to build the final URL. Only include parameters if their corresponding input is provided. URL-encode all parameter values.\n\n-----\n\n### **Parameter Mapping**\n  * **`organizationDomainList`**:\n{{ $json.organizationDomainList }}\n\n      * **Input**: You will receive an input named `organizationDomainList`. This is an array of objects, where each object contains a **pre-cleaned, ready-to-use company domain**.\n          * *Example Input*: `[ { \"companyWebsite\": \"bolt.com\" }, { \"companyWebsite\": \"oracle.com\" } ]`\n      * **Action**: Take the `companyWebsite` value from **each** object in the array. For each domain, append a separate `&organizationDomainList[]=` parameter to the URL. **Do not perform any cleaning on these domains.**\n     \n\n  * **Other Parameters**:\n\n      * **`jobTitle`**: Maps to `person_titles[]`.\n      * **`personLocation`**: Maps to `person_locations[]`.\n      * **`jobSeniority`**: Maps to `seniorities[]` (e.g., 'senior', 'director', 'vp').\n      * **`companyEmployees`**: Maps to `organizationNumEmployeesRanges[]` (e.g., '10000%2C100000').\n      * **`emailStatus`**: Maps to `emailStatuses[]` (e.g., 'verified').\n\n-----\n\n### **Example Final Output**\n\nGiven an `organizationDomainList` and other filters like `jobTitle: [\"Data Scientist\"]` and `personLocation: [\"California, US\"]`, your final output should look like this:\n\n```json\n{\n  \"clean_output\": false,\n  \"URL\": \"https://app.apollo.io/#/people?finderViewId=5b8050d050a3893c382e9360&page=1&sortByField=recommendations_score&organizationDomainList[]=bolt.com&organizationDomainList[]=blackmorepartnersinc.com&organizationDomainList[]=mygwork.com&person_titles[]=Data%20Scientist&person_locations[]=California%2C%20US\",\n  \"total_records\": 500\n}\n```"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-80, -48],
+      "id": "apollo-url-builder",
+      "name": "Build Apollo URL - Multiple companies",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "jljBwyyQakqrL1wae",
+          "mode": "list",
+          "cachedResultName": "🔥Apollo Scraper - Scrape upto 50k Leads (code_crafter/apollo-io-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/jljBwyyQakqrL1wae/input"
+        },
+        "customBody": "={{ $json.content.parts[0].text }}",
+        "timeout": {}
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [120, -48],
+      "id": "apify-apollo-scraper",
+      "name": "Run Apollo Actor - Contact Discovery",
+      "credentials": {
+        "apifyApi": {
+          "id": "wI68UXmrV57w78X2",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "741f00c0-e45a-4889-b4cb-e002980dc9d1",
+              "leftValue": "={{ $json.email_status }}",
+              "rightValue": "verified",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [320, -48],
+      "id": "verified-email-filter",
+      "name": "Verified Email Only"
+    },
+    {
+      "parameters": {
+        "url": "https://api.neverbounce.com/v4/single/check",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "private_6635897607b6fbcab58db75cffad6cb4"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, -48],
+      "id": "neverbounce-verification",
+      "name": "NeverBounce Email Verification"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "395101e9-1f12-4bfc-bd7a-523b0ae11c3e",
+              "leftValue": "={{ $json.result }}",
+              "rightValue": "valid",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [720, -48],
+      "id": "final-email-filter",
+      "name": "Verified Email ONLY"
+    },
+    {
+      "parameters": {
+        "jsCode": "// CONTACT ENRICHMENT - OUTPUT FORMATTING FOR ORCHESTRATOR\n// Formats contact data for integration with orchestrator Merge node\n\nconst contactData = $json; // From final verification filter\nconst originalJobData = $('Company Domain Processing').item.json.originalJobData;\n\n// Handle case where no contacts were found or verification failed\nif (!contactData || !contactData.email) {\n  return [{\n    json: {\n      jobData: originalJobData,\n      contactEnrichment: {\n        status: \"no_contacts_found\",\n        processedAt: new Date().toISOString(),\n        searchMethod: \"apollo-apify-integration\"\n      },\n      processingMetadata: {\n        workflowId: \"contact-enrichment-augment\",\n        workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactEnrichment--Augment\",\n        status: \"no_contacts_found\",\n        processedAt: new Date().toISOString(),\n        version: \"1.0.0\"\n      }\n    }\n  }];\n}\n\n// Format successful contact enrichment results\nconst finalOutput = {\n  jobData: {\n    title: originalJobData.title,\n    companyName: originalJobData.companyName,\n    companyWebsite: originalJobData.companyWebsite,\n    location: originalJobData.location,\n    descriptionHtml: originalJobData.descriptionHtml,\n    descriptionText: originalJobData.descriptionText,\n    jobUrl: originalJobData.jobUrl\n  },\n  contactEnrichment: {\n    primaryContact: {\n      firstName: contactData.first_name,\n      lastName: contactData.last_name,\n      email: contactData.email,\n      jobTitle: contactData.title,\n      company: contactData.organization_name,\n      linkedinUrl: contactData.linkedin_url,\n      emailStatus: contactData.email_status,\n      confidence: \"high\", // Verified through NeverBounce\n      organizationId: contactData.organization_id\n    },\n    enrichmentMetadata: {\n      searchMethod: \"apollo-apify-integration\",\n      totalFound: 1,\n      verificationMethod: \"neverbounce\",\n      processedAt: new Date().toISOString(),\n      apifyCreditsUsed: 1,\n      neverBounceCreditsUsed: 1\n    }\n  },\n  processingMetadata: {\n    workflowId: \"contact-enrichment-augment\",\n    workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactEnrichment--Augment\",\n    processedAt: new Date().toISOString(),\n    status: \"contacts_enriched\",\n    version: \"1.0.0\",\n    executionId: $executionId,\n    dataSource: \"extracted-from-33node-workflow\"\n  }\n};\n\nconsole.log(`Contact enrichment completed for ${originalJobData.companyName}`);\nconsole.log(`Primary contact: ${contactData.first_name} ${contactData.last_name} (${contactData.email})`);\n\nreturn [{ json: finalOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, -48],
+      "id": "output-formatting",
+      "name": "Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Company Domain Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Domain Processing": {
+      "main": [
+        [
+          {
+            "node": "Build Apollo URL - Multiple companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Apollo URL - Multiple companies": {
+      "main": [
+        [
+          {
+            "node": "Run Apollo Actor - Contact Discovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Apollo Actor - Contact Discovery": {
+      "main": [
+        [
+          {
+            "node": "Verified Email Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verified Email Only": {
+      "main": [
+        [
+          {
+            "node": "NeverBounce Email Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NeverBounce Email Verification": {
+      "main": [
+        [
+          {
+            "node": "Verified Email ONLY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verified Email ONLY": {
+      "main": [
+        [
+          {
+            "node": "Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "active": false,
+  "tags": [
+    {
+      "name": "Augment Code"
+    },
+    {
+      "name": "sub-flow"
+    }
+  ]
+}
