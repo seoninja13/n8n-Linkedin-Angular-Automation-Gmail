@@ -1,0 +1,25 @@
+{
+  "name": "n8n-linkedin-angular-automation-gmail",
+  "version": "1.0.0",
+  "main": "LinkedIn-Automation-Validation-Test-Suite.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seoninja13/n8n-Linkedin-Angular-Automation-Gmail.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/seoninja13/n8n-Linkedin-Angular-Automation-Gmail/issues"
+  },
+  "homepage": "https://github.com/seoninja13/n8n-Linkedin-Angular-Automation-Gmail#readme",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.12.1",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
