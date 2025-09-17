@@ -1,0 +1,324 @@
+{
+  "name": "LinkedIn-SEO-Gmail-Orchestrator--Augment",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1280, -272],
+      "id": "7406d789-9fcb-4013-a655-61324e266478",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1310e237-ee98-4ae0-96dd-55eadd1645f9",
+              "name": "input",
+              "value": "Execute LinkedIn automation: Find all available jobs for SEO, Search Engine optimization roles in Remote locations.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1056, -272],
+      "id": "ebf8a7c1-bf3c-48ac-aa37-213daa320427",
+      "name": "Edit Fields - Set Initial Command"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields - Set Initial Command').item.json.input }}",
+        "options": {
+          "systemMessage": "You are a hyper-efficient Job Discovery Specialist Agent. Your ONLY mission is to parse a user's request and call the `job_discovery_workflow` tool with the correct parameters.\n\nCRITICAL RULES:\n1. Your sole capability is to use the `job_discovery_workflow` tool. Do not answer questions, do not chat, do not perform any other action.\n2. From the user's input, you MUST extract two pieces of information: the job `keywords` and the `location`.\n3. The `keywords` can be a comma-separated list if multiple roles are mentioned.\n4. If the location is ambiguous, default to \"Remote\".\n5. If the keywords are missing or unclear, you must respond with an error and stop processing.\n6. You must call the tool with a properly formatted search criteria object containing the extracted `keywords` and `location`.",
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [-864, -272],
+      "id": "4bb1d389-27ba-4a0b-9750-40d184923105",
+      "name": "AI Agent - Dynamic Interface"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 8192,
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-880, -16],
+      "id": "cae965f9-cc26-4c73-9f62-0a314b204533",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wbkQo6X2R8XQOYgG",
+          "mode": "list",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobDiscovery--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-656, -272],
+      "id": "13e205f2-c5ef-433a-b83e-4be216a04c9a",
+      "name": "Job Discovery Workflow Tool"
+    },
+    {
+      "parameters": {
+        "jsCode": "// CODE - SPLIT IN BATCHES FOR DISTRIBUTED PROCESSING\n// Takes bulk job discovery results and splits into individual job items\n// Enables parallel workshop processing of individual jobs\n\nconst aiAgentOutput = $json;\nlet jobs = [];\n\n// Extract jobs from AI Agent output structure\nif (aiAgentOutput.output && aiAgentOutput.output.toolOutput) {\n  // Handle case where toolOutput contains the job array\n  const toolOutput = aiAgentOutput.output.toolOutput;\n  if (Array.isArray(toolOutput)) {\n    jobs = toolOutput;\n  } else if (toolOutput.jobs && Array.isArray(toolOutput.jobs)) {\n    jobs = toolOutput.jobs;\n  } else if (toolOutput.jobData) {\n    // Single job wrapped in jobData structure\n    jobs = [toolOutput.jobData];\n  }\n} else if (Array.isArray(aiAgentOutput)) {\n  // Direct array of jobs\n  jobs = aiAgentOutput;\n} else if (aiAgentOutput.jobData) {\n  // Single job in jobData structure\n  jobs = [aiAgentOutput.jobData];\n}\n\n// Validate we have jobs to process\nif (!Array.isArray(jobs) || jobs.length === 0) {\n  console.log('No jobs found in AI Agent output:', JSON.stringify(aiAgentOutput, null, 2));\n  return [];\n}\n\n// Create individual items for each job\n// This enables downstream workshops to process jobs individually\nconst jobItems = jobs.map((job, index) => {\n  return {\n    json: {\n      ...job,\n      jobIndex: index,\n      totalJobs: jobs.length,\n      processingMetadata: {\n        splitAt: new Date().toISOString(),\n        orchestratorWorkflow: 'LinkedIn-SEO-Gmail-Orchestrator--Augment',\n        batchProcessing: true\n      }\n    }\n  };\n});\n\nconsole.log(`Split ${jobs.length} jobs into individual items for workshop processing`);\nconsole.log(`First job: ${jobItems[0]?.json?.title || 'Unknown'} at ${jobItems[0]?.json?.companyName || 'Unknown Company'}`);\n\nreturn jobItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-432, -272],
+      "id": "aa9fac8e-8d8a-4e58-855d-92df98c68f30",
+      "name": "Code - Split in Batches"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "rClUELDAK9f4mgJx",
+          "mode": "list",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactEnrichment--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [-208, -144],
+      "id": "7d9a91a2-c27f-41a3-a637-2b20d9655509",
+      "name": "Execute workflow - Contact Enrichment Workshop"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "1XJcb1D52YHOTg5O",
+          "mode": "list",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatchingScoring"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [-208, -400],
+      "id": "7d770f62-3620-4673-89a8-dbc5e21c8d4d",
+      "name": "Execute workflow - Job Matching Workshop"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "zTtSVmTg3UaV9tPG",
+          "mode": "list",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ResumeGeneration--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [16, -400],
+      "id": "0b285e02-a76a-46e9-a4ce-a3d69b8e6bc0",
+      "name": "Execute workflow - Resume Generation Workshop"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [240, -272],
+      "id": "64478c27-c7bf-4756-87e9-fd4b66c762f0",
+      "name": "Merge - Resume Gen and Contact Enrichment"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "qsOwrB0ngdZVEqmO",
+          "mode": "list",
+          "cachedResultName": "Linkedin- Automation Specialist - Gmail Outreach"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [464, -272],
+      "id": "72a2f7ae-5eb4-47e4-b5ab-4581f38d1655",
+      "name": "Execute workflow - Outreach Tracking"
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields - Set Initial Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields - Set Initial Command": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Dynamic Interface",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Dynamic Interface": {
+      "main": [
+        [
+          {
+            "node": "Code - Split in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Dynamic Interface",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Discovery Workflow Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent - Dynamic Interface",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Split in Batches": {
+      "main": [
+        [
+          {
+            "node": "Execute workflow - Contact Enrichment Workshop",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute workflow - Job Matching Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute workflow - Contact Enrichment Workshop": {
+      "main": [
+        [
+          {
+            "node": "Merge - Resume Gen and Contact Enrichment",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Execute workflow - Job Matching Workshop": {
+      "main": [
+        [
+          {
+            "node": "Execute workflow - Resume Generation Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute workflow - Resume Generation Workshop": {
+      "main": [
+        [
+          {
+            "node": "Merge - Resume Gen and Contact Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge - Resume Gen and Contact Enrichment": {
+      "main": [
+        [
+          {
+            "node": "Execute workflow - Outreach Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,328 @@
+{
+  "// ===== VS CODE EXTENSIONS CONFIGURATION =====": "",
+  "// This file contains recommended extensions and optimization settings",
+  "// for development environments using the System Resource Cleanup tools",
+  
+  "version": "1.0.0",
+  "lastUpdated": "2025-09-16",
+  
+  "// ===== ESSENTIAL EXTENSIONS (LIGHTWEIGHT) =====": "",
+  "essential": {
+    "description": "Core extensions needed for most development work",
+    "extensions": [
+      {
+        "id": "ms-vscode.vscode-json",
+        "name": "JSON Language Features",
+        "description": "JSON language support",
+        "memoryImpact": "low",
+        "required": true
+      },
+      {
+        "id": "ms-vscode.vscode-typescript-next",
+        "name": "TypeScript and JavaScript Language Features",
+        "description": "TypeScript/JavaScript language support",
+        "memoryImpact": "medium",
+        "required": true
+      },
+      {
+        "id": "vscode.git",
+        "name": "Git",
+        "description": "Git source control",
+        "memoryImpact": "low",
+        "required": true
+      },
+      {
+        "id": "ms-vscode.vscode-markdown",
+        "name": "Markdown Language Features",
+        "description": "Markdown language support",
+        "memoryImpact": "low",
+        "required": false
+      }
+    ]
+  },
+  
+  "// ===== DEVELOPMENT EXTENSIONS (MODERATE IMPACT) =====": "",
+  "development": {
+    "description": "Extensions for active development work",
+    "extensions": [
+      {
+        "id": "ms-vscode.vscode-eslint",
+        "name": "ESLint",
+        "description": "JavaScript/TypeScript linting",
+        "memoryImpact": "medium",
+        "optimizationSettings": {
+          "eslint.run": "onSave",
+          "eslint.autoFixOnSave": false,
+          "eslint.validate": ["javascript", "typescript"]
+        }
+      },
+      {
+        "id": "esbenp.prettier-vscode",
+        "name": "Prettier - Code formatter",
+        "description": "Code formatting",
+        "memoryImpact": "low",
+        "optimizationSettings": {
+          "prettier.requireConfig": true,
+          "prettier.disableLanguages": ["markdown"]
+        }
+      },
+      {
+        "id": "ms-vscode.vscode-node-debug2",
+        "name": "Node.js Debugger",
+        "description": "Node.js debugging support",
+        "memoryImpact": "medium",
+        "required": false
+      },
+      {
+        "id": "bradlc.vscode-tailwindcss",
+        "name": "Tailwind CSS IntelliSense",
+        "description": "Tailwind CSS support",
+        "memoryImpact": "high",
+        "optimizationSettings": {
+          "tailwindCSS.includeLanguages": {
+            "html": "html",
+            "javascript": "javascript",
+            "css": "css"
+          }
+        }
+      }
+    ]
+  },
+  
+  "// ===== HEAVY EXTENSIONS (HIGH MEMORY IMPACT) =====": "",
+  "heavy": {
+    "description": "Resource-intensive extensions - use sparingly",
+    "extensions": [
+      {
+        "id": "ms-python.python",
+        "name": "Python",
+        "description": "Python language support",
+        "memoryImpact": "very-high",
+        "optimizationSettings": {
+          "python.defaultInterpreterPath": "",
+          "python.linting.enabled": false,
+          "python.analysis.autoImportCompletions": false
+        },
+        "recommendation": "Disable when not working on Python projects"
+      },
+      {
+        "id": "ms-vscode.cpptools",
+        "name": "C/C++",
+        "description": "C/C++ language support",
+        "memoryImpact": "very-high",
+        "optimizationSettings": {
+          "C_Cpp.intelliSenseEngine": "Disabled",
+          "C_Cpp.autocomplete": "Disabled"
+        },
+        "recommendation": "Disable when not working on C/C++ projects"
+      },
+      {
+        "id": "ms-dotnettools.csharp",
+        "name": "C#",
+        "description": "C# language support",
+        "memoryImpact": "very-high",
+        "recommendation": "Disable when not working on .NET projects"
+      },
+      {
+        "id": "ms-vscode.vscode-docker",
+        "name": "Docker",
+        "description": "Docker support",
+        "memoryImpact": "high",
+        "optimizationSettings": {
+          "docker.attachShellCommand.linuxContainer": "/bin/sh"
+        }
+      }
+    ]
+  },
+  
+  "// ===== N8N WORKFLOW SPECIFIC EXTENSIONS =====": "",
+  "n8nWorkflow": {
+    "description": "Extensions optimized for N8N workflow development",
+    "extensions": [
+      {
+        "id": "ms-vscode.vscode-json",
+        "name": "JSON Language Features",
+        "description": "Essential for N8N JSON workflows",
+        "memoryImpact": "low",
+        "required": true,
+        "settings": {
+          "json.validate.enable": true,
+          "json.format.enable": true,
+          "json.schemas": []
+        }
+      },
+      {
+        "id": "redhat.vscode-yaml",
+        "name": "YAML",
+        "description": "YAML support for configuration files",
+        "memoryImpact": "low",
+        "required": false
+      },
+      {
+        "id": "ms-vscode.vscode-typescript-next",
+        "name": "TypeScript and JavaScript Language Features",
+        "description": "For N8N custom code nodes",
+        "memoryImpact": "medium",
+        "required": true
+      }
+    ]
+  },
+  
+  "// ===== EXTENSION OPTIMIZATION RECOMMENDATIONS =====": "",
+  "optimizationRecommendations": {
+    "disableWhenNotNeeded": [
+      "ms-python.python",
+      "ms-vscode.cpptools",
+      "ms-dotnettools.csharp",
+      "ms-vscode.vscode-docker",
+      "bradlc.vscode-tailwindcss"
+    ],
+    "keepEnabled": [
+      "ms-vscode.vscode-json",
+      "ms-vscode.vscode-typescript-next",
+      "vscode.git"
+    ],
+    "conditionallyEnable": {
+      "webDevelopment": [
+        "ms-vscode.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "nodeDevelopment": [
+        "ms-vscode.vscode-node-debug2",
+        "ms-vscode.vscode-eslint"
+      ],
+      "n8nWorkflow": [
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml"
+      ]
+    }
+  },
+  
+  "// ===== EXTENSION PERFORMANCE SETTINGS =====": "",
+  "performanceSettings": {
+    "global": {
+      "extensions.autoUpdate": false,
+      "extensions.autoCheckUpdates": false,
+      "extensions.ignoreRecommendations": true,
+      "extensions.showRecommendationsOnlyOnDemand": true
+    },
+    "languageServers": {
+      "typescript.disableAutomaticTypeAcquisition": true,
+      "typescript.suggest.autoImports": false,
+      "typescript.suggest.includePackageJsonAutoImports": "off",
+      "javascript.suggest.autoImports": false,
+      "javascript.suggest.includePackageJsonAutoImports": "off"
+    },
+    "linting": {
+      "eslint.run": "onSave",
+      "eslint.autoFixOnSave": false,
+      "eslint.validate": ["javascript", "typescript"],
+      "eslint.workingDirectories": [{"mode": "auto"}]
+    },
+    "formatting": {
+      "prettier.requireConfig": true,
+      "prettier.disableLanguages": ["markdown", "plaintext"],
+      "editor.formatOnSave": false,
+      "editor.formatOnType": false
+    }
+  },
+  
+  "// ===== WORKSPACE-SPECIFIC CONFIGURATIONS =====": "",
+  "workspaceConfigurations": {
+    "n8nProject": {
+      "description": "Configuration for N8N workflow projects",
+      "enabledExtensions": [
+        "ms-vscode.vscode-json",
+        "ms-vscode.vscode-typescript-next",
+        "vscode.git"
+      ],
+      "disabledExtensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-dotnettools.csharp",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "files.associations": {
+          "*.n8n": "json",
+          "*workflow*.json": "json",
+          "*node*.json": "json"
+        },
+        "json.validate.enable": true,
+        "json.format.enable": true
+      }
+    },
+    "webDevelopment": {
+      "description": "Configuration for web development projects",
+      "enabledExtensions": [
+        "ms-vscode.vscode-json",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "vscode.git"
+      ],
+      "conditionalExtensions": [
+        "bradlc.vscode-tailwindcss"
+      ]
+    },
+    "minimal": {
+      "description": "Minimal configuration for maximum performance",
+      "enabledExtensions": [
+        "ms-vscode.vscode-json",
+        "vscode.git"
+      ],
+      "disabledExtensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-dotnettools.csharp",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  
+  "// ===== EXTENSION MANAGEMENT COMMANDS =====": "",
+  "managementCommands": {
+    "disableHeavyExtensions": [
+      "code --disable-extension ms-python.python",
+      "code --disable-extension ms-vscode.cpptools",
+      "code --disable-extension ms-dotnettools.csharp",
+      "code --disable-extension bradlc.vscode-tailwindcss"
+    ],
+    "enableEssentialOnly": [
+      "code --disable-extensions",
+      "code --enable-extension ms-vscode.vscode-json",
+      "code --enable-extension ms-vscode.vscode-typescript-next",
+      "code --enable-extension vscode.git"
+    ],
+    "enableN8NWorkflow": [
+      "code --enable-extension ms-vscode.vscode-json",
+      "code --enable-extension ms-vscode.vscode-typescript-next",
+      "code --enable-extension redhat.vscode-yaml",
+      "code --enable-extension vscode.git"
+    ]
+  },
+  
+  "// ===== MONITORING AND MAINTENANCE =====": "",
+  "monitoring": {
+    "checkExtensionMemoryUsage": "Get-Process -Name 'Code' | Where-Object { $_.WorkingSet -gt 100MB }",
+    "listEnabledExtensions": "code --list-extensions --show-versions",
+    "extensionPerformanceProfile": {
+      "low": "< 50MB memory usage",
+      "medium": "50-150MB memory usage",
+      "high": "150-300MB memory usage",
+      "very-high": "> 300MB memory usage"
+    }
+  },
+  
+  "// ===== CONFIGURATION NOTES =====": "",
+  "notes": {
+    "usage": "Use this file to guide extension management for optimal performance",
+    "customization": "Modify extension lists based on your specific development needs",
+    "monitoring": "Regularly review extension memory usage and disable unused extensions",
+    "workspaceSpecific": "Consider using workspace-specific extension configurations",
+    "automation": "Extension management can be automated using the provided PowerShell commands"
+  }
+}

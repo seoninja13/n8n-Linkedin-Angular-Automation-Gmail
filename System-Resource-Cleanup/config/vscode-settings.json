@@ -1,0 +1,152 @@
+{
+  "// ===== PERFORMANCE OPTIMIZATION SETTINGS =====": "",
+  "// These settings are optimized to reduce VS Code memory usage and process spawning",
+  
+  "// Extension Management": "",
+  "extensions.autoUpdate": false,
+  "extensions.autoCheckUpdates": false,
+  "extensions.ignoreRecommendations": true,
+  
+  "// TypeScript Performance": "",
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "typescript.surveys.enabled": false,
+  "typescript.suggest.autoImports": false,
+  "typescript.suggest.includePackageJsonAutoImports": "off",
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  
+  "// File Watching Optimization": "",
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/out/**": true,
+    "**/.vscode/**": true,
+    "**/coverage/**": true,
+    "**/.nyc_output/**": true,
+    "**/logs/**": true,
+    "**/*.log": true
+  },
+  
+  "// Search Performance": "",
+  "search.followSymlinks": false,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/out": true,
+    "**/coverage": true,
+    "**/.git": true
+  },
+  
+  "// Telemetry and Data Collection": "",
+  "telemetry.telemetryLevel": "off",
+  "workbench.enableExperiments": false,
+  "workbench.settings.enableNaturalLanguageSearch": false,
+  
+  "// NPM and Package Management": "",
+  "npm.fetchOnlinePackageInfo": false,
+  "npm.autoDetect": "off",
+  
+  "// Git Performance": "",
+  "git.autorefresh": false,
+  "git.autofetch": false,
+  "git.decorations.enabled": false,
+  
+  "// Editor Performance": "",
+  "editor.quickSuggestions": {
+    "other": false,
+    "comments": false,
+    "strings": false
+  },
+  "editor.suggestOnTriggerCharacters": false,
+  "editor.acceptSuggestionOnEnter": "off",
+  "editor.wordBasedSuggestions": false,
+  "editor.parameterHints.enabled": false,
+  "editor.hover.enabled": false,
+  "editor.lightbulb.enabled": false,
+  "editor.occurrencesHighlight": false,
+  "editor.selectionHighlight": false,
+  "editor.wordHighlight": false,
+  "editor.renderWhitespace": "none",
+  "editor.renderControlCharacters": false,
+  "editor.minimap.enabled": false,
+  
+  "// Language Server Performance": "",
+  "json.validate.enable": false,
+  "html.validate.scripts": false,
+  "html.validate.styles": false,
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+  
+  "// Workbench Performance": "",
+  "workbench.startupEditor": "none",
+  "workbench.tips.enabled": false,
+  "workbench.welcome.enabled": false,
+  "workbench.colorTheme": "Default Dark+",
+  "workbench.iconTheme": null,
+  "workbench.tree.renderIndentGuides": "none",
+  
+  "// Terminal Performance": "",
+  "terminal.integrated.rendererType": "dom",
+  "terminal.integrated.fastScrollSensitivity": 5,
+  
+  "// Debug Performance": "",
+  "debug.console.fontSize": 12,
+  "debug.console.lineHeight": 16,
+  "debug.openDebug": "neverOpen",
+  
+  "// Breadcrumbs": "",
+  "breadcrumbs.enabled": false,
+  
+  "// Problems Panel": "",
+  "problems.decorations.enabled": false,
+  
+  "// Outline": "",
+  "outline.problems.enabled": false,
+  
+  "// Explorer": "",
+  "explorer.decorations.colors": false,
+  "explorer.decorations.badges": false,
+  
+  "// ===== N8N WORKFLOW SPECIFIC SETTINGS =====": "",
+  "// Optimized for JSON workflow development",
+  
+  "json.schemas": [],
+  "json.format.enable": true,
+  "json.maxItemsComputed": 1000,
+  
+  "// File Associations for N8N": "",
+  "files.associations": {
+    "*.n8n": "json",
+    "*workflow*.json": "json",
+    "*node*.json": "json"
+  },
+  
+  "// Auto Save for Workflow Files": "",
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 5000,
+  
+  "// ===== DEVELOPMENT ENVIRONMENT SETTINGS =====": "",
+  "// Safe defaults for development work",
+  
+  "window.zoomLevel": 0,
+  "window.restoreWindows": "none",
+  "window.newWindowDimensions": "inherit",
+  
+  "// Security": "",
+  "security.workspace.trust.enabled": false,
+  
+  "// Updates": "",
+  "update.mode": "manual",
+  "update.showReleaseNotes": false,
+  
+  "// ===== MEMORY OPTIMIZATION NOTES =====": "",
+  "// These settings prioritize performance over features",
+  "// Re-enable specific features as needed for your workflow",
+  "// Monitor system resources after applying these settings",
+  "// Restart VS Code after applying for full effect"
+}

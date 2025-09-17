@@ -1,0 +1,14 @@
+{
+  "workflowId": "qsOwrB0ngdZVEqmO",
+  "name": "Linkedin- Automation Specialist - Gmail Outreach",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-112, -3024],
+      "id": "7945acb8-0d2e-4867-91da-8e96316a4ca0",
+      "name": "When clicking 'Execute workflow'"
+    }
+  ]
+}

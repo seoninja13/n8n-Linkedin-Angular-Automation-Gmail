@@ -1,0 +1,46 @@
+You are correct. Let's discard the generic Switch approach. Given your well-defined, deterministic process, we don't need a branching choice between different architectural patterns. Instead, we must create a single, unified architecture that correctly incorporates all three components (MCP Client, MCP Server, Execute Workflow) into one seamless, linear flow.
+Your insight is key: the Execute Workflow pattern isn't an alternative to the MCP architecture; it's the engine inside of it.
+
+## The Unified Deterministic Architecture
+
+Here is the definitive architecture that integrates all components into the single, deterministic process you require. There is only one path.
+The crucial link, as you identified, is that the Tier 2 MCP Server's only job is to immediately call the Tier 3 Sub-Workflow. The specific node used for this is the Call n8n Sub-Workflow Tool.
+
+Code snippet
+
+
+graph TD
+    subgraph "Tier 1: Orchestrator"
+        A[<b>MCP Client Node</b><br>Starts the process by calling a specific tool];
+    end
+
+    subgraph "Tier 2: MCP Server (The Mailroom)"
+        B[<b>MCP Server Trigger</b><br>Receives the call from the Orchestrator];
+        C[<b>Call n8n Sub-Workflow Tool</b><br>The critical link. Immediately delegates the work.];
+        B --> C;
+    end
+
+    subgraph "Tier 3: Complex Sub-Workflow (The Workshop)"
+        D[<b>Execute Workflow Trigger</b><br>Receives the work from the Mailroom];
+        E[<b>Linear Sequence of Nodes</b><br>Your 33 nodes of logic: JS, AI, Apify, SQL, etc.];
+        F[<b>End Node</b><br>Returns the final result of the sequence];
+        D --> E --> F;
+    end
+
+    %% Connections
+    A -- "1. Makes API-like Call" --> B;
+    C -- "2. Executes the Sub-Workflow" --> D;
+    F -- "3. Returns Final Data" --> C;
+    C -- "4. Returns Response" --> A;
+
+
+
+
+## How It Works, Step-by-Step
+
+This is the single, unchangeable flow for every one of your processes.
+Request (Tier 1): The Master Orchestrator workflow uses a MCP Client node to call a specific service, like LinkedIn-Job-Discovery-MCP-Server. It sends the necessary parameters (e.g., search query).
+Receive & Delegate (Tier 2): The LinkedIn-Job-Discovery-MCP-Server workflow triggers. It does no processing itself. Its one and only action is to use the Call n8n Sub-Workflow Tool node to execute your complex "workshop" sub-workflow, passing the parameters it just received.
+Execute (Tier 3): The complex sub-workflow (e.g., Job-Discovery-Processor) is triggered via its Execute Workflow Trigger. It now runs through your entire required sequence of nodes (the initial 33 nodes, broken into logical parts) to perform the actual work—scraping, analyzing, formatting, etc.
+Return: Once the sequence is complete, the final data is returned from the sub-workflow back to the Call n8n Sub-Workflow Tool in Tier 2, which in turn passes the result back to the MCP Client in Tier 1.
+This architecture achieves everything you require: it uses the MCP Server/Client model for clean, service-oriented calls while leveraging the Call n8n Sub-Workflow Tool to enable the complex, linear processing that is essential for your operations.

@@ -1,0 +1,225 @@
+{
+  "// ===== SYSTEM RESOURCE CLEANUP CONFIGURATION =====": "",
+  "// This file contains configuration settings for all cleanup scripts",
+  "// Modify these values to customize cleanup behavior",
+  
+  "version": "1.0.0",
+  "lastUpdated": "2025-09-16",
+  
+  "// ===== PROCESS CLEANUP SETTINGS =====": "",
+  "processCleanup": {
+    "nodeJs": {
+      "enabled": true,
+      "keepLargestProcesses": 5,
+      "minimumMemoryThresholdMB": 30,
+      "maxProcessesToTerminate": 15,
+      "preserveProcessesWithConnections": true,
+      "preserveParentProcesses": true,
+      "blacklistedPorts": [3000, 8080, 5000, 9000],
+      "whitelistedProcessNames": ["n8n", "webpack", "vite"]
+    },
+    "vsCode": {
+      "enabled": true,
+      "keepLargestProcesses": 3,
+      "minimumMemoryThresholdMB": 50,
+      "maxProcessesToTerminate": 10,
+      "preserveMainWindows": true,
+      "terminateOnlySmallProcesses": true
+    },
+    "other": {
+      "enabled": false,
+      "targetProcesses": ["chrome", "msedge"],
+      "keepLargestProcesses": 2,
+      "minimumMemoryThresholdMB": 100
+    }
+  },
+  
+  "// ===== TEMPORARY FILES CLEANUP =====": "",
+  "tempFileCleanup": {
+    "enabled": true,
+    "ageDaysThreshold": 7,
+    "paths": [
+      "%TEMP%",
+      "%USERPROFILE%\\AppData\\Local\\Temp",
+      "%USERPROFILE%\\.vscode\\logs",
+      "%USERPROFILE%\\.npm\\_logs",
+      "%USERPROFILE%\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files"
+    ],
+    "excludePatterns": [
+      "*.lock",
+      "*.pid",
+      "current-session*"
+    ],
+    "maxFileSizeMB": 100,
+    "preserveRecentFiles": true
+  },
+  
+  "// ===== VS CODE OPTIMIZATION =====": "",
+  "vsCodeOptimization": {
+    "enabled": true,
+    "createBackup": true,
+    "applyPerformanceSettings": true,
+    "cleanWorkspaceStorage": true,
+    "workspaceStorageAgeDays": 30,
+    "cleanExtensionCache": true,
+    "extensionCacheAgeDays": 7,
+    "optimizeSettings": {
+      "disableAutoUpdate": true,
+      "disableTelemetry": true,
+      "optimizeFileWatching": true,
+      "disableHeavyFeatures": true,
+      "optimizeLanguageServers": true
+    }
+  },
+  
+  "// ===== SYSTEM MONITORING =====": "",
+  "monitoring": {
+    "enabled": true,
+    "refreshIntervalSeconds": 30,
+    "saveToFile": true,
+    "alertThresholds": {
+      "nodeProcessCount": 20,
+      "vsCodeProcessCount": 15,
+      "memoryUsagePercent": 85,
+      "cpuUsagePercent": 90
+    },
+    "performanceTargets": {
+      "maxNodeProcesses": 15,
+      "maxVSCodeProcesses": 8,
+      "maxMemoryUsagePercent": 70
+    }
+  },
+  
+  "// ===== LOGGING CONFIGURATION =====": "",
+  "logging": {
+    "enabled": true,
+    "logLevel": "INFO",
+    "maxLogFileSizeMB": 10,
+    "maxLogFiles": 5,
+    "logRotation": true,
+    "detailedLogging": false,
+    "logPaths": {
+      "cleanup": "logs/cleanup-history.log",
+      "monitoring": "logs/system-monitor.log",
+      "vsCodeOptimization": "logs/vscode-optimization.log",
+      "scheduler": "logs/scheduler.log"
+    }
+  },
+  
+  "// ===== BACKUP CONFIGURATION =====": "",
+  "backup": {
+    "enabled": true,
+    "createBeforeCleanup": true,
+    "retentionDays": 30,
+    "maxBackups": 10,
+    "backupPath": "backups",
+    "compressBackups": false,
+    "backupTypes": {
+      "vsCodeSettings": true,
+      "systemConfiguration": false,
+      "processLists": true
+    }
+  },
+  
+  "// ===== SAFETY SETTINGS =====": "",
+  "safety": {
+    "dryRunByDefault": false,
+    "requireConfirmation": false,
+    "conservativeMode": true,
+    "maxProcessTerminations": 25,
+    "preserveActiveConnections": true,
+    "preserveChildProcesses": true,
+    "emergencyStop": {
+      "enabled": true,
+      "maxMemoryFreedMB": 2048,
+      "maxProcessesTerminated": 30
+    }
+  },
+  
+  "// ===== SCHEDULING CONFIGURATION =====": "",
+  "scheduling": {
+    "enabled": false,
+    "tasks": {
+      "safeCleanup": {
+        "enabled": true,
+        "schedule": "Weekly",
+        "time": "02:00",
+        "dayOfWeek": "Sunday"
+      },
+      "comprehensiveCleanup": {
+        "enabled": true,
+        "schedule": "Monthly",
+        "time": "03:00",
+        "dayOfMonth": 1
+      },
+      "vsCodeOptimization": {
+        "enabled": true,
+        "schedule": "Monthly",
+        "time": "03:30",
+        "dayOfMonth": 1
+      },
+      "systemMonitoring": {
+        "enabled": false,
+        "schedule": "Daily",
+        "time": "00:00",
+        "duration": 3600
+      }
+    }
+  },
+  
+  "// ===== PERFORMANCE TARGETS =====": "",
+  "performanceTargets": {
+    "nodeProcessReduction": 30,
+    "vsCodeProcessReduction": 40,
+    "memoryFreedMB": 500,
+    "diskSpaceFreedMB": 100,
+    "executionTimeSeconds": 60
+  },
+  
+  "// ===== NOTIFICATION SETTINGS =====": "",
+  "notifications": {
+    "enabled": false,
+    "methods": ["console", "file"],
+    "levels": ["ERROR", "WARN", "SUCCESS"],
+    "emailNotifications": {
+      "enabled": false,
+      "smtpServer": "",
+      "fromAddress": "",
+      "toAddress": "",
+      "onlyOnErrors": true
+    }
+  },
+  
+  "// ===== DEVELOPMENT ENVIRONMENT SPECIFIC =====": "",
+  "developmentEnvironment": {
+    "preserveN8NProcesses": true,
+    "preserveWebpackProcesses": true,
+    "preserveViteProcesses": true,
+    "preserveNodemonProcesses": true,
+    "preserveDockerProcesses": true,
+    "developmentPorts": [3000, 3001, 4200, 5000, 5173, 8080, 8081, 9000],
+    "frameworkSpecific": {
+      "angular": {
+        "preserveNgServe": true,
+        "preserveNgBuild": true
+      },
+      "react": {
+        "preserveReactScripts": true,
+        "preserveNextJs": true
+      },
+      "vue": {
+        "preserveVueCli": true,
+        "preserveNuxt": true
+      }
+    }
+  },
+  
+  "// ===== CONFIGURATION NOTES =====": "",
+  "notes": {
+    "usage": "Modify values above to customize cleanup behavior",
+    "safety": "Conservative settings are recommended for production environments",
+    "testing": "Use dryRun mode to test configuration changes",
+    "backup": "Always enable backups when making configuration changes",
+    "monitoring": "Enable monitoring to track cleanup effectiveness"
+  }
+}
