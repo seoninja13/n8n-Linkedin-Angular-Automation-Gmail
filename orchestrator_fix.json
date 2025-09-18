@@ -1,0 +1,24 @@
+{
+  "Resume Generation Workshop": {
+    "parameters": {
+      "workflowId": {
+        "__rl": true,
+        "value": "zTtSVmTg3UaV9tPG",
+        "mode": "list",
+        "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ResumeGeneration--Augment"
+      },
+      "workflowInputs": {
+        "mappingMode": "defineBelow",
+        "value": {},
+        "matchingColumns": [],
+        "schema": [],
+        "attemptToConvertTypes": false,
+        "convertFieldsToString": true
+      },
+      "mode": "each",
+      "options": {
+        "waitForSubWorkflow": true
+      }
+    }
+  }
+}
