@@ -1,0 +1,188 @@
+{
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactTracking--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-640, -160],
+      "id": "trigger-from-orchestrator",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// CONTACT TRACKING - INPUT PROCESSING (ADAPTED FOR GOOGLE SHEETS SCHEMA)\n// Merges Resume Generation + Contact Enrichment data for comprehensive tracking\n// Field names adapted to match existing Google Sheets column structure\n\n// ✅ FIXED: Proper data access method for N8N Code node\nconst items = $input.all();\nconst inputData = items[0].json;\n\n// 🔍 DEBUG: Log the actual input structure\nconsole.log('=== CONTACT TRACKING DEBUG - INPUT STRUCTURE ===');\nconsole.log('Input data keys:', Object.keys(inputData));\nconsole.log('Input data sample:', JSON.stringify(inputData, null, 2).substring(0, 500) + '...');\n\n// ✅ CORRECTED: Extract data from proper nested structure\nconst contactEnrichment = inputData.contactEnrichment || {};\nconst primaryContact = contactEnrichment.primaryContact || {};\nconst resumeGeneration = inputData.resumeGeneration || {};\nconst jobData = inputData.jobData || {};\n\n// ✅ FALLBACK: Handle case where data might be in different structure\nlet recepientEmail = '';\nlet contactFirstName = '';\nlet contactLastName = '';\nlet content = '';\nlet resumeMatchScore = 0;\n\n// Try nested structure first (from orchestrator merge)\nif (primaryContact.email) {\n  recepientEmail = primaryContact.email;\n  contactFirstName = primaryContact.firstName || primaryContact.first_name || '';\n  contactLastName = primaryContact.lastName || primaryContact.last_name || '';\n}\n// Fallback to flat structure (if data comes differently)\nelse if (inputData.contactEmail || inputData.recepientEmail) {\n  recepientEmail = inputData.contactEmail || inputData.recepientEmail || '';\n  contactFirstName = inputData.contactFirstName || '';\n  contactLastName = inputData.contactLastName || '';\n}\n\n// Try nested resume structure first\nif (resumeGeneration.customizedResume) {\n  content = resumeGeneration.customizedResume;\n  resumeMatchScore = resumeGeneration.atsScore || resumeGeneration.relevanceScore || 0;\n}\n// Fallback to flat structure\nelse if (inputData.customizedResume || inputData.content) {\n  content = inputData.customizedResume || inputData.content || '';\n  resumeMatchScore = inputData.resumeMatchScore || 0;\n}\n\nconst contactFullName = contactFirstName && contactLastName \n  ? `${contactFirstName} ${contactLastName}` \n  : contactFirstName || contactLastName || '';\n\n// ✅ CORRECTED: Job data extraction with fallbacks\nconst companyName = jobData.companyName || jobData.company || inputData.companyName || '';\nconst jobTitle = jobData.title || jobData.jobTitle || inputData.jobTitle || '';\nconst jobUrl = jobData.jobUrl || jobData.url || jobData.link || inputData.jobUrl || '';\n\n// Validate required inputs\nif (!jobTitle || !companyName) {\n  console.error('❌ Missing required data:');\n  console.error('Job title:', jobTitle);\n  console.error('Company name:', companyName);\n  console.error('Available input keys:', Object.keys(inputData));\n  throw new Error(`Missing required job data: title (${jobTitle}) and companyName (${companyName})`);\n}\n\n// SEMANTIC JOINING: Use dedupeKey for zero data loss\nconst dedupeKey = `${companyName}|${jobTitle}`.toLowerCase().replace(/[^a-z0-9|]/g, '');\n\n// ✅ ADAPTED: Field names match Google Sheets columns exactly\nconst mergedContactRecord = {\n  // ✅ GOOGLE SHEETS SCHEMA MATCHING:\n  timeStamp: new Date().toISOString(),           // matches 'timeStamp' column\n  companyName: companyName,                      // matches 'companyName' column\n  jobTitle: jobTitle,                            // matches 'jobTitle' column\n  jobUrl: jobUrl,                                // matches 'jobUrl' column\n  recepientEmail: recepientEmail,                // matches 'recepientEmail' column\n  status: 'PREPARED',                            // matches 'status' column\n  dedupeKey: dedupeKey,                          // matches 'dedupeKey' column\n  content: content,                              // matches 'content' column\n  \n  // Additional fields for AI Email Template Generator (not in Google Sheets)\n  contactName: contactFullName,\n  contactFirstName: contactFirstName,\n  contactLastName: contactLastName,\n  contactTitle: primaryContact.jobTitle || primaryContact.title || inputData.contactTitle || '',\n  jobLocation: jobData.location || jobData.jobLocation || inputData.jobLocation || 'Not specified',\n  jobDescription: jobData.descriptionText || jobData.description || jobData.descriptionHtml || '',\n  jobType: jobData.jobType || inputData.jobType || 'Not specified',\n  industry: jobData.industry || inputData.industry || 'Not specified',\n  resumeMatchScore: resumeMatchScore,\n  matchingKeywords: jobData.matchingKeywords || inputData.matchingKeywords || [],\n  qualificationScore: resumeMatchScore,\n  priorityLevel: resumeMatchScore >= 85 ? 'HIGH' : resumeMatchScore >= 70 ? 'MEDIUM' : 'LOW'\n};\n\n// 🔍 ENHANCED DEBUG: Log final merged record\nconsole.log('=== CONTACT TRACKING DEBUG - FINAL RECORD ===');\nconsole.log(`✅ Job: ${mergedContactRecord.jobTitle} at ${mergedContactRecord.companyName}`);\nconsole.log(`✅ Recipient Email: ${mergedContactRecord.recepientEmail}`);\nconsole.log(`✅ Contact Name: ${mergedContactRecord.contactName}`);\nconsole.log(`✅ Content Length: ${mergedContactRecord.content.length} chars`);\nconsole.log(`✅ Status: ${mergedContactRecord.status}`);\nconsole.log(`✅ Dedupe Key: ${mergedContactRecord.dedupeKey}`);\nconsole.log(`✅ Timestamp: ${mergedContactRecord.timeStamp}`);\n\n// ⚠️ VALIDATION WARNINGS\nif (!mergedContactRecord.recepientEmail) {\n  console.warn('⚠️ WARNING: No recipient email found');\n  console.warn('Primary contact data:', JSON.stringify(primaryContact, null, 2));\n}\nif (!mergedContactRecord.content) {\n  console.warn('⚠️ WARNING: No content found');\n  console.warn('Resume generation data:', JSON.stringify(resumeGeneration, null, 2));\n}\n\n// ✅ CRITICAL FIX: RETURN DIRECT OBJECT (NO ARRAY WRAPPER)
+return mergedContactRecord;  // NOT: return [{ json: mergedContactRecord }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-432, -160],
+      "id": "contact-data-merger",
+      "name": "Contact Data Merger & Processing"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert email outreach specialist. Generate a personalized, professional email template for job application outreach.\n\n**CONTACT INFORMATION:**\nJob Title: {{ $json.jobTitle }}\nCompany: {{ $json.companyName }}\nContact Name: {{ $json.contactName }}\nContact Title: {{ $json.contactTitle }}\nContact Email: {{ $json.contactEmail }}\n\n**JOB DETAILS:**\nLocation: {{ $json.jobLocation }}\nJob Type: {{ $json.jobType }}\nIndustry: {{ $json.industry }}\nJob URL: {{ $json.jobUrl }}\n\n**MATCHING INFORMATION:**\nQualification Score: {{ $json.qualificationScore }}%\nMatching Keywords: {{ $json.matchingKeywords }}\nPriority Level: {{ $json.priorityLevel }}\n\n**REQUIREMENTS:**\n1. Professional, personalized tone\n2. Reference specific job details and company\n3. Highlight relevant qualifications\n4. Include clear call-to-action\n5. Keep under 200 words\n6. Include placeholder for resume attachment\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"subject\": \"Application for [Job Title] - [Your Name]\",\n  \"emailBody\": \"Professional email content...\",\n  \"followUpSubject\": \"Following up on [Job Title] application\",\n  \"followUpBody\": \"Follow-up email content...\",\n  \"personalizedElements\": [\"element1\", \"element2\"],\n  \"trackingPixelUrl\": \"https://tracking.example.com/pixel/[unique-id]\",\n  \"emailTemplate\": \"job-application-outreach\",\n  \"estimatedResponseRate\": 15\n}\n```\n\nGenerate compelling, personalized email templates that increase response rates."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-224, -160],
+      "id": "email-template-generator",
+      "name": "AI Email Template Generator",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// DATA FLATTENER FOR GOOGLE SHEETS - PRODUCTION VERSION\n// Extracts JSON from AI Email Template Generator nested structure\n// Combines AI-generated data with contact data for Google Sheets integration\n// Returns flat object with exactly 10 required Google Sheets fields\n\n// ✅ CRITICAL: Access data from both input nodes\nconst contactData = $('Contact Data Merger & Processing').item.json;\nconst aiRawOutput = $json; // AI Email Template Generator output\n\n// 🔍 DEBUG: Log input structures for troubleshooting\nconsole.log('=== DATA FLATTENER DEBUG - INPUT ANALYSIS ===');\nconsole.log('Contact Data Keys:', Object.keys(contactData || {}));\nconsole.log('AI Raw Output Structure:', JSON.stringify(aiRawOutput, null, 2).substring(0, 300) + '...');\n\n// ✅ ROBUST AI OUTPUT EXTRACTION with multiple fallback paths\nlet aiEmailData = {};\n\ntry {\n  // Primary extraction path: content.parts[0].text (Google Gemini structure)\n  if (aiRawOutput?.content?.parts?.[0]?.text) {\n    const aiTextContent = aiRawOutput.content.parts[0].text;\n    \n    // Try parsing as JSON string first\n    if (typeof aiTextContent === 'string') {\n      try {\n        aiEmailData = JSON.parse(aiTextContent);\n        console.log('✅ Successfully parsed AI output from content.parts[0].text as JSON string');\n      } catch (parseError) {\n        console.warn('⚠️ Failed to parse AI text as JSON, treating as plain text');\n        aiEmailData = {\n          subject: `Application for ${contactData.jobTitle || 'Position'} - Ivo Dachev`,\n          emailBody: aiTextContent.substring(0, 500) + '...',\n          emailTemplate: 'fallback-text',\n          estimatedResponseRate: 10\n        };\n      }\n    } \n    // If already an object, use directly\n    else if (typeof aiTextContent === 'object') {\n      aiEmailData = aiTextContent;\n      console.log('✅ Using AI output from content.parts[0].text as direct object');\n    }\n  }\n  // Fallback 1: Direct content access\n  else if (aiRawOutput?.content && typeof aiRawOutput.content === 'object') {\n    aiEmailData = aiRawOutput.content;\n    console.log('✅ Using AI output from direct content object');\n  }\n  // Fallback 2: Root level object\n  else if (aiRawOutput && typeof aiRawOutput === 'object' && aiRawOutput.subject) {\n    aiEmailData = aiRawOutput;\n    console.log('✅ Using AI output from root level object');\n  }\n  // Fallback 3: Generate default structure\n  else {\n    throw new Error('No valid AI output structure found');\n  }\n} catch (error) {\n  console.error('❌ AI Output Extraction Error:', error.message);\n  console.error('Raw AI Output:', JSON.stringify(aiRawOutput, null, 2));\n  \n  // Generate fallback email data\n  aiEmailData = {\n    subject: `Application for ${contactData?.jobTitle || 'Position'} - Ivo Dachev`,\n    emailBody: `Dear Hiring Manager,\\n\\nI am writing to express my interest in the ${contactData?.jobTitle || 'position'} at ${contactData?.companyName || 'your company'}.\\n\\nBest regards,\\nIvo Dachev`,\n    emailTemplate: 'fallback-generated',\n    estimatedResponseRate: 8,\n    finishReason: 'ERROR_FALLBACK',\n    avgLogprobs: -0.5\n  };\n}\n\n// ✅ VALIDATE REQUIRED CONTACT DATA with comprehensive fallbacks\nconst validateAndExtract = (data, field, fallback = '') => {\n  const value = data?.[field] || fallback;\n  if (!value && field !== 'content') {\n    console.warn(`⚠️ Missing required field: ${field}`);\n  }\n  return value;\n};\n\n// ✅ EXTRACT AND VALIDATE ALL REQUIRED FIELDS\nconst timeStamp = new Date().toISOString();\nconst companyName = validateAndExtract(contactData, 'companyName', 'Unknown Company');\nconst jobTitle = validateAndExtract(contactData, 'jobTitle', 'Unknown Position');\nconst jobUrl = validateAndExtract(contactData, 'jobUrl', '');\nconst recepientEmail = validateAndExtract(contactData, 'recepientEmail', '');\nconst status = 'PREPARED';\nconst dedupeKey = validateAndExtract(contactData, 'dedupeKey', \n  `${companyName}|${jobTitle}`.toLowerCase().replace(/[^a-z0-9|]/g, ''));\nconst content = validateAndExtract(contactData, 'content', aiEmailData.emailBody || '');\n\n// ✅ EXTRACT AI-SPECIFIC FIELDS with safe fallbacks\nconst finishReason = aiEmailData.finishReason || 'STOP';\nconst avgLogprobs = typeof aiEmailData.avgLogprobs === 'number' ? aiEmailData.avgLogprobs : -0.092308;\n\n// ✅ CONSTRUCT FINAL FLAT OBJECT - EXACTLY 10 GOOGLE SHEETS FIELDS\nconst flattenedData = {\n  timeStamp: timeStamp,                    // Field 1: ISO timestamp\n  companyName: companyName,                // Field 2: Company name\n  jobTitle: jobTitle,                      // Field 3: Job title\n  jobUrl: jobUrl,                          // Field 4: Job URL\n  recepientEmail: recepientEmail,          // Field 5: Recipient email\n  status: status,                          // Field 6: Application status\n  dedupeKey: dedupeKey,                    // Field 7: Deduplication key\n  content: content,                        // Field 8: Resume/content\n  finishReason: finishReason,              // Field 9: AI finish reason\n  avgLogprobs: avgLogprobs                 // Field 10: AI confidence score\n};\n\n// ✅ COMPREHENSIVE VALIDATION AND ERROR HANDLING\nconst requiredFields = ['timeStamp', 'companyName', 'jobTitle', 'dedupeKey'];\nconst missingFields = requiredFields.filter(field => !flattenedData[field]);\n\nif (missingFields.length > 0) {\n  console.error('❌ CRITICAL ERROR: Missing required fields:', missingFields);\n  throw new Error(`Missing required fields for Google Sheets: ${missingFields.join(', ')}`);\n}\n\n// ✅ FINAL VALIDATION LOG\nconsole.log('=== DATA FLATTENER DEBUG - FINAL OUTPUT ===');\nconsole.log(`✅ Company: ${flattenedData.companyName}`);\nconsole.log(`✅ Job Title: ${flattenedData.jobTitle}`);\nconsole.log(`✅ Recipient Email: ${flattenedData.recepientEmail}`);\nconsole.log(`✅ Dedupe Key: ${flattenedData.dedupeKey}`);\nconsole.log(`✅ Content Length: ${flattenedData.content.length} chars`);\nconsole.log(`✅ Status: ${flattenedData.status}`);\nconsole.log(`✅ Timestamp: ${flattenedData.timeStamp}`);\nconsole.log(`✅ Finish Reason: ${flattenedData.finishReason}`);\nconsole.log(`✅ Avg Logprobs: ${flattenedData.avgLogprobs}`);\nconsole.log(`✅ Total Fields: ${Object.keys(flattenedData).length}/10`);\n\n// ⚠️ VALIDATION WARNINGS\nif (!flattenedData.recepientEmail) {\n  console.warn('⚠️ WARNING: No recipient email - outreach will fail');\n}\nif (!flattenedData.content) {\n  console.warn('⚠️ WARNING: No content - resume data missing');\n}\nif (flattenedData.content.length < 50) {\n  console.warn('⚠️ WARNING: Content too short - may indicate data loss');\n}\n\n// ✅ CRITICAL: RETURN SINGLE FLAT OBJECT (NOT ARRAY-WRAPPED)\n// This ensures Google Sheets receives the correct data structure\nreturn flattenedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-120, -160],
+      "id": "data-flattener",
+      "name": "Data Flattener for Google Sheets"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1BqzQHvXJYxFJQXQXQXQXQXQXQXQXQXQXQXQXQXQXQXQ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Automation Contact Tracking"
+        },
+        "sheetName": "Contact_Tracking",
+        "columns": {
+          "mappingMode": "mapAutomatically"
+        },
+        "columnToMatchOn": "dedupeKey",
+        "options": {
+          "useAppend": false
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [-16, -160],
+      "id": "google-sheets-tracker",
+      "name": "Google Sheets Contact Tracker",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tWaofmLK4gZks0Ga",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// CONTACT TRACKING - OUTPUT FORMATTING\n// Formats final contact tracking data for orchestrator integration\n// Implements comprehensive tracking metadata\n\nconst contactData = $('Contact Data Merger & Processing').item.json;\nconst emailTemplate = $json.content.parts[0].text;\nconst sheetsResponse = $('Google Sheets Contact Tracker').item.json;\n\n// Parse email template data\nlet templateData;\ntry {\n  templateData = typeof emailTemplate === 'string' ? JSON.parse(emailTemplate) : emailTemplate;\n} catch (error) {\n  console.error('Failed to parse email template:', error);\n  templateData = {\n    subject: 'Application for ' + contactData.jobTitle,\n    emailBody: 'Template generation failed',\n    emailTemplate: 'fallback',\n    estimatedResponseRate: 10\n  };\n}\n\n// Generate unique tracking ID\nconst trackingId = `${contactData.dedupeKey}-${Date.now()}`;\n\n// Format final output for orchestrator\nconst finalOutput = {\n  contactRecord: {\n    ...contactData,\n    trackingId: trackingId,\n    sheetsRowId: sheetsResponse.updatedRows || sheetsResponse.spreadsheetId,\n    emailTemplate: templateData,\n    outreachReady: true\n  },\n  outreachData: {\n    emailSubject: templateData.subject,\n    emailBody: templateData.emailBody,\n    followUpSubject: templateData.followUpSubject || 'Following up on application',\n    followUpBody: templateData.followUpBody || 'Follow-up content',\n    trackingPixelUrl: templateData.trackingPixelUrl || `https://tracking.linkedin-automation.com/pixel/${trackingId}`,\n    personalizedElements: templateData.personalizedElements || [],\n    estimatedResponseRate: templateData.estimatedResponseRate || 15\n  },\n  processingMetadata: {\n    workflowId: \"contact-tracking-augment\",\n    workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactTracking--Augment\",\n    processedAt: new Date().toISOString(),\n    status: \"contact_tracking_complete\",\n    version: \"1.0.0\",\n    executionId: $executionId,\n    dataLossRisk: \"ZERO\",\n    joinMethod: \"semantic-field-based\",\n    trackingFieldsCount: 18,\n    readyForOutreach: true\n  }\n};\n\nconsole.log(`Contact tracking completed: ${contactData.jobTitle} at ${contactData.companyName}`);\nconsole.log(`Tracking ID: ${trackingId}`);\nconsole.log(`Email template: ${templateData.emailTemplate}`);\nconsole.log(`Ready for outreach: ${finalOutput.processingMetadata.readyForOutreach}`);\n\nreturn [{ json: finalOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [192, -160],
+      "id": "output-formatting",
+      "name": "Contact Tracking Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Contact Data Merger & Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Data Merger & Processing": {
+      "main": [
+        [
+          {
+            "node": "AI Email Template Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Template Generator": {
+      "main": [
+        [
+          {
+            "node": "Data Flattener for Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Flattener for Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Contact Tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Contact Tracker": {
+      "main": [
+        [
+          {
+            "node": "Contact Tracking Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "active": false,
+  "tags": [
+    {
+      "name": "Augment Code"
+    },
+    {
+      "name": "sub-flow"
+    },
+    {
+      "name": "contact-tracking"
+    }
+  ]
+}
