@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "backupDate": "2025-01-27T00:00:00.000Z",
+    "workflowId": "wZyxRjWShhnSFbSV",
+    "workflowName": "Contact Tracking",
+    "purpose": "Pre-implementation backup before Google Sheets API quota fixes",
+    "phase": "Phase 1 - Request Caching, Wait Node, Retry Logic",
+    "backupType": "COMPLETE_WORKFLOW_STATE"
+  },
+  "currentState": {
+    "dataFlattenerFile": "nodes/contact-tracking-workflow/data-flattener-v2.2-content-json-parser.js",
+    "version": "2.2.0",
+    "fileSize": "356 lines",
+    "lastModified": "Enhanced with email audit trail fields",
+    "functionality": "FULLY_OPERATIONAL",
+    "duplicateDetection": "WORKING_BUT_QUOTA_LIMITED"
+  },
+  "keyComponents": {
+    "dataFlattener": {
+      "file": "nodes/contact-tracking-workflow/data-flattener-v2.2-content-json-parser.js",
+      "purpose": "Extract job data, normalize dedupeKey, flatten AI content",
+      "fields": 19,
+      "status": "NO_CHANGES_REQUIRED"
+    },
+    "duplicateDetection": {
+      "location": "Separate duplicate detection node (not in data flattener)",
+      "issue": "Makes full Google Sheets API read (A:Q) every execution",
+      "quotaLimit": "60 requests per minute per user",
+      "status": "REQUIRES_CACHING_OPTIMIZATION"
+    },
+    "googleSheetsIntegration": {
+      "documentId": "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+      "sheet": "Tracking",
+      "operation": "Append or Update Row",
+      "matchColumn": "dedupeKey",
+      "status": "REQUIRES_RETRY_LOGIC"
+    }
+  },
+  "preservedFunctionality": {
+    "dataExtraction": "Multi-source AI data extraction with fallbacks",
+    "dedupeKeyGeneration": "Normalize company+job title for duplicate detection",
+    "contentFlattening": "Handle object/string AI content formats",
+    "emailAuditTrail": "emailBodyContent, draftCreatedTimestamp, draftStatus fields",
+    "errorHandling": "Comprehensive fallback mechanisms",
+    "legacyCompatibility": "recipientEmail/recepientEmail dual field support"
+  },
+  "implementationPlan": {
+    "phase1": {
+      "requestCaching": {
+        "target": "Duplicate detection node (separate from data flattener)",
+        "implementation": "Cache Google Sheets API responses for 1 minute",
+        "expectedReduction": "60-70% fewer API calls"
+      },
+      "waitNodeIntegration": {
+        "location": "Between Data Flattener and Duplicate Detection",
+        "duration": "1.5 seconds",
+        "purpose": "Ensure 60 requests/minute compliance"
+      },
+      "retryLogic": {
+        "target": "All Google Sheets nodes",
+        "settings": "maxTries=3, waitBetweenTries=2000ms",
+        "purpose": "Handle temporary quota exceeded errors"
+      }
+    }
+  },
+  "rollbackProcedure": {
+    "step1": "git checkout HEAD~1 -- nodes/contact-tracking-workflow/",
+    "step2": "Restore workflow configuration from this backup",
+    "step3": "Verify functionality with single test execution",
+    "estimatedTime": "5 minutes"
+  },
+  "successCriteria": {
+    "quotaCompliance": "Zero quota exceeded errors for 24 hours",
+    "apiCallReduction": "60-70% fewer Google Sheets API requests",
+    "functionalAccuracy": "100% duplicate detection accuracy maintained",
+    "executionTimeImpact": "<5 seconds additional delay per workflow",
+    "dataIntegrity": "All 19 fields populate correctly in Google Sheets"
+  }
+}

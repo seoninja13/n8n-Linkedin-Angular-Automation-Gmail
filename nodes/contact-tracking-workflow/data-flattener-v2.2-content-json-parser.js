@@ -275,6 +275,11 @@ try {
     emailSubject: emailSubjectValue,
     emailBody: emailBodyValue,
 
+    // Enhanced email audit trail fields (for Google Sheets columns)
+    emailBodyContent: emailBodyValue,
+    draftCreatedTimestamp: new Date().toISOString(),
+    draftStatus: (emailBodyValue && emailBodyValue !== "Email content not generated") ? "CREATED" : "FAILED",
+
     // Initialization for downstream duplicate handling
     isDuplicate: false,
     duplicateCount: 1,
@@ -321,6 +326,12 @@ try {
     avgLogprobs: "",
     emailSubject: "Application for Position - Ivo Dachev",
     emailBody: "Email content not generated",
+
+    // Enhanced email audit trail fields (fallback values)
+    emailBodyContent: "Email content not generated",
+    draftCreatedTimestamp: new Date().toISOString(),
+    draftStatus: "FAILED",
+
     emailTemplate: "job-application-outreach",
     estimatedResponseRate: "",
     personalizedElements: [],
