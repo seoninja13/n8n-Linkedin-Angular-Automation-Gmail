@@ -1,0 +1,270 @@
+{
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-OutreachTracking--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "content": ""
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1440,
+        -752
+      ],
+      "typeVersion": 1,
+      "id": "c107f489-87e7-48cd-8db0-0cb8d9bb615c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1232,
+        -400
+      ],
+      "id": "f662a488-a907-4e71-acde-95bed2697272",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// OUTREACH TRACKING - INPUT PROCESSING (FIXED)\n// Processes contact tracking data for outreach email creation\n// FIXED: Handles Contact Tracking workflow output structure correctly\n// ENHANCED: Includes duplicate detection fields for IF node filtering\n\nconst inputData = $json;\nconsole.log('🔍 Outreach Input Debug:');\nconsole.log('   Input keys:', Object.keys(inputData));\nconsole.log('   ContactRecord keys:', inputData.contactRecord ? Object.keys(inputData.contactRecord) : 'No contactRecord');\n\n// FIXED: Extract data from Contact Tracking workflow output structure\nconst contactRecord = inputData.contactRecord || {};\nconst outreachData = inputData.outreachData || {};\nconst processingMetadata = inputData.processingMetadata || {};\n\n// FIXED: Handle field name differences from Contact Tracking workflow\nconst jobTitle = contactRecord.jobTitle;\nconst companyName = contactRecord.companyName;\nconst jobLocation = contactRecord.jobLocation || 'Not specified';\nconst jobUrl = contactRecord.jobUrl || '';\nconst jobDescription = contactRecord.jobDescription || '';\n\n// FIXED: Validate required inputs with correct field names\nif (!jobTitle || !companyName) {\n  console.error('❌ Validation failed:');\n  console.error('   JobTitle:', jobTitle);\n  console.error('   CompanyName:', companyName);\n  console.error('   Available contactRecord fields:', Object.keys(contactRecord));\n  throw new Error(`Invalid job data: missing required fields (jobTitle: ${!!jobTitle}, companyName: ${!!companyName})`);\n}\n\n// FIXED: Extract contact information from Contact Tracking structure\nconst contactName = contactRecord.contactName || 'Unknown Contact';\nconst contactFirstName = contactRecord.contactFirstName || '';\nconst contactLastName = contactRecord.contactLastName || '';\nconst contactTitle = contactRecord.contactTitle || '';\nconst recepientEmail = contactRecord.recepientEmail || '';\n\n// FIXED: Extract resume/content information\nconst resumeContent = contactRecord.content || '';\nconst resumeMatchScore = contactRecord.resumeMatchScore || 0;\nconst qualificationScore = contactRecord.qualificationScore || 0;\n\n// FIXED: Extract email template information\nconst emailTemplate = contactRecord.emailTemplate || {};\nconst emailSubject = emailTemplate.subject || outreachData.emailSubject || '';\nconst emailBody = emailTemplate.emailBody || outreachData.emailBody || '';\n\n// ENHANCED: Extract duplicate detection fields from Contact Tracking workflow\nconst isDuplicate = Boolean(contactRecord.isDuplicate || false);\nconst duplicateCount = contactRecord.duplicateCount || 0;\nconst duplicateReason = contactRecord.duplicateReason || '';\nconst originalApplicationDate = contactRecord.originalApplicationDate || '';\nconst duplicateDetectedAt = contactRecord.duplicateDetectedAt || '';\n\n// Validate contact email\nif (!recepientEmail) {\n  throw new Error('Invalid contact data: missing recipient email');\n}\n\n// Validate resume content\nif (!resumeContent && !emailBody) {\n  throw new Error('Invalid resume/content data: missing both resume content and email body');\n}\n\n// FIXED: Create properly structured outreach data\nconst outreachComponents = {\n  job: {\n    title: jobTitle,\n    company: companyName,\n    location: jobLocation,\n    jobUrl: jobUrl,\n    description: jobDescription\n  },\n  contact: {\n    name: contactName,\n    firstName: contactFirstName,\n    lastName: contactLastName,\n    email: recepientEmail,\n    jobTitle: contactTitle,\n    company: companyName\n  },\n  resume: {\n    customizedContent: resumeContent,\n    matchScore: resumeMatchScore,\n    qualificationScore: qualificationScore\n  },\n  email: {\n    subject: emailSubject,\n    body: emailBody,\n    template: emailTemplate.emailTemplate || 'job-application-outreach',\n    estimatedResponseRate: emailTemplate.estimatedResponseRate || 0\n  },\n  tracking: {\n    dedupeKey: contactRecord.dedupeKey || '',\n    trackingId: contactRecord.trackingId || '',\n    status: contactRecord.status || 'PREPARED',\n    priorityLevel: contactRecord.priorityLevel || 'MEDIUM',\n    processedAt: contactRecord.processedAt || new Date().toISOString()\n  },\n  isDuplicate: isDuplicate,\n  duplicateCount: duplicateCount,\n  duplicateReason: duplicateReason,\n  originalApplicationDate: originalApplicationDate,\n  duplicateDetectedAt: duplicateDetectedAt,\n  outreachType: 'job-application-email',\n  timestamp: new Date().toISOString(),\n  originalInput: inputData\n};\n\nconsole.log('✅ Outreach Input Processing Success:');\nconsole.log(`   Job: ${jobTitle} at ${companyName}`);\nconsole.log(`   Contact: ${contactName} (${recepientEmail})`);\nconsole.log(`   Resume Match Score: ${resumeMatchScore}%`);\nconsole.log(`   Email Subject: ${emailSubject}`);\nconsole.log(`   Tracking Status: ${contactRecord.status}`);\nconsole.log(`   🔍 Duplicate Detection: isDuplicate=${isDuplicate}, duplicateCount=${duplicateCount}`);\nconsole.log(`   📋 Processing Path: ${isDuplicate ? 'DUPLICATE_DETECTED - Skip Email' : 'NEW_APPLICATION - Generate Email'}`);\n\nreturn [{ json: outreachComponents }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        -400
+      ],
+      "id": "07d5b054-0fb8-4068-91e8-0384059fdf29",
+      "name": "Outreach Input Processing"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Email Outreach AI that creates personalized job application emails. Your task is to create a compelling, professional email that highlights the candidate's qualifications.\n\n**INPUT DATA:**\nJob Information: {{ $json.job }}\nContact Information: {{ $json.contact }}\nResume Data: {{ $json.resume }}\n\n**EMAIL REQUIREMENTS:**\n\n1. **Professional Tone**: Formal but engaging business communication\n2. **Personalization**: Address recipient by name, reference their role\n3. **Value Proposition**: Clearly articulate candidate's value to the company\n4. **Specific Examples**: Include relevant achievements and skills\n5. **Call to Action**: Request for interview or further discussion\n6. **Proper Structure**: Subject line, greeting, body, closing, signature\n\n**EMAIL STRUCTURE:**\n- **Subject Line**: Compelling and specific to the role\n- **Greeting**: Professional salutation with recipient's name\n- **Opening**: Brief introduction and purpose\n- **Body**: Qualifications, achievements, and value proposition\n- **Closing**: Call to action and professional sign-off\n- **Signature**: Contact information\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"emailSubject\": \"Application for [Position] - [Candidate Name]\",\n  \"emailBody\": \"Full email content...\",\n  \"emailMetadata\": {\n    \"tone\": \"professional\",\n    \"personalizationLevel\": \"high\",\n    \"wordCount\": 250,\n    \"readabilityScore\": 85\n  },\n  \"attachments\": [\n    {\n      \"name\": \"Resume_[CandidateName]_[Position].pdf\",\n      \"type\": \"resume\",\n      \"required\": true\n    }\n  ],\n  \"followUpSchedule\": {\n    \"firstFollowUp\": \"7 days\",\n    \"secondFollowUp\": \"14 days\"\n  }\n}\n```\n\nCreate a professional, personalized job application email that maximizes response potential."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        -384
+      ],
+      "id": "2474af28-806f-4168-9a25-20c2f6fed5a9",
+      "name": "AI Email Generation",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// OUTREACH INPUT PROCESSING - ENHANCED WITH DUPLICATE FLAG PREPARATION\nconst processOutreachInput = () => {\n  const item = $json;\n  \n  console.log(`🔍 Processing: ${item.companyName} - ${item.jobTitle}`);\n  console.log(`📋 Duplicate Status: ${item.isDuplicate}`);\n  \n  // Ensure duplicate detection fields are properly formatted for downstream processing\n  const processedItem = {\n    ...item,\n    // Ensure boolean type for IF node condition\n    isDuplicate: Boolean(item.isDuplicate),\n    duplicateCount: item.duplicateCount || 0,\n    duplicateReason: item.duplicateReason || '',\n    originalApplicationDate: item.originalApplicationDate || '',\n    \n    // Add processing metadata\n    outreachProcessingTimestamp: new Date().toISOString(),\n    processingPath: item.isDuplicate ? 'DUPLICATE_DETECTED' : 'NEW_APPLICATION'\n  };\n  \n  console.log(`✅ Processed for routing - isDuplicate: ${processedItem.isDuplicate}`);\n  \n  return [{ json: processedItem }];\n};\n\nreturn processOutreachInput();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -384
+      ],
+      "id": "da74a969-aaa8-4e46-b973-89cc6cb00659",
+      "name": "Outreach Tracking Output Formatting"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Tracking",
+          "mode": "name"
+        },
+        "columnToMatchOn": "dedupeKey",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $('AI Email Generation').item ? 'EMAIL_DRAFT_CREATED' : 'DUPLICATE_SKIPPED' }}",
+            "dedupeKey": "={{ $('Outreach Input Processing').item.json.tracking.dedupeKey }}",
+            "emailSubject": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailSubject : '' }}",
+            "emailBody": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailBody : '' }}",
+            "emailTemplate": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailMetadata.template : 'job-application-outreach' }}",
+            "estimatedResponseRate": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).estimatedResponseRate : 0 }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -48,
+        -384
+      ],
+      "id": "ab2bff18-f152-4160-ae3c-f5e2d546b94a",
+      "name": "Status Update",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HnVkHdxofZiUvnda",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ JSON.parse($json.content.parts[0].text)[0].emailSubject }}",
+        "message": "={{ JSON.parse($json.content.parts[0].text)[0].emailSubject }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        -384
+      ],
+      "id": "ce9f62db-a8f5-42ae-b169-27922f6b065c",
+      "name": "Draft Gmail",
+      "webhookId": "7a97ea05-8017-420d-b85c-fadc1dc6a8dc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rEDqr1LkX2ZgxHLO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "38159f4e-c431-4295-952d-ca66a5bb6dbb",
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -848,
+        -560
+      ],
+      "id": "03417c6d-588d-4f0f-9288-98538174c26b",
+      "name": "If - Duplicate or not"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Outreach Input Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outreach Input Processing": {
+      "main": [
+        [
+          {
+            "node": "If - Duplicate or not",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Generation": {
+      "main": [
+        [
+          {
+            "node": "Draft Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status Update": {
+      "main": [
+        [
+          {
+            "node": "Outreach Tracking Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Gmail": {
+      "main": [
+        [
+          {
+            "node": "Status Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Duplicate or not": {
+      "main": [
+        [
+          {
+            "node": "Status Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Email Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}
+

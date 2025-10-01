@@ -1,0 +1,50 @@
+{
+  "parameters": {
+    "documentId": {
+      "__rl": true,
+      "value": "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+      "mode": "id"
+    },
+    "sheetName": {
+      "__rl": true,
+      "value": "Tracking",
+      "mode": "name"
+    },
+    "filtersUI": {
+      "values": [
+        {
+          "lookupColumn": "dedupeKey",
+          "lookupValue": "={{ $json.dedupeKey }}"
+        }
+      ]
+    },
+    "options": {
+      "dataLocationOnSheet": {
+        "values": {
+          "rangeDefinition": "specifyRangeA1",
+          "range": "A:Z"
+        }
+      }
+    }
+  },
+  "type": "n8n-nodes-base.googleSheets",
+  "typeVersion": 4.7,
+  "position": [
+    -784,
+    -928
+  ],
+  "id": "abd08013-4de6-4d4c-adf7-88427703d82c",
+  "name": "Rows lookup",
+  "alwaysOutputData": false,
+  "credentials": {
+    "googleSheetsOAuth2Api": {
+      "id": "HnVkHdxofZiUvnda",
+      "name": "Google Sheets account"
+    }
+  },
+  "retryOnFail": true,
+  "maxTries": 5,
+  "waitBetweenTries": 2000,
+  "notes": "FIXED: Added retry logic to handle 429 quota errors\n- Max Tries: 5\n- Wait Between Tries: 2000ms (2 seconds)\n- This handles transient burst rate limit errors\n- Total max wait: 10 seconds before final failure"
+}
+

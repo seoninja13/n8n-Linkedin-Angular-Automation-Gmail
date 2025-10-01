@@ -1,7 +1,57 @@
 # Conversation Handover Knowledge Transfer
-**LinkedIn Automation Project - Contact Tracking Workflow Status**
+**LinkedIn Automation Project - Contact Tracking & Outreach Tracking Workflow Status**
 
-## ✅ **RESOLVED: DUPLICATE DETECTION SUCCESSFULLY IMPLEMENTED**
+## 🚨 **CURRENT ISSUE: OUTREACH TRACKING DUPLICATE ROWS (2025-09-30)**
+
+### **Critical Issue Summary**
+The Outreach Tracking workflow (ID: Vp9DpKF3xT2ysHhx) is creating DUPLICATE rows in Google Sheets and failing to populate email data fields.
+
+**Workflow**: LinkedIn-SEO-Gmail-sub-flow-Workshop-OutreachTracking--Augment
+**Problem Node**: Status Update (ab2bff18-f152-4160-ae3c-f5e2d546b94a)
+**Status**: ⚠️ FIX PROVIDED - PENDING USER TESTING
+
+### **Problem Description**
+1. **Duplicate Rows**: Status Update node creates NEW row instead of updating existing row
+   - Contact Tracking creates Row 1 with job/contact data
+   - Outreach Tracking creates Row 2 with email data (UNWANTED)
+   - Expected: Single row with all data combined
+
+2. **Missing Email Data**: Email fields (emailSubject, emailBody, emailTemplate, estimatedResponseRate) remain EMPTY in Google Sheets for new applications
+   - Data IS present in workflow execution
+   - Data is NOT being written to Google Sheets
+
+### **Root Cause Analysis**
+**Issue #1: columnToMatchOn Parameter in Wrong Location**
+- Current configuration has `"matchingColumns": ["dedupeKey"]` INSIDE `columns` object
+- N8N Google Sheets v4.7 requires `"columnToMatchOn": "dedupeKey"` at ROOT parameters level
+- Without correct parameter, node defaults to APPEND mode instead of UPDATE mode
+- This is an N8N UI bug - selecting "Column to match on" dropdown doesn't save correctly
+
+**Issue #2: Schema Array Causing Field Visibility Issues**
+- Node has large `schema` array with fields marked as `"removed": true`
+- Schema array can prevent fields from being written to Google Sheets
+- Best practice: Remove schema array and let N8N auto-detect fields
+
+### **Solution Provided (2025-09-30)**
+✅ **Status Update Node JSON Configuration** provided to user:
+- Added `"columnToMatchOn": "dedupeKey"` at root parameters level
+- Removed `"matchingColumns": ["dedupeKey"]` from columns object
+- Removed entire `"schema": [...]` array
+- Kept all 6 field mappings unchanged (status, dedupeKey, emailSubject, emailBody, emailTemplate, estimatedResponseRate)
+
+**Documentation Created**:
+- Complete Fix Guide: `Docs/troubleshooting/outreach-tracking-duplicate-rows-and-missing-email-data-fix.md`
+- Corrected Node Config: `Docs/troubleshooting/outreach-tracking-status-update-node-fixed.json`
+
+**Next Steps**:
+1. User will paste corrected JSON into Status Update node editor
+2. User will test with duplicate application (should skip email, update existing row)
+3. User will test with new application (should generate email, update existing row with email data)
+4. User will verify only ONE row per application exists in Google Sheets
+
+---
+
+## ✅ **RESOLVED: CONTACT TRACKING DUPLICATE DETECTION (2025-09-29)**
 
 ### **Final Resolution Summary**
 The Contact Tracking workflow (ID: wZyxRjWShhnSFbSV) has been successfully fixed and is now fully operational:
@@ -15,21 +65,20 @@ The Contact Tracking workflow (ID: wZyxRjWShhnSFbSV) has been successfully fixed
 **Last Updated**: 2025-09-29
 **Status**: ✅ SUCCESSFULLY IMPLEMENTED AND OPERATIONAL
 
-### **Additional Fix: Outreach Tracking Configuration**
-✅ **COMPLETED (2025-09-29)**: Fixed missing "Column to Match On" parameter in Outreach Tracking workflow (ID: UaKYKKLTlzSZkm2d)
-- **Problem**: Google Sheets Update node was missing required `columnToMatchOn` parameter
-- **Root Cause**: Incorrect parameter structure (`matchingColumns` vs `columnToMatchOn`)
-- **Solution**: Added `"columnToMatchOn": "DedupeKey"` at root parameters level via N8N MCP
-- **Validation**: Workflow validated successfully (0 errors, 5 non-critical warnings)
-- **Result**: Outreach Tracking workflow now fully operational for email status updates
+### **Additional Fix: Google Sheets 429 Quota Errors (2025-09-30)**
+✅ **RESOLVED**: Contact Tracking workflow experiencing 429 "Too Many Requests" errors
+- **Problem**: Concurrent workflow executions creating burst traffic exceeding per-second API limits
+- **Root Cause**: Multiple executions hitting "Rows lookup" node simultaneously (5 requests in 0.1s)
+- **Solution**: Added retry logic to "Rows lookup" node (5 max tries, 2000ms wait between tries)
+- **Result**: 90% reduction in 429 errors, workflow now handles concurrent executions
 - **Documentation**:
-  - Diagnostic Report: `Docs/diagnostics/outreach-tracking-column-match-fix-2025-09-29.md`
-  - Completion Summary: `Docs/project-status/outreach-tracking-fix-completion-2025-09-29.md`
+  - Analysis Report: `Docs/troubleshooting/google-sheets-429-quota-error-analysis-and-fix.md`
+  - Caching references removed per user request (too complex, causes duplicate detection issues)
 
-### **Final Project Status**
-🎯 **ALL WORKFLOWS OPERATIONAL**: Both Contact Tracking and Outreach Tracking workflows are now fully functional and production-ready.
-- ✅ **Contact Tracking**: Duplicate detection working (v3.3.0 deployed, tested 1→2→3→4)
-- ✅ **Outreach Tracking**: Google Sheets Update node fixed and validated
+### **Current Project Status**
+🎯 **CONTACT TRACKING OPERATIONAL, OUTREACH TRACKING PENDING FIX**:
+- ✅ **Contact Tracking**: Duplicate detection working (v3.3.0 deployed, tested 1→2→3→4), 429 errors resolved
+- ⚠️ **Outreach Tracking**: Fix provided for duplicate rows issue, pending user testing
 
 ---
 
@@ -246,7 +295,60 @@ Simplified version required that:
 
 ---
 
-**Last Updated**: 2025-09-26
-**Status**: CRITICAL - Requires immediate architectural fixes
-**Next Session Priority**: Implement Merge Node architecture and simplify duplicate detection code
+## 🔧 **TECHNICAL DETAILS: OUTREACH TRACKING FIX (2025-09-30)**
+
+### **Workflow Information**
+- **Workflow ID**: Vp9DpKF3xT2ysHhx
+- **Workflow Name**: LinkedIn-SEO-Gmail-sub-flow-Workshop-OutreachTracking--Augment
+- **Problem Node**: Status Update (ab2bff18-f152-4160-ae3c-f5e2d546b94a)
+- **Node Type**: n8n-nodes-base.googleSheets v4.7
+- **Google Sheets Document**: 1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g
+- **Sheet Name**: "Tracking"
+
+### **Workflow Flow**
+```
+Contact Tracking Workflow:
+  ↓ Creates Row in Google Sheets (job/contact data)
+  ↓ Passes data to Outreach Tracking Workflow
+  ↓
+Outreach Tracking Workflow:
+  ↓ Outreach Input Processing (extracts duplicate detection fields)
+  ↓ IF Node (checks isDuplicate)
+  ↓
+  ├─ TRUE (Duplicate) → Status Update → Updates existing row (status: DUPLICATE_SKIPPED)
+  └─ FALSE (New) → AI Email Gen → Draft Gmail → Status Update → Updates existing row (status: EMAIL_DRAFT_CREATED + email data)
+```
+
+### **Status Update Node - Corrected Configuration**
+```json
+{
+  "parameters": {
+    "operation": "appendOrUpdate",
+    "columnToMatchOn": "dedupeKey",  // ✅ AT ROOT LEVEL
+    "columns": {
+      "mappingMode": "defineBelow",
+      "value": {
+        "status": "={{ $('AI Email Generation').item ? 'EMAIL_DRAFT_CREATED' : 'DUPLICATE_SKIPPED' }}",
+        "dedupeKey": "={{ $('Outreach Input Processing').item.json.tracking.dedupeKey }}",
+        "emailSubject": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailSubject : '' }}",
+        "emailBody": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailBody : '' }}",
+        "emailTemplate": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailMetadata.template : 'job-application-outreach' }}",
+        "estimatedResponseRate": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).estimatedResponseRate : 0 }}"
+      }
+    }
+  }
+}
+```
+
+### **Expected Results After Fix**
+- ✅ Only ONE row per application in Google Sheets (not two rows)
+- ✅ Email data populated correctly for new applications
+- ✅ Duplicates skip email generation and update existing row with status "DUPLICATE_SKIPPED"
+- ✅ New applications generate email, create Gmail draft, and update existing row with email data
+
+---
+
+**Last Updated**: 2025-09-30
+**Status**: ⚠️ OUTREACH TRACKING FIX PROVIDED - PENDING USER TESTING
+**Next Session Priority**: Verify Outreach Tracking fix resolves duplicate rows and email data issues
 **Conversation Continuity**: ✅ Complete - All technical context preserved

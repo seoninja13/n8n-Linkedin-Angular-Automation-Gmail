@@ -1,0 +1,44 @@
+{
+  "parameters": {
+    "operation": "appendOrUpdate",
+    "documentId": {
+      "__rl": true,
+      "value": "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+      "mode": "id"
+    },
+    "sheetName": {
+      "__rl": true,
+      "value": "Tracking",
+      "mode": "name"
+    },
+    "columnToMatchOn": "dedupeKey",
+    "columns": {
+      "mappingMode": "defineBelow",
+      "value": {
+        "status": "={{ $('AI Email Generation').item ? 'EMAIL_DRAFT_CREATED' : 'DUPLICATE_SKIPPED' }}",
+        "dedupeKey": "={{ $('Outreach Input Processing').item.json.tracking.dedupeKey }}",
+        "emailSubject": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailSubject : '' }}",
+        "emailBody": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailBody : '' }}",
+        "emailTemplate": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).emailMetadata.template : 'job-application-outreach' }}",
+        "estimatedResponseRate": "={{ $('AI Email Generation').item ? JSON.parse($('AI Email Generation').item.json.content.parts[0].text).estimatedResponseRate : 0 }}"
+      }
+    },
+    "options": {}
+  },
+  "type": "n8n-nodes-base.googleSheets",
+  "typeVersion": 4.7,
+  "position": [
+    -48,
+    -384
+  ],
+  "id": "ab2bff18-f152-4160-ae3c-f5e2d546b94a",
+  "name": "Status Update",
+  "credentials": {
+    "googleSheetsOAuth2Api": {
+      "id": "HnVkHdxofZiUvnda",
+      "name": "Google Sheets account"
+    }
+  },
+  "notes": "FIXED: Moved columnToMatchOn to root level and removed schema array\n- columnToMatchOn: 'dedupeKey' (at root parameters level)\n- Removed matchingColumns from columns object\n- Removed schema array to prevent field visibility issues\n- Field mappings handle both duplicate and new application paths"
+}
+
