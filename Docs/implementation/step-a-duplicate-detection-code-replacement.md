@@ -238,15 +238,36 @@ try {
 ## **3. Save and Test**
 - Click "Save" to save the node configuration
 - Click "Execute Node" to test the new code
-- Verify the output includes the new fields: `cacheStatus`, `quotaOptimizationEnabled`
-- Check the console logs for "QUOTA OPTIMIZATION" messages
+- Verify the output includes duplicate detection fields: `isDuplicate`, `duplicateCount`, `routingDecision`
+- Check the console logs for "DUPLICATE DETECTION" messages showing the analysis results
 
 ---
 
 ## **✅ EXPECTED RESULTS**
-- **Cache Status**: Should show "MISS_CACHED" on first run, "HIT" on subsequent runs within 1 minute
-- **API Calls**: Reduced by 60-70% for workflows processing multiple items
-- **New Fields**: `cacheStatus`, `quotaOptimizationEnabled`, `duplicateCheckTimestamp`
-- **Error Handling**: Graceful fallback to cached data on quota exceeded errors
+
+### **Duplicate Detection Fields:**
+- **isDuplicate**: `true` for duplicates, `false` for new applications
+- **duplicateCount**: Increments correctly (1 for new, 2+ for duplicates)
+- **duplicateDetectedAt**: ISO timestamp when duplicate was detected
+- **originalApplicationDate**: Timestamp from the first application
+- **routingDecision**: `"UPDATE"` for duplicates, `"INSERT"` for new applications
+
+### **Metadata Fields:**
+- **duplicateCheckTimestamp**: ISO timestamp of the duplicate check
+- **duplicateCheckMethod**: `"rows-lookup-merge-analysis-v3.3"`
+- **apiCallsAvoided**: Always `1` (uses existing Rows Lookup results)
+- **processingEfficiency**: `"optimized"`
+
+### **Behavior:**
+- **For Duplicates**: Returns EXISTING record with updated duplicate tracking fields
+- **For New Applications**: Returns NEW record with initialized duplicate tracking fields
+- **No Caching**: Uses Rows Lookup results directly without any caching layer
+- **Error Handling**: Graceful fallback to INSERT mode on errors (prevents data loss)
+
+### **Console Output:**
+- Detailed logging of duplicate detection analysis
+- Shows dedupeKey, company name, job title, and duplicate count
+- Logs routing decision (UPDATE vs INSERT)
+- Confirms API call optimization (no redundant queries)
 
 **Step A Status**: ✅ CODE PROVIDED - READY FOR N8N NODE UPDATE

@@ -1,0 +1,35 @@
+{
+  "parameters": {
+    "conditions": {
+      "options": {
+        "caseSensitive": true,
+        "leftValue": "",
+        "typeValidation": "strict",
+        "version": 2
+      },
+      "conditions": [
+        {
+          "id": "38159f4e-c431-4295-952d-ca66a5bb6dbb",
+          "leftValue": "={{ $json.isDuplicate }}",
+          "rightValue": "={{ true }}",
+          "operator": {
+            "type": "boolean",
+            "operation": "equals",
+            "name": "filter.operator.equals"
+          }
+        }
+      ],
+      "combinator": "and"
+    },
+    "options": {}
+  },
+  "type": "n8n-nodes-base.if",
+  "typeVersion": 2.2,
+  "position": [
+    -848,
+    -560
+  ],
+  "id": "03417c6d-588d-4f0f-9288-98538174c26b",
+  "name": "If - Duplicate or not"
+}
+
