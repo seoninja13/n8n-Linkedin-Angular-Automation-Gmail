@@ -1,0 +1,7 @@
+{
+  "workflow_id": "fGpR7xvrOO7PBa0c",
+  "workflow_name": "LinkedIn-SEO-Gmail-Orchestrator--Augment copy",
+  "node_search": "Split in Batches",
+  "note": "Extracting the Split in Batches Code node to find batch size limiting logic"
+}
+

@@ -2,7 +2,7 @@
 
 This is the single, authoritative entry point for all project documentation. Every document should link back here for navigation continuity.
 
-Last updated: 2025-09-27
+Last updated: 2025-10-01
 
 ---
 
@@ -47,6 +47,52 @@ Design docs and plans for implementing fixes or features.
 
 ## Code Fixes
 Operational playbooks, node configuration details, and code samples.
+
+### Recent Fixes (2025-10-01)
+**Email Personalization Fixes for Outreach Tracking Workflow**
+
+- **Implementation Summary**: Complete overview of all email personalization fixes
+  - Document: Docs/fixes/IMPLEMENTATION-SUMMARY.md
+  - Status: ⚠️ Pending user implementation (3 critical tasks)
+
+- **Implementation Checklist**: Step-by-step guide for implementing all fixes
+  - Document: Docs/pending-tasks/post-conversation-implementation-checklist.md
+  - Estimated Time: 20 minutes
+  - Priority: 🔴 CRITICAL
+
+**Individual Fix Guides**:
+1. **JavaScript Syntax Errors**:
+   - Outreach Input Processing syntax error fix (Line 118)
+     - Document: Docs/fixes/outreach-input-processing-syntax-error-fix.md
+     - Code: Docs/fixes/outreach-input-processing-COMPLETE-FIXED-CODE.js
+     - Status: ✅ Implemented by user
+
+   - Template literal syntax error fix (Line 172)
+     - Document: Docs/fixes/line-172-syntax-error-fix-explanation.md
+     - Status: ✅ Implemented by user
+
+2. **Gmail Draft Creation Issues**:
+   - Draft Gmail trim() error diagnostic and fix
+     - Document: Docs/fixes/draft-gmail-trim-error-diagnostic-fix.md
+     - Code: Docs/fixes/resume-filename-customizer-FIXED-CODE.js
+     - Status: ✅ Implemented by user
+
+   - Complete Gmail draft fix guide (missing recipient, subject, body, attachment)
+     - Document: Docs/fixes/gmail-draft-complete-fix-guide.md
+     - Code: Docs/fixes/ai-email-generation-CORRECTED-PROMPT.txt
+     - Status: ⚠️ Pending user implementation
+
+3. **AI Email Signature Placeholder Fix**:
+   - Signature placeholder replacement (Alice Wonderland → Ivo Dachev)
+     - Document: Docs/fixes/signature-placeholder-fix-guide.md
+     - Code: Docs/fixes/resume-filename-customizer-WITH-SIGNATURE-FIX.js
+     - Status: ⚠️ Pending user implementation
+
+**Key Lessons Learned**:
+- N8N expression syntax: `{{ }}` (template mode) vs `${}` (JavaScript expression mode)
+- N8N Code nodes use older JavaScript engine (ES5 compatibility required)
+- AI models may generate placeholder content despite explicit instructions
+- Always implement post-processing validation as a safety net
 
 - Directory: Docs/code-fixes/
   - Example: Docs/code-fixes/Google-Sheets-Node-Configuration.md
