@@ -1,0 +1,70 @@
+{
+  "createdAt": "2025-09-13T04:30:49.220Z",
+  "updatedAt": "2025-09-16T15:18:03.000Z",
+  "id": "0ZJ84RLQXxuYKLyE",
+  "name": "LinkedIn-Validation-Reporting-MCP-Server",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "toolName": "validation-reporting",
+        "toolDescription": "Validates and generates comprehensive reports for the LinkedIn automation system with audit trails and performance metrics",
+        "toolSchema": {
+          "type": "object",
+          "properties": {
+            "processedData": {
+              "type": "array",
+              "description": "Array of processed job application data from outreach tracking"
+            },
+            "validationLevel": {
+              "type": "string",
+              "description": "Level of validation: basic, standard, comprehensive",
+              "enum": [
+                "basic",
+                "standard",
+                "comprehensive"
+              ]
+            },
+            "generateReport": {
+              "type": "boolean",
+              "description": "Generate detailed validation report (default: true)"
+            }
+          },
+          "required": [
+            "processedData"
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ],
+      "id": "validation-mcp-trigger",
+      "name": "Validation Reporting MCP Trigger"
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "b6914fe2-ddcb-452f-804f-77d3775543da",
+  "triggerCount": 0,
+  "exportMetadata": {
+    "exportedAt": "2025-10-02T18:03:00.000Z",
+    "exportVersion": "1.0.0",
+    "category": "archived",
+    "originalActive": false,
+    "originalArchived": true,
+    "backupSystem": "n8n-workflow-backup-v1.0.0"
+  }
+}

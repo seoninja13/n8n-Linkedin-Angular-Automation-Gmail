@@ -1,0 +1,52 @@
+{
+  "createdAt": "2025-09-14T16:44:41.762Z",
+  "updatedAt": "2025-09-15T19:46:13.000Z",
+  "id": "3gyBXNi1h5DH7pxH",
+  "name": "LinkedIn-SEO-Gmail-MCP-Server-Job-Discovery-copy2",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "1dfd8198-d3a1-4f11-a505-a7523e553eef"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cbfdc845-b767-4617-b4cd-3346fcb5ebab",
+      "name": "MCP Server Trigger",
+      "webhookId": "1dfd8198-d3a1-4f11-a505-a7523e553eef"
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "cfae46b6-853d-4dd2-957e-16463a0db861",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-09-14T16:44:41.766Z",
+      "updatedAt": "2025-09-14T16:44:41.766Z",
+      "role": "workflow:owner",
+      "workflowId": "3gyBXNi1h5DH7pxH",
+      "projectId": "1nA39eVus9AACl1f"
+    }
+  ],
+  "tags": [],
+  "exportMetadata": {
+    "exportedAt": "2025-10-02T18:05:00.000Z",
+    "exportVersion": "1.0.0",
+    "category": "archived",
+    "originalActive": false,
+    "originalArchived": true,
+    "backupSystem": "n8n-workflow-backup-v1.0.0",
+    "nodeCount": 1,
+    "lastUpdated": "2025-09-15T19:46:13.000Z"
+  }
+}

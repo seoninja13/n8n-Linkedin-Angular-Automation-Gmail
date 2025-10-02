@@ -1,0 +1,73 @@
+{
+  "createdAt": "2025-09-13T04:30:49.220Z",
+  "updatedAt": "2025-09-16T15:18:03.000Z",
+  "id": "0ZJ84RLQXxuYKLyE",
+  "name": "LinkedIn-Validation-Reporting-MCP-Server",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "toolName": "validation-reporting",
+        "toolDescription": "Validates and generates comprehensive reports for the LinkedIn automation system with audit trails and performance metrics",
+        "toolSchema": {
+          "type": "object",
+          "properties": {
+            "processedData": {
+              "type": "array",
+              "description": "Array of processed job application data from outreach tracking"
+            },
+            "validationLevel": {
+              "type": "string",
+              "description": "Level of validation: basic, standard, comprehensive",
+              "enum": ["basic", "standard", "comprehensive"]
+            },
+            "generateReport": {
+              "type": "boolean",
+              "description": "Generate detailed validation report (default: true)"
+            }
+          },
+          "required": ["processedData"]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1,
+      "position": [100, 100],
+      "id": "validation-mcp-trigger",
+      "name": "Validation Reporting MCP Trigger"
+    },
+    {
+      "id": "comprehensive-validation-engine",
+      "name": "Comprehensive Validation Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 200],
+      "parameters": {
+        "jsCode": "// COMPREHENSIVE VALIDATION ENGINE FOR LINKEDIN AUTOMATION SYSTEM\nconst processedData = $json.processedData || [];\nconst validationLevel = $json.validationLevel || 'standard';\nconst generateReport = $json.generateReport !== false;\n\nconst results = [];\nconst validationReport = {\n  timestamp: new Date().toISOString(),\n  validationLevel: validationLevel,\n  totalRecords: processedData.length,\n  validRecords: 0,\n  invalidRecords: 0,\n  dataLossAnalysis: {\n    semanticJoiningEnabled: 0,\n    positionBasedMerging: 0,\n    zeroDataLossRecords: 0,\n    dataLossPreventionRate: 0\n  },\n  performanceMetrics: {\n    jobDiscoverySuccess: 0,\n    resumeGenerationSuccess: 0,\n    contactEnrichmentSuccess: 0,\n    overallSuccessRate: 0\n  },\n  qualityMetrics: {\n    averageMatchScore: 0,\n    highQualityMatches: 0,\n    dedupeKeyConsistency: 0\n  },\n  errors: [],\n  warnings: [],\n  recommendations: []\n};\n\nlet totalMatchScore = 0;\nlet matchScoreCount = 0;\n\n// VALIDATE EACH PROCESSED RECORD\nprocessedData.forEach((record, index) => {\n  const validation = {\n    recordIndex: index,\n    isValid: true,\n    errors: [],\n    warnings: [],\n    dedupeKey: record.dedupeKey,\n    joinMethod: record.joinMethod || 'unknown',\n    dataLossRisk: record.dataLossRisk || 'UNKNOWN'\n  };\n  \n  // CRITICAL: Validate required fields\n  if (!record.title) {\n    validation.errors.push('Missing job title');\n    validation.isValid = false;\n  }\n  \n  if (!record.companyName && !record.company) {\n    validation.errors.push('Missing company name');\n    validation.isValid = false;\n  }\n  \n  // ZERO DATA LOSS VALIDATION: Check dedupeKey\n  if (!record.dedupeKey) {\n    validation.errors.push('CRITICAL: Missing dedupeKey - will cause data loss in semantic joining');\n    validation.isValid = false;\n  } else {\n    validationReport.qualityMetrics.dedupeKeyConsistency++;\n  }\n  \n  // DATA LOSS ANALYSIS: Track joining methods\n  if (record.joinMethod === 'semantic-field-based') {\n    validationReport.dataLossAnalysis.semanticJoiningEnabled++;\n    if (record.dataLossRisk === 'ZERO') {\n      validationReport.dataLossAnalysis.zeroDataLossRecords++;\n    }\n  } else if (record.joinMethod === 'position-based') {\n    validationReport.dataLossAnalysis.positionBasedMerging++;\n    validation.warnings.push('CRITICAL: Position-based merging detected - HIGH DATA LOSS RISK (85% loss)');\n  }\n  \n  // PERFORMANCE METRICS: Track success rates\n  if (record.title && (record.companyName || record.company)) {\n    validationReport.performanceMetrics.jobDiscoverySuccess++;\n  }\n  \n  if (record.resume) {\n    validationReport.performanceMetrics.resumeGenerationSuccess++;\n  }\n  \n  if (record.contact || record.email) {\n    validationReport.performanceMetrics.contactEnrichmentSuccess++;\n  }\n  \n  // QUALITY METRICS: Track match scores\n  if (record.matchScore && typeof record.matchScore === 'number') {\n    totalMatchScore += record.matchScore;\n    matchScoreCount++;\n    if (record.matchScore >= 85) {\n      validationReport.qualityMetrics.highQualityMatches++;\n    }\n  }\n  \n  // Update counters\n  if (validation.isValid) {\n    validationReport.validRecords++;\n  } else {\n    validationReport.invalidRecords++;\n    validationReport.errors.push(...validation.errors);\n  }\n  \n  validationReport.warnings.push(...validation.warnings);\n  \n  results.push({\n    json: {\n      ...record,\n      validation: validation,\n      validatedAt: new Date().toISOString(),\n      serverType: 'validation-reporting'\n    }\n  });\n});\n\n// CALCULATE FINAL METRICS\nif (validationReport.totalRecords > 0) {\n  validationReport.performanceMetrics.overallSuccessRate = \n    ((validationReport.validRecords / validationReport.totalRecords) * 100).toFixed(2);\n  \n  validationReport.dataLossAnalysis.dataLossPreventionRate = \n    ((validationReport.dataLossAnalysis.zeroDataLossRecords / validationReport.totalRecords) * 100).toFixed(2);\n  \n  validationReport.qualityMetrics.dedupeKeyConsistency = \n    ((validationReport.qualityMetrics.dedupeKeyConsistency / validationReport.totalRecords) * 100).toFixed(2);\n}\n\nif (matchScoreCount > 0) {\n  validationReport.qualityMetrics.averageMatchScore = (totalMatchScore / matchScoreCount).toFixed(2);\n}\n\n// GENERATE RECOMMENDATIONS\nif (validationReport.dataLossAnalysis.positionBasedMerging > 0) {\n  validationReport.recommendations.push('CRITICAL: Switch to semantic joining to prevent 85% data loss');\n}\n\nif (validationReport.qualityMetrics.averageMatchScore < 80) {\n  validationReport.recommendations.push('Consider improving job qualification criteria to increase match scores');\n}\n\nif (validationReport.performanceMetrics.contactEnrichmentSuccess < validationReport.performanceMetrics.jobDiscoverySuccess * 0.8) {\n  validationReport.recommendations.push('Contact enrichment success rate is low - check Apollo.io integration');\n}\n\n// Add validation report as final result\nif (generateReport) {\n  results.push({\n    json: {\n      type: 'VALIDATION_REPORT',\n      report: validationReport,\n      summary: {\n        status: validationReport.validRecords === validationReport.totalRecords ? 'PASSED' : 'FAILED',\n        successRate: `${validationReport.performanceMetrics.overallSuccessRate}%`,\n        dataLossPreventionRate: `${validationReport.dataLossAnalysis.dataLossPreventionRate}%`,\n        semanticJoiningAdoption: `${((validationReport.dataLossAnalysis.semanticJoiningEnabled / validationReport.totalRecords) * 100).toFixed(2)}%`,\n        averageMatchScore: validationReport.qualityMetrics.averageMatchScore,\n        totalRecommendations: validationReport.recommendations.length\n      },\n      serverType: 'validation-reporting',\n      generatedAt: new Date().toISOString()\n    }\n  });\n}\n\nconsole.log(`Validation Complete: ${validationReport.validRecords}/${validationReport.totalRecords} valid records`);\nconsole.log(`Data Loss Prevention Rate: ${validationReport.dataLossAnalysis.dataLossPreventionRate}%`);\n\nreturn results;"
+      }
+    }
+  ],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "b6914fe2-ddcb-452f-804f-77d3775543da",
+  "triggerCount": 0,
+  "exportMetadata": {
+    "exportedAt": "2025-10-02T18:05:00.000Z",
+    "exportVersion": "1.0.0",
+    "category": "archived",
+    "originalActive": false,
+    "originalArchived": true,
+    "backupSystem": "n8n-workflow-backup-v1.0.0",
+    "nodeCount": 3,
+    "lastUpdated": "2025-09-16T15:18:03.000Z"
+  }
+}

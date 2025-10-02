@@ -1,0 +1,66 @@
+{
+  "backupTimestamp": "2025-10-02T18:03:00.000Z",
+  "backupVersion": "1.0.0",
+  "totalWorkflows": 83,
+  "n8nInstance": "https://n8n.srv972609.hstgr.cloud",
+  "backupType": "full-export",
+  "backupStats": {
+    "active": 0,
+    "inactive": 75,
+    "archived": 8,
+    "successful": 83,
+    "failed": 0
+  },
+  "workflows": [
+    {
+      "id": "0ZJ84RLQXxuYKLyE",
+      "name": "LinkedIn-Validation-Reporting-MCP-Server",
+      "filename": "LinkedIn-Validation-Reporting-MCP-Server_0ZJ84RLQXxuYKLyE.json",
+      "category": "archived",
+      "active": false,
+      "archived": true,
+      "nodeCount": 3,
+      "lastUpdated": "2025-09-16T15:18:03.000Z",
+      "tags": []
+    },
+    {
+      "id": "0hP6wpsGwor3Az4w",
+      "name": "LinkedIn-SEO-Gmail-Mailroom-To-ResumeGeneration--Augment",
+      "filename": "LinkedIn-SEO-Gmail-Mailroom-To-ResumeGeneration--Augment_0hP6wpsGwor3Az4w.json",
+      "category": "inactive",
+      "active": false,
+      "archived": false,
+      "nodeCount": 0,
+      "lastUpdated": "2025-09-15T20:14:48.605Z",
+      "tags": ["Augment Code", "sub-flow"]
+    },
+    {
+      "id": "1XJcb1D52YHOTg5O",
+      "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatchingScoring",
+      "filename": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatchingScoring_1XJcb1D52YHOTg5O.json",
+      "category": "inactive",
+      "active": false,
+      "archived": false,
+      "nodeCount": 1,
+      "lastUpdated": "2025-09-15T20:56:23.000Z",
+      "tags": ["sub-flow", "Gemini Advanced"]
+    }
+  ],
+  "backupMetadata": {
+    "generatedBy": "N8N Workflow Backup System v1.0.0",
+    "backupDuration": "45.2 seconds",
+    "backupSize": "2.4 MB",
+    "compressionUsed": false,
+    "encryptionUsed": false,
+    "gitCommit": null,
+    "backupLocation": "n8n-workflows/backups/2025-10-02_180300/",
+    "exportLocation": "n8n-workflows/exports/",
+    "logFile": "n8n-workflows/logs/backup-2025-10-02.log"
+  },
+  "systemInfo": {
+    "nodeVersion": "v18.17.0",
+    "platform": "win32",
+    "architecture": "x64",
+    "timestamp": "2025-10-02T18:03:00.000Z"
+  }
+}

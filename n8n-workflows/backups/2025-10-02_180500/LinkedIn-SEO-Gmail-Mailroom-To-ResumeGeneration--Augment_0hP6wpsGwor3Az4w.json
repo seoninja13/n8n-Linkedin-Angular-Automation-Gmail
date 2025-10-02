@@ -1,0 +1,108 @@
+{
+  "createdAt": "2025-09-15T20:14:48.605Z",
+  "updatedAt": "2025-09-15T20:14:48.605Z",
+  "id": "0hP6wpsGwor3Az4w",
+  "name": "LinkedIn-SEO-Gmail-Mailroom-To-ResumeGeneration--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "dbca4910-e4f0-42e5-861a-88b2efed2063",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-15T20:14:48.610Z",
+      "updatedAt": "2025-09-15T20:14:48.610Z",
+      "role": "workflow:owner",
+      "workflowId": "0hP6wpsGwor3Az4w",
+      "projectId": "1nA39eVus9AACl1f",
+      "project": {
+        "createdAt": "2025-08-23T16:02:53.713Z",
+        "updatedAt": "2025-08-23T16:23:23.630Z",
+        "id": "1nA39eVus9AACl1f",
+        "name": "Ivo Dachev <dachevivo@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "createdAt": "2025-08-23T16:02:53.713Z",
+            "updatedAt": "2025-08-23T16:02:53.713Z",
+            "userId": "0aa3f394-4258-4544-8488-960d18baca6d",
+            "projectId": "1nA39eVus9AACl1f",
+            "user": {
+              "createdAt": "2025-08-23T16:02:52.851Z",
+              "updatedAt": "2025-10-01T22:00:30.000Z",
+              "id": "0aa3f394-4258-4544-8488-960d18baca6d",
+              "email": "dachevivo@gmail.com",
+              "firstName": "Ivo",
+              "lastName": "Dachev",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-08-23T16:24:15.627Z",
+                "personalization_survey_n8n_version": "1.107.4",
+                "automationGoalDevops": [
+                  "cloud-infrastructure-orchestration"
+                ],
+                "companySize": "<20",
+                "companyType": "digital-agency",
+                "role": "it",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "dismissedCallouts": {
+                  "preBuiltAgentsCalloutHttpRequest": true,
+                  "preBuiltAgentsCallout": true,
+                  "preBuiltAgentsCalloutGoogleSheets": true,
+                  "preBuiltAgentsModalCallout": true
+                },
+                "firstSuccessfulWorkflowId": "HuZ10YOgOiTlYGrM",
+                "userActivatedAt": 1757356687300,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1757703111289
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2025-10-01",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-09-10T16:23:08.235Z",
+      "updatedAt": "2025-09-10T16:23:08.235Z",
+      "id": "FrnybmIzoJd732QS",
+      "name": "Augment Code"
+    },
+    {
+      "createdAt": "2025-09-13T21:08:18.122Z",
+      "updatedAt": "2025-09-13T21:08:18.122Z",
+      "id": "H8bAHR6C77zCCEmw",
+      "name": "sub-flow"
+    }
+  ],
+  "exportMetadata": {
+    "exportedAt": "2025-10-02T18:05:00.000Z",
+    "exportVersion": "1.0.0",
+    "category": "inactive",
+    "originalActive": false,
+    "originalArchived": false,
+    "backupSystem": "n8n-workflow-backup-v1.0.0",
+    "nodeCount": 0,
+    "lastUpdated": "2025-09-15T20:14:48.605Z"
+  }
+}

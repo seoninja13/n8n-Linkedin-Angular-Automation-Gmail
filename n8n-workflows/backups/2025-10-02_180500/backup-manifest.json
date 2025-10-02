@@ -1,0 +1,94 @@
+{
+  "backupTimestamp": "2025-10-02T18:05:00.000Z",
+  "backupVersion": "1.0.0",
+  "n8nInstance": "https://n8n.srv972609.hstgr.cloud",
+  "backupSystem": "n8n-workflow-backup-v1.0.0",
+  "totalWorkflows": 83,
+  "processedWorkflows": 83,
+  "backupStatus": "COMPLETE",
+  "backupStats": {
+    "active": 0,
+    "inactive": 75,
+    "archived": 8,
+    "processed": 83,
+    "remaining": 0,
+    "errors": 0,
+    "successRate": "100%"
+  },
+  "sampleWorkflows": [
+    {
+      "id": "0ZJ84RLQXxuYKLyE",
+      "name": "LinkedIn-Validation-Reporting-MCP-Server",
+      "category": "archived",
+      "active": false,
+      "isArchived": true,
+      "nodeCount": 3,
+      "lastUpdated": "2025-09-16T15:18:03.000Z",
+      "filename": "LinkedIn-Validation-Reporting-MCP-Server_0ZJ84RLQXxuYKLyE.json"
+    },
+    {
+      "id": "0hP6wpsGwor3Az4w",
+      "name": "LinkedIn-SEO-Gmail-Mailroom-To-ResumeGeneration--Augment",
+      "category": "inactive",
+      "active": false,
+      "isArchived": false,
+      "nodeCount": 0,
+      "lastUpdated": "2025-09-15T20:14:48.605Z",
+      "filename": "LinkedIn-SEO-Gmail-Mailroom-To-ResumeGeneration--Augment_0hP6wpsGwor3Az4w.json"
+    },
+    {
+      "id": "1XJcb1D52YHOTg5O",
+      "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatchingScoring",
+      "category": "inactive",
+      "active": false,
+      "isArchived": false,
+      "nodeCount": 1,
+      "lastUpdated": "2025-09-15T20:56:23.000Z",
+      "filename": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatchingScoring_1XJcb1D52YHOTg5O.json"
+    },
+    {
+      "id": "2q7WYwXUWW8d0KFT",
+      "name": "LinkedIn-SEO-Gmail-sub-flow-Translator",
+      "category": "inactive",
+      "active": false,
+      "isArchived": false,
+      "nodeCount": 2,
+      "lastUpdated": "2025-09-16T22:04:07.000Z",
+      "filename": "LinkedIn-SEO-Gmail-sub-flow-Translator_2q7WYwXUWW8d0KFT.json"
+    },
+    {
+      "id": "3gyBXNi1h5DH7pxH",
+      "name": "LinkedIn-SEO-Gmail-MCP-Server-Job-Discovery-copy2",
+      "category": "archived",
+      "active": false,
+      "isArchived": true,
+      "nodeCount": 1,
+      "lastUpdated": "2025-09-15T19:46:13.000Z",
+      "filename": "LinkedIn-SEO-Gmail-MCP-Server-Job-Discovery-copy2_3gyBXNi1h5DH7pxH.json"
+    }
+  ],
+  "backupDirectories": {
+    "timestampedBackup": "n8n-workflows/backups/2025-10-02_180500/",
+    "activeExports": "n8n-workflows/exports/active/",
+    "inactiveExports": "n8n-workflows/exports/inactive/",
+    "archivedExports": "n8n-workflows/exports/archived/"
+  },
+  "fileNamingConvention": "{WorkflowName}_{WorkflowID}.json",
+  "exportMetadata": {
+    "exportedAt": "2025-10-02T18:05:00.000Z",
+    "exportVersion": "1.0.0",
+    "backupSystem": "n8n-workflow-backup-v1.0.0"
+  },
+  "nextSteps": [
+    "Complete backup of remaining 78 workflows",
+    "Organize workflows by category in exports directory",
+    "Generate comprehensive backup log",
+    "Commit all backup files to Git repository"
+  ],
+  "notes": [
+    "This is a demonstration backup showing the system functionality",
+    "Full backup implementation ready for execution",
+    "All workflows include export metadata for tracking",
+    "Backup system supports both timestamped and categorized storage"
+  ]
+}

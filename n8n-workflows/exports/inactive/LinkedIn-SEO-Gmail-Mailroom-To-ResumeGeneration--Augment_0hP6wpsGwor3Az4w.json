@@ -1,0 +1,40 @@
+{
+  "createdAt": "2025-09-15T20:14:48.605Z",
+  "updatedAt": "2025-09-15T20:14:48.605Z",
+  "id": "0hP6wpsGwor3Az4w",
+  "name": "LinkedIn-SEO-Gmail-Mailroom-To-ResumeGeneration--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "dbca4910-e4f0-42e5-861a-88b2efed2063",
+  "triggerCount": 0,
+  "tags": [
+    {
+      "createdAt": "2025-09-10T16:23:08.235Z",
+      "updatedAt": "2025-09-10T16:23:08.235Z",
+      "id": "FrnybmIzoJd732QS",
+      "name": "Augment Code"
+    },
+    {
+      "createdAt": "2025-09-13T21:08:18.122Z",
+      "updatedAt": "2025-09-13T21:08:18.122Z",
+      "id": "H8bAHR6C77zCCEmw",
+      "name": "sub-flow"
+    }
+  ],
+  "exportMetadata": {
+    "exportedAt": "2025-10-02T18:03:00.000Z",
+    "exportVersion": "1.0.0",
+    "category": "inactive",
+    "originalActive": false,
+    "originalArchived": false,
+    "backupSystem": "n8n-workflow-backup-v1.0.0"
+  }
+}

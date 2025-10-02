@@ -1,0 +1,100 @@
+{
+  "createdAt": "2025-09-14T19:00:51.599Z",
+  "updatedAt": "2025-09-16T22:04:07.000Z",
+  "id": "2q7WYwXUWW8d0KFT",
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Translator",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "keywords"
+            },
+            {
+              "name": "location"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        -80
+      ],
+      "id": "ef663b88-2e04-4025-b8b3-f994df636d3b",
+      "name": "Execute Workflow - Received from orchestrator"
+    },
+    {
+      "parameters": {
+        "source": "parameter",
+        "workflowJson": "={\n      \"keywords\": \"{{ $json.keywords }}\",\n      \"location\": \"{{ $json.location }}\"\n    }\n}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        -80
+      ],
+      "id": "c8f3606d-1a0e-4576-8d54-7bcb9c639cd9",
+      "name": "Execute workflow - Mailroom Job Discovery"
+    }
+  ],
+  "connections": {
+    "Execute Workflow - Received from orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Execute workflow - Mailroom Job Discovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "versionId": "13353c3c-bc13-4b32-942f-9cd2538af7ea",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-09-14T19:00:51.604Z",
+      "updatedAt": "2025-09-14T19:00:51.604Z",
+      "role": "workflow:owner",
+      "workflowId": "2q7WYwXUWW8d0KFT",
+      "projectId": "1nA39eVus9AACl1f"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-09-13T21:08:18.122Z",
+      "updatedAt": "2025-09-13T21:08:18.122Z",
+      "id": "H8bAHR6C77zCCEmw",
+      "name": "sub-flow"
+    },
+    {
+      "createdAt": "2025-09-12T18:47:10.430Z",
+      "updatedAt": "2025-09-12T18:47:10.430Z",
+      "id": "NfRillbe2Hw5VtLy",
+      "name": "Gemini Advanced"
+    }
+  ],
+  "exportMetadata": {
+    "exportedAt": "2025-10-02T18:05:00.000Z",
+    "exportVersion": "1.0.0",
+    "category": "inactive",
+    "originalActive": false,
+    "originalArchived": false,
+    "backupSystem": "n8n-workflow-backup-v1.0.0",
+    "nodeCount": 2,
+    "lastUpdated": "2025-09-16T22:04:07.000Z"
+  }
+}
