@@ -1,5 +1,5 @@
 {
-  "organizationDomains": [
+  "companyDomain": [
     "cloud.qencode.com",
     "owletcare.com",
     "growforce.agency",
@@ -9,7 +9,17 @@
     "godigitive.com",
     "jrdsi.com"
   ],
-  "personTitles": [
+  "companyEmployeeSize": [
+    "0 - 1",
+    "2 - 10",
+    "11 - 50",
+    "51 - 200",
+    "201 - 500"
+  ],
+  "contactEmailStatus": "verified",
+  "functional": ["Marketing", "HR", "Hiring", "Sales"],
+  "includeEmails": true,
+  "personTitle": [
     "Marketing Specialist",
     "Senior Copywriter",
     "Social Media Manager",
@@ -29,8 +39,14 @@
     "Director of Recruiting",
     "Talent Acquisition Manager"
   ],
-
-  "maxResults": 1000,
-  "getEmails": true,
-  "includeRiskyEmails": false
+  "seniority": [
+    "Vice President",
+    "Director",
+    "Head",
+    "Manager",
+    "Senior",
+    "Entry Level",
+    "Executive"
+  ],
+  "totalResults": 1000
 }

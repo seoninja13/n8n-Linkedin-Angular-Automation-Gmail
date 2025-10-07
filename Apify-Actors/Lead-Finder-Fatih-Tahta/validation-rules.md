@@ -12,7 +12,7 @@
 
 ### **Error #1: `keywords` Field Not Allowed**
 
-**Date Discovered**: 2025-10-06  
+**Date Discovered**: 2025-10-06
 **Error Message**: `"Property input.keywords is not allowed."`
 
 **Problem**:
@@ -35,9 +35,41 @@
 }
 ```
 
-**Root Cause**: Documentation-implementation mismatch  
-**Impact**: Wasted time debugging (similar to Leads Scraper's 80 minutes)  
+**Root Cause**: Documentation-implementation mismatch
+**Impact**: Wasted time debugging (similar to Leads Scraper's 80 minutes)
 **Workaround**: Remove `keywords` field entirely from input JSON
+
+---
+
+### **Error #2: `employeeRanges` Field Not Allowed**
+
+**Date Discovered**: 2025-10-07
+**Error Message**: `"Property input.employeeRanges is not allowed."`
+
+**Problem**:
+- This field **WAS WORKING** in Test #2 (2025-10-06) and passed validation
+- As of 2025-10-07, the API now **REJECTS** this field with a validation error
+- This indicates an **API change** or **schema update** by the actor developer
+
+**Previous Working Example (Test #2 - 2025-10-06)**:
+```json
+{
+  "organizationDomains": ["acme.com"],
+  "employeeRanges": ["1,10", "11,50", "51,200", "201,500"]  // ✅ WORKED in Test #2
+}
+```
+
+**Current Required Format (2025-10-07)**:
+```json
+{
+  "organizationDomains": ["acme.com"]  // ✅ CORRECT - No employeeRanges field
+}
+```
+
+**Root Cause**: Actor API schema change between 2025-10-06 and 2025-10-07
+**Impact**: Minimal - field was optional and primarily used for secondary filtering
+**Workaround**: Remove `employeeRanges` field entirely from input JSON
+**Functionality Impact**: Actor will return contacts from companies of ANY size (not filtered by employee count)
 
 ---
 
@@ -49,7 +81,7 @@
 |-----------|----------|--------------|----------------------|-------------|
 | `organizationDomains` | Array | ⚠️ Optional* | Array of domain strings | `["stripe.com", "shopify.com"]` |
 | `personTitles` | Array | ⚠️ Optional* | Array of job title strings | `["Head of Marketing", "VP Marketing"]` |
-| `employeeRanges` | Array | Optional | Format: `"min,max"` (comma, no spaces) | `["1,10", "11,50", "51,200"]` |
+| ~~`employeeRanges`~~ | ~~Array~~ | ~~Optional~~ | ❌ **REMOVED** (API change 2025-10-07) | ~~`["1,10", "11,50", "51,200"]`~~ |
 | `maxResults` | Number | Optional | Default: 50000, Max: 50000 | `1000` |
 | `getEmails` | Boolean | Optional | Default: `true` | `true` |
 | `includeRiskyEmails` | Boolean | Optional | Default: `true` | `false` |
@@ -63,6 +95,7 @@
 | **Field** | **Status** | **Error Message** | **Notes** |
 |-----------|------------|-------------------|-----------|
 | `keywords` | ❌ **NOT ALLOWED** | `"Property input.keywords is not allowed."` | Despite appearing in README example |
+| `employeeRanges` | ❌ **NOT ALLOWED** (as of 2025-10-07) | `"Property input.employeeRanges is not allowed."` | **API CHANGE**: Worked in Test #2 (2025-10-06), now rejected |
 
 ---
 
@@ -170,6 +203,8 @@
 
 ## 🧪 **Validated Test Input** (Confirmed Working)
 
+### **Current Working Input (as of 2025-10-07)**:
+
 ```json
 {
   "organizationDomains": [
@@ -202,23 +237,35 @@
     "Director of Recruiting",
     "Talent Acquisition Manager"
   ],
-  "employeeRanges": [
-    "1,10",
-    "11,50",
-    "51,200",
-    "201,500"
-  ],
   "maxResults": 1000,
   "getEmails": true,
   "includeRiskyEmails": false
 }
 ```
 
-**Validation Status**: ✅ **PASSED** (no errors when submitting to API)
-**Date Validated**: 2025-10-06
-**Execution Status**: 🔄 **IN PROGRESS** (waiting for actor to return results)
+**Validation Status**: ✅ **EXPECTED TO PASS** (employeeRanges field removed)
+**Date Updated**: 2025-10-07
+**Change**: Removed `employeeRanges` field due to API validation error
 
-**Note**: This input passed validation and the actor started successfully. We are now waiting for the actual results to determine email yield and data quality.
+---
+
+### **Previous Working Input (Test #2 - 2025-10-06)** - ⚠️ **NO LONGER VALID**:
+
+```json
+{
+  "organizationDomains": [...],
+  "personTitles": [...],
+  "employeeRanges": ["1,10", "11,50", "51,200", "201,500"],  // ❌ NOW REJECTED
+  "maxResults": 1000,
+  "getEmails": true,
+  "includeRiskyEmails": false
+}
+```
+
+**Validation Status**: ❌ **FAILS** (as of 2025-10-07)
+**Date Validated**: 2025-10-06 (worked then, fails now)
+**Error**: `"Property input.employeeRanges is not allowed."`
+**Reason**: Actor API schema changed between 2025-10-06 and 2025-10-07
 
 ---
 
@@ -244,8 +291,9 @@ These fields appear in the actor's documentation but have NOT been tested yet:
 | **Error #** | **Date** | **Field** | **Error Message** | **Root Cause** | **Fix** | **Time Wasted** |
 |-------------|----------|-----------|-------------------|----------------|---------|-----------------|
 | **#1** | 2025-10-06 | `keywords` | `"Property input.keywords is not allowed."` | Documentation bug | Remove field | ~5 minutes |
+| **#2** | 2025-10-07 | `employeeRanges` | `"Property input.employeeRanges is not allowed."` | API schema change | Remove field | ~10 minutes |
 
-**Total Time Wasted**: ~5 minutes (vs 80 minutes for Leads Scraper)
+**Total Time Wasted**: ~15 minutes (vs 80 minutes for Leads Scraper)
 
 ---
 
@@ -289,11 +337,12 @@ These fields appear in the actor's documentation but have NOT been tested yet:
 | **Date** | **Error #** | **Field** | **Action** |
 |----------|-------------|-----------|------------|
 | 2025-10-06 | #1 | `keywords` | Documented and removed from input schema |
+| 2025-10-07 | #2 | `employeeRanges` | Documented API change and removed from input schema |
 
 ---
 
-**Last Updated**: 2025-10-06  
-**Next Action**: Test corrected input JSON to identify any additional validation errors
+**Last Updated**: 2025-10-07
+**Next Action**: Test corrected input JSON (without employeeRanges) to verify it works
 
 ---
 
