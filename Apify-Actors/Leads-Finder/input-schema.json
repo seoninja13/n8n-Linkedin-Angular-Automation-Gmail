@@ -1,0 +1,40 @@
+{
+  "fetch_count": 500,
+  "file_name": "Contact_Enrichment_Batch",
+  "company_domain": [
+    "notion.so",
+    "stripe.com", 
+    "shopify.com",
+    "figma.com",
+    "linear.app"
+  ],
+  "contact_job_title": [
+    "Head of Talent",
+    "VP People", 
+    "Director of Recruiting",
+    "Talent Acquisition Manager",
+    "HR Manager",
+    "Chief People Officer",
+    "Head of People",
+    "VP Human Resources"
+  ],
+  "seniority_level": [
+    "c_level",
+    "vice_president", 
+    "director",
+    "head",
+    "manager"
+  ],
+  "functional_level": [
+    "hr",
+    "operations"
+  ],
+  "email_status": ["validated"],
+  "exclude_catch_all_domain": true,
+  "size": [
+    "201-500",
+    "501-1000", 
+    "1001-2000",
+    "2001-5000"
+  ]
+}

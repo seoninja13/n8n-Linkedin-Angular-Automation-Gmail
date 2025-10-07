@@ -1,0 +1,36 @@
+{
+  "organizationDomains": [
+    "cloud.qencode.com",
+    "owletcare.com",
+    "growforce.agency",
+    "gaggleamp.com",
+    "howtorebuildcivilization.com",
+    "fete.com",
+    "godigitive.com",
+    "jrdsi.com"
+  ],
+  "personTitles": [
+    "Marketing Specialist",
+    "Senior Copywriter",
+    "Social Media Manager",
+    "Growth Marketing Manager",
+    "Content Marketing Manager",
+    "Head of Marketing",
+    "Director of Marketing",
+    "Head of Communications",
+    "Content Editor",
+    "Social Content Specialist",
+    "Marketing Manager",
+    "VP Marketing",
+    "Chief Marketing Officer",
+    "Head of Talent",
+    "VP People",
+    "HR Manager",
+    "Director of Recruiting",
+    "Talent Acquisition Manager"
+  ],
+  "employeeRanges": ["1,10", "11,50", "51,200", "201,500"],
+  "maxResults": 1000,
+  "getEmails": true,
+  "includeRiskyEmails": false
+}

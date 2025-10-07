@@ -1,0 +1,47 @@
+{
+  "personTitle": [
+    "Head of Talent",
+    "VP People", 
+    "Director of Recruiting",
+    "Talent Acquisition Manager",
+    "HR Manager",
+    "Chief People Officer",
+    "Head of People",
+    "VP Human Resources",
+    "Director of People",
+    "Talent Acquisition Specialist"
+  ],
+  "seniority": [
+    "C-Level",
+    "VP", 
+    "Director",
+    "Head",
+    "Manager"
+  ],
+  "companyEmployeeSize": [
+    "201-500",
+    "501-1000", 
+    "1001-5000",
+    "5001-10000"
+  ],
+  "personCountry": [
+    "United States"
+  ],
+  "contactEmailStatus": [
+    "verified"
+  ],
+  "functional": [
+    "Human Resources",
+    "Operations",
+    "Management"
+  ],
+  "companyDomain": [
+    "notion.so",
+    "stripe.com", 
+    "shopify.com",
+    "figma.com",
+    "linear.app"
+  ],
+  "totalResults": 500,
+  "includeEmails": true
+}

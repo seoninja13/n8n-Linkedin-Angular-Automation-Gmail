@@ -1,0 +1,121 @@
+{
+  "large_batch_100_companies": {
+    "description": "Single batch processing 100 job postings - RECOMMENDED for cost efficiency",
+    "use_case": "Process all 100 job postings in one actor execution",
+    "cost_estimate": "$0.20 (200 leads × $1.4/1k, minimum 100 leads charged)",
+    "execution_time": "15-20 minutes",
+    "input": {
+      "companyDomain": [
+        "notion.so", "stripe.com", "shopify.com", "figma.com", "linear.app",
+        "slack.com", "zoom.us", "dropbox.com", "atlassian.com", "github.com",
+        "gitlab.com", "docker.com", "mongodb.com", "redis.com", "elastic.co",
+        "snowflake.com", "databricks.com", "palantir.com", "twilio.com", "sendgrid.com",
+        "mailchimp.com", "hubspot.com", "salesforce.com", "workday.com", "servicenow.com",
+        "zendesk.com", "intercom.com", "segment.com", "amplitude.com", "mixpanel.com",
+        "datadog.com", "newrelic.com", "splunk.com", "pagerduty.com", "okta.com",
+        "auth0.com", "cloudflare.com", "fastly.com", "akamai.com", "aws.amazon.com",
+        "microsoft.com", "google.com", "apple.com", "meta.com", "netflix.com",
+        "uber.com", "lyft.com", "airbnb.com", "doordash.com", "instacart.com",
+        "coinbase.com", "robinhood.com", "square.com", "paypal.com", "venmo.com",
+        "plaid.com", "chime.com", "affirm.com", "klarna.com", "afterpay.com",
+        "peloton.com", "mirror.co", "tonal.com", "whoop.com", "oura.com",
+        "23andme.com", "ancestry.com", "illumina.com", "moderna.com", "pfizer.com",
+        "johnson.com", "merck.com", "abbvie.com", "gilead.com", "biogen.com",
+        "regeneron.com", "amgen.com", "celgene.com", "genentech.com", "roche.com",
+        "novartis.com", "sanofi.com", "gsk.com", "astrazeneca.com", "bms.com",
+        "lilly.com", "abbott.com", "medtronic.com", "boston-scientific.com", "stryker.com",
+        "zimmer.com", "smith-nephew.com", "edwards.com", "intuitive.com", "danaher.com",
+        "thermo.com", "agilent.com", "waters.com", "perkinelmer.com", "bio-rad.com",
+        "qiagen.com", "illumina.com", "10xgenomics.com", "twist.com", "synthetic.com",
+        "zymergen.com", "ginkgo.com", "modern-meadow.com", "bolt.com", "impossible.com",
+        "beyond.com", "oatly.com", "just.com", "memphis.com", "upside.com"
+      ],
+      "totalResults": 200,
+      "personTitle": [
+        "Head of Talent", "VP People", "Director of Recruiting", 
+        "Talent Acquisition Manager", "HR Manager", "Chief People Officer",
+        "Head of People", "VP Human Resources", "Director of People"
+      ],
+      "seniority": ["Manager", "Director", "VP", "Head"],
+      "functional": ["Human Resources", "Operations"],
+      "contactEmailStatus": ["verified"],
+      "companyEmployeeSize": ["201-500", "501-1000", "1001-5000", "5001-10000"],
+      "personCountry": ["United States"],
+      "includeEmails": true
+    }
+  },
+  
+  "medium_batch_20_companies": {
+    "description": "Medium batch processing 20 companies - BALANCED approach",
+    "use_case": "Process 20 job postings per batch (5 batches total for 100 jobs)",
+    "cost_estimate": "$0.50 (5 batches × 100 leads minimum × $1.4/1k)",
+    "execution_time": "5-8 minutes per batch",
+    "input": {
+      "companyDomain": [
+        "notion.so", "stripe.com", "shopify.com", "figma.com", "linear.app",
+        "slack.com", "zoom.us", "dropbox.com", "atlassian.com", "github.com",
+        "gitlab.com", "docker.com", "mongodb.com", "redis.com", "elastic.co",
+        "snowflake.com", "databricks.com", "palantir.com", "twilio.com", "sendgrid.com"
+      ],
+      "totalResults": 40,
+      "personTitle": [
+        "Head of Talent", "VP People", "Director of Recruiting",
+        "Talent Acquisition Manager", "HR Manager", "Chief People Officer"
+      ],
+      "seniority": ["Manager", "Director", "VP", "Head"],
+      "functional": ["Human Resources", "Operations"],
+      "contactEmailStatus": ["verified"],
+      "companyEmployeeSize": ["201-500", "501-1000", "1001-5000"],
+      "personCountry": ["United States"],
+      "includeEmails": true
+    }
+  },
+
+  "small_batch_5_companies": {
+    "description": "Small batch processing 5 companies - TESTING approach",
+    "use_case": "Test batch or process high-priority companies",
+    "cost_estimate": "$0.14 (100 leads minimum × $1.4/1k)",
+    "execution_time": "2-3 minutes",
+    "input": {
+      "companyDomain": [
+        "notion.so", "stripe.com", "shopify.com", "figma.com", "linear.app"
+      ],
+      "totalResults": 10,
+      "personTitle": [
+        "Head of Talent", "VP People", "Director of Recruiting",
+        "Talent Acquisition Manager", "HR Manager"
+      ],
+      "seniority": ["Manager", "Director", "VP", "Head"],
+      "functional": ["Human Resources", "Operations"],
+      "contactEmailStatus": ["verified"],
+      "companyEmployeeSize": ["201-500", "501-1000", "1001-5000"],
+      "personCountry": ["United States"],
+      "includeEmails": true
+    }
+  },
+
+  "fallback_relaxed_filters": {
+    "description": "Relaxed filters for companies with zero results",
+    "use_case": "Second pass for companies that returned no contacts",
+    "cost_estimate": "$0.14 (100 leads minimum × $1.4/1k)",
+    "execution_time": "2-5 minutes",
+    "input": {
+      "companyDomain": [
+        "company-with-no-results-1.com",
+        "company-with-no-results-2.com",
+        "company-with-no-results-3.com"
+      ],
+      "totalResults": 50,
+      "personTitle": [
+        "Recruiter", "HR Specialist", "People Partner", "Talent Partner",
+        "HR Business Partner", "Recruiting Coordinator", "HR Coordinator"
+      ],
+      "seniority": ["Senior", "Manager", "Director", "VP", "Head"],
+      "functional": ["Human Resources", "Operations", "Management"],
+      "contactEmailStatus": ["verified", "unverified"],
+      "companyEmployeeSize": ["51-200", "201-500", "501-1000", "1001-5000", "5001-10000"],
+      "personCountry": ["United States", "Canada"],
+      "includeEmails": true
+    }
+  }
+}
