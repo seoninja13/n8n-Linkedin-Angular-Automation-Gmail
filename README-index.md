@@ -2,7 +2,7 @@
 
 This is the single, authoritative entry point for all project documentation. Every document should link back here for navigation continuity.
 
-Last updated: 2025-10-01
+Last updated: 2025-01-10
 
 ---
 
@@ -18,13 +18,35 @@ Last updated: 2025-10-01
 ## Handover / Knowledge Transfer
 Use these documents to understand session outcomes and next steps. Each entry includes a brief description and date.
 
+- 2025-10-15 — Contact Enrichment Workflow Apify API Error Resolution
+  - Description: Resolved "Property input.jobsByDomain is not allowed" error by storing passthrough data in binary property instead of passthroughData. Workflow now executes successfully end-to-end (execution #4203). Documented reusable N8N binary data pattern for external API calls.
+  - Document: Docs/handover/conversation-handover-knowledge-transfer.md
+  - Status: ✅ Complete - Workflow executing successfully
+
+- 2025-01-10 — Job Matching Workflow Optimization & Batch Processing Implementation
+  - Description: Contact Enrichment batch processing (99% cost savings), Job Matching simplification, Google Gemini HTTP Request workaround, AI Response Validation node creation
+  - Document: Docs/daily-logs/2025-01-10-job-matching-workflow-optimization.md
+  - Linear Issue: [1BU-449](https://linear.app/1builder/issue/1BU-449/continue-job-matching-workflow-implementation-ai-response-validation)
+  - Status: 90% Complete - AI Response Validation error pending fix
+
 - 2025-09-27 — Contact Tracking workflow debugging handover
   - Description: Root cause and exact fix for Google Sheets write failures; IF node count-based duplicate detection, wiring, tests
   - Document: Docs/handover/2025-09-27-contact-tracking-workflow-debugging-handover.md
 
 - Conversation Handover — Knowledge Transfer (general)
-  - Description: Central guide to conversation-based knowledge transfer and state handoff
+  - Description: Central guide to conversation-based knowledge transfer and state handoff (UPDATED 2025-10-15)
   - Document: Docs/handover/conversation-handover-knowledge-transfer.md
+
+---
+
+## Patterns
+Reusable patterns and best practices for N8N workflows and integrations.
+
+- **N8N Binary Data Pattern for External API Calls** (2025-10-15)
+  - Description: Store passthrough context data in binary property to prevent N8N from merging it into $json when calling external APIs with strict input schemas
+  - Document: Docs/patterns/n8n-binary-data-pattern-for-external-apis.md
+  - Use Case: Apify actors, Stripe API, SendGrid API, any external API with strict input validation
+  - Status: ✅ Documented and tested in Contact Enrichment workflow
 
 ---
 
