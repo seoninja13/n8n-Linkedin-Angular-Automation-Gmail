@@ -219,3 +219,6 @@ Orchestrator-LIVE-STATE.json
 Contact-Enrichment-Live-Workflow-Retrieved.json
 Contact-Enrichment-Workflow-LIVE-STATE.json
 Contact-Enrichment-Workflow-UPDATED-STATE.json
+
+# N8N to Python conversion tool
+n8n2python/
