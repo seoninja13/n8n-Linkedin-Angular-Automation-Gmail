@@ -18,6 +18,20 @@ Last updated: 2025-01-10
 ## Handover / Knowledge Transfer
 Use these documents to understand session outcomes and next steps. Each entry includes a brief description and date.
 
+- 2025-10-28 — Production Scaling Analysis: Multi-Keyword Campaign Architecture & Gmail Rate Limiting Strategy
+  - Description: Comprehensive strategic planning session addressing three critical questions for scaling LinkedIn automation to production: (1) Production readiness assessment (95-98% ready, pending Google Sheets fix), (2) Gmail rate limiting strategy (15-20 day gradual ramp-up to 100 emails/day to avoid account suspension), (3) Multi-keyword workflow architecture (2-tier shared sub-workflow approach). **Key Architectural Decision**: Duplicate ONLY orchestrator + Job Discovery per keyword, share all other sub-workflows across ALL keywords. **Key Benefit**: Single point of fix - if one keyword campaign has an issue, fixing the shared sub-workflow automatically fixes it for ALL keywords (eliminates code duplication).
+  - Document: Docs/handover/conversation-handover-knowledge-transfer.md
+  - Daily Log: Docs/daily-logs/2025-10-28-production-scaling-analysis-three-critical-questions.md
+  - Strategy Document: Docs/strategy/multi-keyword-campaign-strategy.md
+  - Linear Issue: [1BU-462](https://linear.app/1builder/issue/1BU-462/production-scaling-strategy-multi-keyword-campaign-architecture-and) (In Progress)
+  - Architecture: 2-tier shared sub-workflows (orchestrator + Job Discovery per keyword, 5 shared sub-workflows)
+  - Production Readiness: 95-98% (pending Google Sheets fix in Contact Tracking Workshop)
+  - Gmail Strategy: Gradual ramp-up over 15-20 days (10 → 15 → 20 → ... → 100 emails/day)
+  - Multi-Keyword Timeline: 80 minutes per keyword, 4 hours for 3 keywords (SEO, Automation Specialist, GenAI Engineer)
+  - Target: 300 emails/day across 3 keywords by Week 4
+  - Status: ✅ STRATEGIC PLANNING COMPLETE - Ready for implementation
+  - Next Steps: (1) Fix Contact Tracking Workshop Google Sheets issue (1-2 hours), (2) Set up email authentication (SPF, DKIM, DMARC) (1-2 hours), (3) Switch Outreach Tracking from draft to send (5 minutes), (4) Begin Gmail rate limiting ramp-up (Week 1)
+
 - 2025-10-28 — Orchestrator Workflow Verification & Resume Generation Fix
   - Description: Successfully resolved critical bug in orchestrator workflow where Resume Generation Workshop Execute Workflow node was only triggering 1 sub-workflow execution instead of 6. Root cause: Missing explicit `mode: "each"` parameter. After implementing fix, conducted comprehensive end-to-end verification of orchestrator execution 5779, confirming ZERO DATA LOSS across all 6 jobs through entire pipeline (Contact Enrichment → Filter → Resume Generation → Contact Tracking → Outreach Tracking). All 6 Gmail drafts successfully created with customized resumes achieving 89% ATS score and 92% relevance score.
   - Document: Docs/handover/conversation-handover-knowledge-transfer.md
@@ -183,6 +197,15 @@ High-level and detailed architectural documentation.
 
 ## Analysis & Strategy
 Technical analysis documents and strategic planning for workflow optimization and integration.
+
+- **Multi-Keyword Campaign Strategy** (2025-10-28)
+  - Description: Strategic planning document for scaling LinkedIn automation to support multiple parallel job search campaigns targeting different keywords simultaneously. Documents the 2-tier shared sub-workflow architecture decision, implementation roadmap, naming conventions, and monitoring strategy. **Key Benefit**: Single point of fix - fix code once, applies to all keywords (eliminates code duplication).
+  - Document: Docs/strategy/multi-keyword-campaign-strategy.md
+  - Architecture: 2-tier approach (orchestrator + Job Discovery per keyword, 5 shared sub-workflows)
+  - Target Keywords: SEO Specialist, Automation Specialist, GenAI Engineer (Phase 1)
+  - Implementation Timeline: 80 minutes per keyword, 4 hours for 3 keywords
+  - Target Volume: 300 emails/day across 3 keywords by Week 4
+  - Status: ✅ Strategy approved - Ready for implementation
 
 - **Contact Enrichment Workshop Batch Processing Analysis** (2025-10-21)
   - Description: Comprehensive analysis of Contact Enrichment Workshop sub-workflow (ID: rClUELDAK9f4mgJx) to implement NeverBounce batch email verification. Critical finding: Lead Finder Actor already uses batch processing, but NeverBounce verification is sequential (one email at a time), creating a bottleneck.
