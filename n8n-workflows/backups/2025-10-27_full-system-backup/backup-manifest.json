@@ -1,0 +1,79 @@
+{
+  "backupMetadata": {
+    "backupDate": "2025-10-27T01:43:00.000Z",
+    "backupType": "full-system-backup",
+    "backupMethod": "n8n-mcp-server-tools",
+    "totalWorkflows": 83,
+    "backupStatus": "IN_PROGRESS",
+    "backupStarted": "2025-10-27T01:43:00.000Z",
+    "backupCompleted": null
+  },
+  "workflowCategories": {
+    "active": 2,
+    "inactive": 54,
+    "archived": 27
+  },
+  "criticalWorkflowsBackedUp": [
+    {
+      "id": "zTtSVmTg3UaV9tPG",
+      "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ResumeGeneration--Augment",
+      "status": "inactive",
+      "versionId": "92573b62-1ec1-434d-9e24-75cd4cbca3cf",
+      "lastUpdated": "2025-10-27T01:42:54.189Z",
+      "backupLocation": "../2025-10-26_CRITICAL-BACKUP/2025-10-26_Resume-Generation-Workshop_zTtSVmTg3UaV9tPG_PRE-FIX.json",
+      "notes": "Resume Generation fix applied before this backup - pre-fix version backed up separately"
+    },
+    {
+      "id": "wZyxRjWShhnSFbSV",
+      "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactTracking--Augment",
+      "status": "inactive",
+      "versionId": "a87c07b7-4fc5-4005-9aad-7af258c6f5f7",
+      "lastUpdated": "2025-10-26T22:52:50.776Z",
+      "nodeCount": 13,
+      "backupStatus": "RETRIEVED"
+    },
+    {
+      "id": "Vp9DpKF3xT2ysHhx",
+      "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-OutreachTracking--Augment",
+      "status": "inactive",
+      "versionId": "1e076f26-aa2d-4d7f-b176-487d83371d56",
+      "lastUpdated": "2025-10-26T22:37:07.907Z",
+      "nodeCount": 12,
+      "backupStatus": "RETRIEVED"
+    },
+    {
+      "id": "HuZ10YOgOiTlYGrM",
+      "name": "Test  - MCP Calendar",
+      "status": "active",
+      "versionId": "be9145a9-d512-4df6-87ae-798ce0898aed",
+      "lastUpdated": "2025-09-16T15:19:28.000Z",
+      "nodeCount": 3,
+      "backupStatus": "RETRIEVED"
+    }
+  ],
+  "recentChanges": {
+    "resumeGenerationFix": {
+      "workflowId": "zTtSVmTg3UaV9tPG",
+      "fixApplied": "2025-10-27T01:42:54.189Z",
+      "changeDescription": "Updated AI Resume Customization node prompt to correctly reference Google Docs content field",
+      "preFixVersionId": "2d1dbdc7-ab29-41f4-83d6-de40c1cdecc8",
+      "postFixVersionId": "92573b62-1ec1-434d-9e24-75cd4cbca3cf",
+      "preFixBackupLocation": "../2025-10-26_CRITICAL-BACKUP/"
+    }
+  },
+  "backupProgress": {
+    "workflowsRetrieved": 4,
+    "workflowsRemaining": 79,
+    "percentComplete": 4.8,
+    "estimatedTimeRemaining": "10-15 minutes"
+  },
+  "notes": [
+    "This backup was initiated after applying the Resume Generation Workshop fix",
+    "Critical workflows (Resume Generation, Contact Tracking, Outreach Tracking) have been retrieved",
+    "Full 83-workflow backup is in progress",
+    "Previous backup: 2025-10-02 (24 days old)",
+    "Backup includes complete workflow configurations (nodes, connections, settings, metadata)",
+    "Credentials are referenced by ID but not backed up for security"
+  ]
+}
+

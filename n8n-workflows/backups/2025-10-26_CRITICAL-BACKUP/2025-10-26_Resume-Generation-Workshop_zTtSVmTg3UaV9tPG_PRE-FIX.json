@@ -1,0 +1,184 @@
+{
+  "backupMetadata": {
+    "backupDate": "2025-10-26T23:00:00.000Z",
+    "backupReason": "CRITICAL BACKUP - Before applying AI prompt fix for resume generation quality issue",
+    "workflowId": "zTtSVmTg3UaV9tPG",
+    "workflowName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ResumeGeneration--Augment",
+    "versionId": "2d1dbdc7-ab29-41f4-83d6-de40c1cdecc8",
+    "lastUpdated": "2025-10-25T20:46:26.000Z",
+    "backupType": "pre-fix-safety-backup",
+    "plannedChange": "Update AI Resume Customization node prompt to reference correct Google Docs field (change $json.data to $('Get a document').item.json.content)",
+    "rollbackProcedure": "Use n8n_update_partial_workflow or import this JSON file to restore the workflow to its pre-fix state"
+  },
+  "workflow": {
+    "createdAt": "2025-09-15T20:35:34.416Z",
+    "updatedAt": "2025-10-25T20:46:26.000Z",
+    "id": "zTtSVmTg3UaV9tPG",
+    "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ResumeGeneration--Augment",
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [-544, -112],
+        "id": "706eea04-4a25-4765-ae47-c9d19fa53fc8",
+        "name": "Execute Workflow Trigger - From Orchestrator"
+      },
+      {
+        "parameters": {
+          "jsCode": "// RESUME GENERATION - INPUT PROCESSING (FIXED FOR DOUBLE NESTING)\n// Processes job data and matching results for resume customization\n// FIXED: Handles Contact Enrichment Workshop's double nested jobData structure\n\nconst inputData = $json;\nconsole.log('🔍 Resume Generation Input Debug:');\nconsole.log('   Input keys:', Object.keys(inputData));\nconsole.log('   JobData keys:', inputData.jobData ? Object.keys(inputData.jobData) : 'No jobData');\n\n// CRITICAL FIX: Handle double nested jobData structure from Contact Enrichment\n// Contact Enrichment outputs: { jobData: { jobData: {...}, qualityValidation: {...} } }\n// We need to extract the INNER jobData object\nconst jobData = (inputData.jobData && inputData.jobData.jobData) \n  ? inputData.jobData.jobData \n  : (inputData.jobData || inputData);\n\nconsole.log('   Extracted jobData keys:', Object.keys(jobData));\n\n// CRITICAL FIX: Extract qualityValidation from the outer jobData wrapper\n// This contains the Job Matching Workshop's quality analysis\nconst jobAnalysis = (inputData.jobData && inputData.jobData.qualityValidation)\n  ? inputData.jobData.qualityValidation\n  : (inputData.jobAnalysis || inputData.jobMatching || null);\n\nconsole.log('   JobAnalysis keys:', jobAnalysis ? Object.keys(jobAnalysis) : 'No jobAnalysis');\n\n// ✅ CRITICAL FIX: Handle field name differences between workshops\nconst jobTitle = jobData.jobTitle || jobData.title; // ← FIXED: Now checks both 'jobTitle' and 'title'\nconst companyName = jobData.company || jobData.companyName; // Handle both field names\nconst jobLocation = jobData.location || 'Not specified';\nconst jobDescription = jobData.description || jobData.descriptionText || jobData.descriptionHtml || '';\n\n// FIXED: Validate required inputs with proper field names\nif (!jobTitle || !companyName) {\n  console.error('❌ Validation failed:');\n  console.error('   Title:', jobTitle);\n  console.error('   Company:', companyName);\n  console.error('   Available jobData fields:', Object.keys(jobData));\n  console.error('   Input structure:', JSON.stringify(inputData, null, 2));\n  throw new Error(`Invalid job data: missing required fields (title: ${!!jobTitle}, company: ${!!companyName})`);\n}\n\n// FIXED: Handle analysis data structure differences\nlet analysisScore = 0;\nlet analysisRecommendation = 'UNKNOWN';\nlet keyStrengths = [];\nlet potentialConcerns = [];\nlet skillsAnalysis = {};\nlet matchingKeywords = [];\n\nif (jobAnalysis) {\n  // Handle both Job Matching Workshop output (qualityValidation) and direct jobAnalysis\n  analysisScore = jobAnalysis.qualityScore || jobAnalysis.score || jobAnalysis.compatibilityScore || 75;\n  analysisRecommendation = jobAnalysis.recommendation || 'GOOD_MATCH';\n  keyStrengths = jobAnalysis.keyStrengths || [];\n  potentialConcerns = jobAnalysis.issues || jobAnalysis.potentialConcerns || [];\n  skillsAnalysis = jobAnalysis.skillsAnalysis || {};\n  matchingKeywords = jobAnalysis.matchingKeywords || [];\n} else {\n  console.log('⚠️ No job analysis data found - using defaults');\n  analysisScore = 75; // Default passing score\n  analysisRecommendation = 'DEFAULT_MATCH';\n}\n\n// Extract key job requirements for resume customization\nconst jobRequirements = {\n  title: jobTitle,\n  company: companyName,\n  location: jobLocation,\n  description: jobDescription,\n  requirements: jobData.requirements || '',\n  skills: jobData.skills || [],\n  experience: jobData.experienceLevel || 'Not specified',\n  jobType: jobData.jobType || jobData.employmentType || 'Not specified',\n  industry: jobData.industry || 'Not specified'\n};\n\n// Extract matching analysis for customization guidance\nconst matchingGuidance = {\n  compatibilityScore: analysisScore,\n  score: analysisScore, // Provide both field names for compatibility\n  recommendation: analysisRecommendation,\n  keyStrengths: keyStrengths,\n  potentialConcerns: potentialConcerns,\n  skillsAnalysis: skillsAnalysis,\n  matchingKeywords: matchingKeywords,\n  analysisType: jobAnalysis?.analysisType || 'job-resume-match'\n};\n\n// Prepare data for resume customization\nconst customizationInput = {\n  job: jobRequirements,\n  matching: matchingGuidance,\n  customizationType: 'job-specific-resume-generation',\n  timestamp: new Date().toISOString(),\n  originalInput: inputData // Keep original for debugging\n};\n\nconsole.log('✅ Resume Generation Input Processing Success:');\nconsole.log(`   Job: ${jobTitle} at ${companyName}`);\nconsole.log(`   Compatibility Score: ${analysisScore}%`);\nconsole.log(`   Recommendation: ${analysisRecommendation}`);\nconsole.log(`   Key Strengths: ${keyStrengths.length} items`);\nconsole.log(`   Analysis Type: ${jobAnalysis?.analysisType || 'default'}`);\n\nreturn [{ json: customizationInput }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [-352, -112],
+        "id": "544f3e8a-bb95-4152-aa53-7b003139d366",
+        "name": "Job-Resume Input Processing"
+      },
+      {
+        "parameters": {
+          "modelId": {
+            "__rl": true,
+            "value": "models/gemini-2.0-flash",
+            "mode": "list",
+            "cachedResultName": "models/gemini-2.0-flash"
+          },
+          "messages": {
+            "values": [
+              {
+                "content": "═══════════════════════════════════════════════════════════════\n🎯 **QUALITY THRESHOLD CONFIGURATION** 🎯\n═══════════════════════════════════════════════════════════════\n\n**CURRENT ATS SCORE THRESHOLD: 50%**\n\n📝 **THRESHOLD ADJUSTMENT GUIDE:**\n• 🧪 **TESTING MODE**: 50% (current setting - allows more items through for pipeline testing)\n• 🚀 **PRODUCTION MODE**: 80% (high-quality resumes for actual job applications)  \n• 🔧 **DEBUG MODE**: 0% (passes all items - use only for troubleshooting)\n• ⚖️ **BALANCED MODE**: 65% (moderate quality standards)\n\n**TO CHANGE THRESHOLD**: Update the percentage above and in the Quality Standards section below\n\n═══════════════════════════════════════════════════════════════\n\nYou are an expert Resume Customization AI that creates job-specific resumes. Your task is to customize a base resume for a specific job posting, emphasizing relevant skills and experience.\n\n**INPUT DATA:**\nJob Information: {{ $('Job-Resume Input Processing').item.json.job }}\nMatching Analysis: {{ $('Job-Resume Input Processing').item.json.matching }}\nBase Resume: {{ $json.data }}\n\n**CUSTOMIZATION REQUIREMENTS:**\n\n1. **Skills Emphasis**: Highlight skills that match job requirements with specific examples and quantified achievements\n2. **Experience Relevance**: Emphasize relevant work experience and achievements with measurable results and impact metrics\n3. **Keyword Integration**: Naturally incorporate job-specific keywords and industry terminology throughout all resume sections\n4. **Achievement Quantification**: Include metrics and specific accomplishments with percentages, dollar amounts, and measurable outcomes\n5. **Company Alignment**: Tailor content to company culture and values based on job description and company research\n6. **ATS Optimization**: Ensure resume is ATS-friendly with proper formatting, standard section headers, and keyword density\n\n**CUSTOMIZATION STRATEGY:**\n- **High Compatibility (90-100%)**: Minor adjustments, emphasize strengths, fine-tune keyword placement\n- **Good Compatibility (70-89%)**: Moderate customization, address concerns, enhance relevant experience\n- **Moderate Compatibility (50-69%)**: Significant customization, skill highlighting, restructure experience focus\n- **Low Compatibility (<50%)**: Major restructuring, focus on transferable skills, emphasize adaptability and learning ability\n\n**QUALITY STANDARDS:**\nGenerate resumes that achieve ATS scores of **50% or higher** based on the configured threshold above. Ensure the optimizationMetrics.atsScore reflects realistic quality assessment, and set qualityGate.meetsStandards to true only when the ATS score meets or exceeds the configured threshold of 50%.\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"customizedResume\": \"Full customized resume text with proper ATS formatting, relevant keywords, and job-specific customizations...\",\n  \"customizationSummary\": {\n    \"changesApplied\": [\"change1\", \"change2\"],\n    \"skillsEmphasized\": [\"skill1\", \"skill2\"],\n    \"keywordsIntegrated\": [\"keyword1\", \"keyword2\"],\n    \"sectionsModified\": [\"summary\", \"experience\", \"skills\"]\n  },\n  \"optimizationMetrics\": {\n    \"atsScore\": 95,\n    \"keywordDensity\": \"optimal\",\n    \"relevanceScore\": 88\n  },\n  \"qualityGate\": {\n    \"meetsStandards\": true,\n    \"atsThresholdMet\": true,\n    \"readyForSubmission\": true,\n    \"thresholdUsed\": 50\n  },\n  \"recommendedActions\": [\n    \"Consider adding certification in X\",\n    \"Quantify achievement in previous role\"\n  ]\n}"
+              }
+            ]
+          },
+          "jsonOutput": true,
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.googleGemini",
+        "typeVersion": 1,
+        "position": [64, -112],
+        "id": "05670670-fdb3-421e-9b9e-af04797024c9",
+        "name": "AI Resume Customization",
+        "retryOnFail": true,
+        "credentials": {
+          "googlePalmApi": {
+            "id": "iSUthz6TcizkpxHs",
+            "name": "Google Gemini(PaLM) Api account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "get",
+          "documentURL": "1_ipN7oOtDQlytBARapdxjJytUNuyCb4CvZfzfA8gAFs"
+        },
+        "type": "n8n-nodes-base.googleDocs",
+        "typeVersion": 2,
+        "position": [-144, -112],
+        "id": "88194991-49a4-485a-b7a2-a77dac8218fc",
+        "name": "Get a document",
+        "credentials": {
+          "googleDocsOAuth2Api": {
+            "id": "nrRB0AHydhQRDsRy",
+            "name": "Google Docs account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "1542f3f6-6146-4037-a547-40cafa5d1a85",
+                "leftValue": "={{ JSON.parse($json.content.parts[0].text).optimizationMetrics.atsScore }}",
+                "rightValue": 0,
+                "operator": {
+                  "type": "number",
+                  "operation": "gte",
+                  "name": "filter.operator.gte"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {
+            "ignoreCase": true
+          }
+        },
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [416, -112],
+        "id": "be6d8e0f-c97c-4bcb-bba7-ab218b166ecf",
+        "name": "Quality Gate Filter"
+      },
+      {
+        "parameters": {
+          "jsCode": "// RESUME GENERATION - OUTPUT FORMATTING (v2.0.0)\n// Transforms AI Resume Customization output into Merge-compatible format\n// FIXED: Passes through contactEnrichment field to Contact Tracking Workshop\n\n// Get the AI Resume Customization output from current node\nconst aiOutput = $json;\n\n// Parse the JSON from AI Resume Customization (nested in content.parts[0].text)\nlet resumeData;\ntry {\n  resumeData = JSON.parse(aiOutput.content.parts[0].text);\n} catch (parseError) {\n  throw new Error(`Failed to parse AI Resume Customization output: ${parseError.message}`);\n}\n\n// Get original job data from Job-Resume Input Processing node\nconst inputProcessingData = $('Job-Resume Input Processing').item.json;\nconst originalJobData = inputProcessingData.job;\n\n// Get original input data (includes contactEnrichment from Contact Enrichment Workshop)\nconst originalInput = inputProcessingData.originalInput;\n\n// Validate required data\nif (!originalJobData) {\n  throw new Error('Missing job data from Job-Resume Input Processing node');\n}\n\nif (!originalJobData.title || !originalJobData.company) {\n  throw new Error(`Invalid job data: missing required fields (title: ${!!originalJobData.title}, company: ${!!originalJobData.company})`);\n}\n\n// Format output for Contact Tracking Workshop\nconst mergeCompatibleOutput = {\n  jobData: {\n    title: originalJobData.title,\n    company: originalJobData.company,\n    location: originalJobData.location,\n    description: originalJobData.description,\n    requirements: originalJobData.requirements || '',\n    skills: originalJobData.skills || [],\n    experience: originalJobData.experience || 'Not specified',\n    jobType: originalJobData.jobType || 'Not specified',\n    industry: originalJobData.industry || 'Not specified'\n  },\n  resumeGeneration: {\n    customizedResume: resumeData.customizedResume || '',\n    atsScore: resumeData.optimizationMetrics?.atsScore || 0,\n    relevanceScore: resumeData.optimizationMetrics?.relevanceScore || 0,\n    keywordDensity: resumeData.optimizationMetrics?.keywordDensity || 'unknown',\n    qualityPassed: (resumeData.optimizationMetrics?.atsScore || 0) >= 50,\n    customizationSummary: resumeData.customizationSummary || {},\n    recommendedActions: resumeData.recommendedActions || [],\n    qualityGate: resumeData.qualityGate || {}\n  },\n  // ✅ CRITICAL FIX: Pass through contactEnrichment from Contact Enrichment Workshop\n  contactEnrichment: originalInput?.contactEnrichment || {},\n  processingMetadata: {\n    workflowId: \"resume-generation-merge-ready\",\n    processedAt: new Date().toISOString(),\n    status: \"resume_generation_complete\",\n    version: \"2.0.0\"\n  }\n};\n\n// Return formatted output\nreturn [{ json: mergeCompatibleOutput }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [672, -112],
+        "id": "0a08b646-6f40-4df8-9f5d-ca72bb1bb382",
+        "name": "Resume Generation Output Formatting"
+      }
+    ],
+    "connections": {
+      "Execute Workflow Trigger - From Orchestrator": {
+        "main": [
+          [
+            {
+              "node": "Job-Resume Input Processing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Job-Resume Input Processing": {
+        "main": [[{ "node": "Get a document", "type": "main", "index": 0 }]]
+      },
+      "Get a document": {
+        "main": [
+          [{ "node": "AI Resume Customization", "type": "main", "index": 0 }]
+        ]
+      },
+      "AI Resume Customization": {
+        "main": [
+          [{ "node": "Quality Gate Filter", "type": "main", "index": 0 }]
+        ]
+      },
+      "Quality Gate Filter": {
+        "main": [
+          [
+            {
+              "node": "Resume Generation Output Formatting",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "saveExecutionProgress": true,
+      "saveManualExecutions": true,
+      "saveDataErrorExecution": "all",
+      "saveDataSuccessExecution": "all",
+      "executionOrder": "v1"
+    },
+    "versionId": "2d1dbdc7-ab29-41f4-83d6-de40c1cdecc8",
+    "tags": [
+      { "id": "FrnybmIzoJd732QS", "name": "Augment Code" },
+      { "id": "H8bAHR6C77zCCEmw", "name": "sub-flow" }
+    ]
+  }
+}

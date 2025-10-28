@@ -1,0 +1,193 @@
+{
+  "createdAt": "2025-09-15T20:35:34.416Z",
+  "updatedAt": "2025-10-27T04:27:51.079Z",
+  "id": "zTtSVmTg3UaV9tPG",
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ResumeGeneration--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-544, -112],
+      "id": "706eea04-4a25-4765-ae47-c9d19fa53fc8",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// RESUME GENERATION - INPUT PROCESSING (FIXED FOR DOUBLE NESTING)\n// Processes job data and matching results for resume customization\n// FIXED: Handles Contact Enrichment Workshop's double nested jobData structure\n\nconst inputData = $json;\nconsole.log('🔍 Resume Generation Input Debug:');\nconsole.log('   Input keys:', Object.keys(inputData));\nconsole.log('   JobData keys:', inputData.jobData ? Object.keys(inputData.jobData) : 'No jobData');\n\n// CRITICAL FIX: Handle double nested jobData structure from Contact Enrichment\n// Contact Enrichment outputs: { jobData: { jobData: {...}, qualityValidation: {...} } }\n// We need to extract the INNER jobData object\nconst jobData = (inputData.jobData && inputData.jobData.jobData) \n  ? inputData.jobData.jobData \n  : (inputData.jobData || inputData);\n\nconsole.log('   Extracted jobData keys:', Object.keys(jobData));\n\n// CRITICAL FIX: Extract qualityValidation from the outer jobData wrapper\n// This contains the Job Matching Workshop's quality analysis\nconst jobAnalysis = (inputData.jobData && inputData.jobData.qualityValidation)\n  ? inputData.jobData.qualityValidation\n  : (inputData.jobAnalysis || inputData.jobMatching || null);\n\nconsole.log('   JobAnalysis keys:', jobAnalysis ? Object.keys(jobAnalysis) : 'No jobAnalysis');\n\n// ✅ CRITICAL FIX: Handle field name differences between workshops\nconst jobTitle = jobData.jobTitle || jobData.title; // ← FIXED: Now checks both 'jobTitle' and 'title'\nconst companyName = jobData.company || jobData.companyName; // Handle both field names\nconst jobLocation = jobData.location || 'Not specified';\nconst jobDescription = jobData.description || jobData.descriptionText || jobData.descriptionHtml || '';\n\n// FIXED: Validate required inputs with proper field names\nif (!jobTitle || !companyName) {\n  console.error('❌ Validation failed:');\n  console.error('   Title:', jobTitle);\n  console.error('   Company:', companyName);\n  console.error('   Available jobData fields:', Object.keys(jobData));\n  console.error('   Input structure:', JSON.stringify(inputData, null, 2));\n  throw new Error(`Invalid job data: missing required fields (title: ${!!jobTitle}, company: ${!!companyName})`);\n}\n\n// FIXED: Handle analysis data structure differences\nlet analysisScore = 0;\nlet analysisRecommendation = 'UNKNOWN';\nlet keyStrengths = [];\nlet potentialConcerns = [];\nlet skillsAnalysis = {};\nlet matchingKeywords = [];\n\nif (jobAnalysis) {\n  // Handle both Job Matching Workshop output (qualityValidation) and direct jobAnalysis\n  analysisScore = jobAnalysis.qualityScore || jobAnalysis.score || jobAnalysis.compatibilityScore || 75;\n  analysisRecommendation = jobAnalysis.recommendation || 'GOOD_MATCH';\n  keyStrengths = jobAnalysis.keyStrengths || [];\n  potentialConcerns = jobAnalysis.issues || jobAnalysis.potentialConcerns || [];\n  skillsAnalysis = jobAnalysis.skillsAnalysis || {};\n  matchingKeywords = jobAnalysis.matchingKeywords || [];\n} else {\n  console.log('⚠️ No job analysis data found - using defaults');\n  analysisScore = 75; // Default passing score\n  analysisRecommendation = 'DEFAULT_MATCH';\n}\n\n// Extract key job requirements for resume customization\nconst jobRequirements = {\n  title: jobTitle,\n  company: companyName,\n  location: jobLocation,\n  description: jobDescription,\n  requirements: jobData.requirements || '',\n  skills: jobData.skills || [],\n  experience: jobData.experienceLevel || 'Not specified',\n  jobType: jobData.jobType || jobData.employmentType || 'Not specified',\n  industry: jobData.industry || 'Not specified'\n};\n\n// Extract matching analysis for customization guidance\nconst matchingGuidance = {\n  compatibilityScore: analysisScore,\n  score: analysisScore, // Provide both field names for compatibility\n  recommendation: analysisRecommendation,\n  keyStrengths: keyStrengths,\n  potentialConcerns: potentialConcerns,\n  skillsAnalysis: skillsAnalysis,\n  matchingKeywords: matchingKeywords,\n  analysisType: jobAnalysis?.analysisType || 'job-resume-match'\n};\n\n// Prepare data for resume customization\nconst customizationInput = {\n  job: jobRequirements,\n  matching: matchingGuidance,\n  customizationType: 'job-specific-resume-generation',\n  timestamp: new Date().toISOString(),\n  originalInput: inputData // Keep original for debugging\n};\n\nconsole.log('✅ Resume Generation Input Processing Success:');\nconsole.log(`   Job: ${jobTitle} at ${companyName}`);\nconsole.log(`   Compatibility Score: ${analysisScore}%`);\nconsole.log(`   Recommendation: ${analysisRecommendation}`);\nconsole.log(`   Key Strengths: ${keyStrengths.length} items`);\nconsole.log(`   Analysis Type: ${jobAnalysis?.analysisType || 'default'}`);\n\nreturn [{ json: customizationInput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-352, -112],
+      "id": "544f3e8a-bb95-4152-aa53-7b003139d366",
+      "name": "Job-Resume Input Processing"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "1_ipN7oOtDQlytBARapdxjJytUNuyCb4CvZfzfA8gAFs"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [-144, -112],
+      "id": "88194991-49a4-485a-b7a2-a77dac8218fc",
+      "name": "Get a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "nrRB0AHydhQRDsRy",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-pro",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-pro"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "🚨🚨🚨 STOP! READ THIS FIRST! 🚨🚨🚨\n\nBEFORE YOU DO ANYTHING ELSE:\n1. Read the MANDATORY KEYWORD EXTRACTION PROCESS section below\n2. Understand that you MUST extract keywords from the TARGET JOB POSTING section ONLY\n3. Do NOT proceed until you understand this rule\n\nIf you extract keywords from the candidate's base resume instead of the job description, you will FAIL this task.\n\n═══════════════════════════════════════════════════════════════\n📋 MANDATORY KEYWORD EXTRACTION PROCESS (5 STEPS)\n═══════════════════════════════════════════════════════════════\n\n**FUNDAMENTAL RULE:**\nThe decision to apply for this job has ALREADY been made. You are NOT evaluating job appropriateness. Your ONLY job is to extract keywords from the job description and integrate them into the resume.\n\n**STEP 1: LOCATE THE TARGET JOB POSTING SECTION**\n- Scroll down to find the section labeled \"TARGET JOB POSTING\"\n- This section contains the ONLY source of keywords you are allowed to use\n- DO NOT extract keywords from any other section\n\n**STEP 2: READ THE ENTIRE JOB DESCRIPTION**\n- Read every word in the TARGET JOB POSTING section\n- Pay special attention to:\n  * Job title\n  * Responsibilities section\n  * Qualifications section\n  * Requirements section\n  * Skills section\n\n**STEP 3: EXTRACT 10-15 KEYWORDS (EXACT PHRASES ONLY)**\n- Write down 10-15 keywords/phrases that appear in the job description\n- Use the EXACT wording from the job description (not synonyms)\n- Prioritize keywords that appear multiple times\n- DO NOT add keywords that don't appear in the job description\n- DO NOT \"upgrade\" generic phrases to technical terms\n\n**STEP 4: VALIDATE YOUR KEYWORD LIST**\n- For EACH keyword in your list, verify it appears in the TARGET JOB POSTING section\n- If you cannot find a keyword in the job description, DELETE it from your list\n- If you're unsure, DO NOT use that keyword\n\n**STEP 5: USE ONLY THESE KEYWORDS FOR CUSTOMIZATION**\n- Integrate ONLY the keywords from your validated list into the resume\n- DO NOT add any keywords from the candidate's base resume\n- DO NOT add any keywords based on your judgment of what the employer \"really wants\"\n\n═══════════════════════════════════════════════════════════════\n✅ CORRECT vs. ❌ WRONG KEYWORD EXTRACTION EXAMPLES\n═══════════════════════════════════════════════════════════════\n\n**EXAMPLE 1: Entry-Level Data Entry Job**\n\nJOB DESCRIPTION:\n\"We are seeking a Data Entry Assistant to support day-to-day operations. The ideal candidate will maintain accuracy and attention to detail, communicate effectively with team members, and demonstrate strong organizational skills.\"\n\n✅ CORRECT KEYWORDS (extracted from job description):\n- \"data entry\"\n- \"support day-to-day operations\"\n- \"maintain accuracy\"\n- \"attention to detail\"\n- \"communicate effectively\"\n- \"team members\"\n- \"organizational skills\"\n\n❌ WRONG KEYWORDS (NOT in job description):\n- \"SQL Server\" ← NOT mentioned\n- \"C# programming\" ← NOT mentioned\n- \"microservices\" ← NOT mentioned\n- \"AWS\" ← NOT mentioned\n- \"Agile\" ← NOT mentioned\n\n**EXAMPLE 2: Senior Software Engineer Job**\n\nJOB DESCRIPTION:\n\"We are seeking a Senior Software Engineer with expertise in C#, .NET Core, and Angular. The ideal candidate will design, develop, and deploy scalable Web APIs using Agile methodologies.\"\n\n✅ CORRECT KEYWORDS (extracted from job description):\n- \"Senior Software Engineer\"\n- \"C#\"\n- \".NET Core\"\n- \"Angular\"\n- \"design, develop, and deploy\"\n- \"scalable Web APIs\"\n- \"Agile methodologies\"\n\n❌ WRONG KEYWORDS (NOT in job description):\n- \"data entry\" ← NOT mentioned\n- \"attention to detail\" ← NOT mentioned (even though it's a good skill)\n- \"Python\" ← NOT mentioned (even though candidate knows it)\n\n═══════════════════════════════════════════════════════════════\n🚫 IDENTITY PRESERVATION RULES (NEVER CHANGE THESE)\n═══════════════════════════════════════════════════════════════\n\n**YOU MUST PRESERVE THESE EXACT VALUES:**\n- **Name**: IVO DACHEV\n- **Phone**: (650) 222-7923\n- **Email**: dachevivo@gmail.com\n- **Location**: Sacramento, CA\n- **Years of Experience**: 13+ years\n- **Actual Companies**: 1BuilderMedia Marketing LLC, Incedo Inc, CSSI Inc, Atos Syntel, Sutter Health, SF Fire Credit Union, SF Website Design, Coding Dojo, SCITON INC, REALTRAX INC, MOBILE ELECTRONICS\n- **Actual Education**: M.S. Forest Science, University of Sofia\n\n❌ NEVER use placeholder names like \"John Doe\", \"[Your Name]\", or fictional companies\n✅ ALWAYS use IVO DACHEV's actual information\n\n═══════════════════════════════════════════════════════════════\n📄 CANDIDATE'S BASE RESUME\n═══════════════════════════════════════════════════════════════\n\n{{ $('Get a document').item.json.content }}\n\n═══════════════════════════════════════════════════════════════\n🎯 TARGET JOB POSTING (YOUR ONLY SOURCE OF KEYWORDS)\n═══════════════════════════════════════════════════════════════\n\n{{ $('Job-Resume Input Processing').item.json.job }}\n\n═══════════════════════════════════════════════════════════════\n✏️ CUSTOMIZATION INSTRUCTIONS\n═══════════════════════════════════════════════════════════════\n\n**WHAT TO CUSTOMIZE:**\n\n1. **Summary Section**\n   - Rewrite to emphasize skills matching the TARGET JOB POSTING\n   - Use keywords from your validated keyword list\n   - Keep IVO DACHEV's actual 13+ years of experience\n\n2. **Work Experience Bullet Points**\n   - Rewrite EACH bullet point to incorporate 3-5 keywords from your list\n   - Maintain factual accuracy about IVO DACHEV's actual work\n   - Use the job description's EXACT terminology\n   - Preserve specific technologies (Okta, AWS, Angular, etc.)\n\n3. **Skills Section**\n   - Reorder skills to prioritize those in the TARGET JOB POSTING\n   - Keep all of IVO DACHEV's actual skills\n\n4. **Achievement Descriptions**\n   - Emphasize accomplishments relevant to the TARGET JOB POSTING\n   - Use IVO DACHEV's actual metrics and results\n\n**KEYWORD INTEGRATION RULES:**\n\n1. **Maximum Keyword Frequency**: Use each keyword 3-5 times maximum across the ENTIRE resume\n2. **Natural Phrasing**: Professional phrasing is MORE IMPORTANT than keyword count\n3. **Technical Preservation**: NEVER remove specific technologies (Okta, OIDC, AWS, Angular, etc.) to make room for keywords\n4. **Balance**: Aim for 60% technical content + 40% keyword integration in each bullet point\n\n**EXAMPLE BULLET POINT REWRITING:**\n\nORIGINAL:\n\"Architected and deployed a comprehensive Customer Identity and Access Management (IAM) platform for custom client applications, leveraging Okta, OIDC, and SAML2 for robust SSO and secure data access.\"\n\nKEYWORDS TO INTEGRATE (from Data Entry job description):\n- data entry\n- attention to detail\n- accuracy\n- organizational skills\n\nREWRITTEN:\n\"Maintained accurate data entry for customer identity records across multiple client applications using Okta, OIDC, and SAML2, demonstrating strong attention to detail and organizational skills to ensure data accuracy and secure access.\"\n\nANALYSIS:\n✅ Integrated 4 keywords from job description\n✅ Preserved technical specifics (Okta, OIDC, SAML2)\n✅ Maintained factual accuracy\n✅ Natural, professional phrasing\n\n═══════════════════════════════════════════════════════════════\n✅ VERIFICATION CHECKLIST (CHECK BEFORE OUTPUTTING)\n═══════════════════════════════════════════════════════════════\n\n**BEFORE YOU OUTPUT THE RESUME, VERIFY:**\n\n1. ✅ Did you extract keywords from the TARGET JOB POSTING section (not from the base resume)?\n2. ✅ Does the resume start with \"IVO DACHEV\"?\n3. ✅ Does the resume contain \"(650) 222-7923\" and \"dachevivo@gmail.com\"?\n4. ✅ Does the resume contain at least 3 actual companies (1BuilderMedia, Incedo Inc, CSSI Inc, etc.)?\n5. ✅ Does the resume say \"13 years\" or \"13+ years\" of experience?\n6. ✅ Does the resume contain \"M.S. Forest Science\" and \"University of Sofia\"?\n7. ✅ Did you rewrite EVERY bullet point to include keywords from the TARGET JOB POSTING?\n8. ✅ Did you preserve specific technologies (Okta, AWS, Angular, etc.)?\n9. ✅ Does each keyword appear 3-5 times maximum?\n10. ✅ Does the resume sound natural and professional?\n\nIf ANY answer is NO, START OVER.\n\n═══════════════════════════════════════════════════════════════\n📤 OUTPUT FORMAT (JSON)\n═══════════════════════════════════════════════════════════════\n\n{\n  \"customizedResume\": \"IVO DACHEV\\nSacramento, CA | (650) 222-7923 | dachevivo@gmail.com\\n\\nSUMMARY\\n[Your customized summary here]\\n\\n[Rest of resume]...\",\n  \"customizationSummary\": {\n    \"changesApplied\": [\"List of changes made\"],\n    \"skillsEmphasized\": [\"Skills from TARGET JOB POSTING\"],\n    \"keywordsIntegrated\": [\"Keywords from TARGET JOB POSTING\"],\n    \"sectionsModified\": [\"summary\", \"experience\", \"skills\"]\n  },\n  \"optimizationMetrics\": {\n    \"atsScore\": 85,\n    \"keywordDensity\": \"optimal\",\n    \"relevanceScore\": 88\n  },\n  \"qualityGate\": {\n    \"meetsStandards\": true,\n    \"atsThresholdMet\": true,\n    \"readyForSubmission\": true,\n    \"thresholdUsed\": 50\n  },\n  \"recommendedActions\": [\"Optional recommendations\"]\n}\n\n**FINAL REMINDER:**\nExtract keywords from the TARGET JOB POSTING section ONLY. Do NOT extract keywords from the candidate's base resume. Do NOT make judgments about job appropriateness. Just extract keywords and integrate them."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [64, -112],
+      "id": "05670670-fdb3-421e-9b9e-af04797024c9",
+      "name": "AI Resume Customization",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iSUthz6TcizkpxHs",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// RESUME IDENTITY VALIDATION NODE (v1.0.0)\n// Validates that AI Resume Customization preserved candidate's actual identity\n// Rejects generic or fictional content\n\nconst aiOutput = $json;\n\n// Parse the AI Resume Customization output\nlet resumeData;\ntry {\n  resumeData = JSON.parse(aiOutput.content.parts[0].text);\n} catch (parseError) {\n  throw new Error(`Failed to parse AI Resume Customization output: ${parseError.message}`);\n}\n\nconst customizedResume = resumeData.customizedResume || '';\n\n// Validation checks\nconst validationResults = {\n  hasActualName: customizedResume.includes('IVO DACHEV'),\n  hasActualPhone: customizedResume.includes('(650) 222-7923'),\n  hasActualEmail: customizedResume.includes('dachevivo@gmail.com'),\n  hasPlaceholderName: customizedResume.includes('[Your Name]') || customizedResume.includes('[Your name]'),\n  hasPlaceholderCompany: customizedResume.includes('[Previous Company]') || customizedResume.includes('[Company Name]'),\n  hasPlaceholderEmail: customizedResume.includes('[Your Email]') || customizedResume.includes('[Your email]'),\n  hasPlaceholderPhone: customizedResume.includes('[Your Phone]') || customizedResume.includes('[Phone Number]')\n};\n\n// Count actual company names from base resume\nconst actualCompanies = [\n  '1BuilderMedia',\n  'Incedo Inc',\n  'CSSI Inc',\n  'Atos Syntel',\n  'SF Fire Credit Union',\n  'Sutter Health',\n  'SF Website Design',\n  'Coding Dojo',\n  'SCITON INC',\n  'REALTRAX INC',\n  'MOBILE ELECTRONICS'\n];\n\nlet companyCount = 0;\nfor (const company of actualCompanies) {\n  if (customizedResume.includes(company)) {\n    companyCount++;\n  }\n}\n\nvalidationResults.actualCompanyCount = companyCount;\nvalidationResults.hasMinimumCompanies = companyCount >= 3;\n\n// Determine if validation passed\nconst validationPassed = \n  validationResults.hasActualName &&\n  validationResults.hasActualPhone &&\n  validationResults.hasActualEmail &&\n  !validationResults.hasPlaceholderName &&\n  !validationResults.hasPlaceholderCompany &&\n  !validationResults.hasPlaceholderEmail &&\n  !validationResults.hasPlaceholderPhone &&\n  validationResults.hasMinimumCompanies;\n\n// Build validation report\nconst validationReport = {\n  validationPassed: validationPassed,\n  timestamp: new Date().toISOString(),\n  checks: validationResults,\n  errors: []\n};\n\n// Collect validation errors\nif (!validationResults.hasActualName) {\n  validationReport.errors.push('CRITICAL: Resume does not contain candidate\\'s actual name \"IVO DACHEV\"');\n}\nif (!validationResults.hasActualPhone) {\n  validationReport.errors.push('CRITICAL: Resume does not contain candidate\\'s actual phone \"(650) 222-7923\"');\n}\nif (!validationResults.hasActualEmail) {\n  validationReport.errors.push('CRITICAL: Resume does not contain candidate\\'s actual email \"dachevivo@gmail.com\"');\n}\nif (validationResults.hasPlaceholderName) {\n  validationReport.errors.push('CRITICAL: Resume contains placeholder text \"[Your Name]\"');\n}\nif (validationResults.hasPlaceholderCompany) {\n  validationReport.errors.push('CRITICAL: Resume contains placeholder text \"[Previous Company]\" or \"[Company Name]\"');\n}\nif (validationResults.hasPlaceholderEmail) {\n  validationReport.errors.push('CRITICAL: Resume contains placeholder text \"[Your Email]\"');\n}\nif (validationResults.hasPlaceholderPhone) {\n  validationReport.errors.push('CRITICAL: Resume contains placeholder text \"[Your Phone]\" or \"[Phone Number]\"');\n}\nif (!validationResults.hasMinimumCompanies) {\n  validationReport.errors.push(`CRITICAL: Resume contains only ${companyCount} actual company names (minimum 3 required)`);\n}\n\n// If validation failed, throw error with details\nif (!validationPassed) {\n  const errorMessage = `Resume Identity Validation FAILED:\\n${validationReport.errors.join('\\n')}`;\n  throw new Error(errorMessage);\n}\n\n// If validation passed, pass through the AI output with validation metadata\n// FIXED: Return a single object, not an array\nreturn {\n  json: {\n    ...aiOutput,\n    validationReport: validationReport\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [416, -112],
+      "id": "fd36f04e-df4e-4a43-8bd9-a97513025fea",
+      "name": "Resume Identity  Validation"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1542f3f6-6146-4037-a547-40cafa5d1a85",
+              "leftValue": "={{ JSON.parse($json.content.parts[0].text).optimizationMetrics.atsScore }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gte",
+                "name": "filter.operator.gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [624, -112],
+      "id": "be6d8e0f-c97c-4bcb-bba7-ab218b166ecf",
+      "name": "Quality Gate Filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "// RESUME GENERATION - OUTPUT FORMATTING (v2.0.0)\n// Transforms AI Resume Customization output into Merge-compatible format\n// FIXED: Passes through contactEnrichment field to Contact Tracking Workshop\n\n// Get the AI Resume Customization output from current node\nconst aiOutput = $json;\n\n// Parse the JSON from AI Resume Customization (nested in content.parts[0].text)\nlet resumeData;\ntry {\n  resumeData = JSON.parse(aiOutput.content.parts[0].text);\n} catch (parseError) {\n  throw new Error(`Failed to parse AI Resume Customization output: ${parseError.message}`);\n}\n\n// Get original job data from Job-Resume Input Processing node\nconst inputProcessingData = $('Job-Resume Input Processing').item.json;\nconst originalJobData = inputProcessingData.job;\n\n// Get original input data (includes contactEnrichment from Contact Enrichment Workshop)\nconst originalInput = inputProcessingData.originalInput;\n\n// Validate required data\nif (!originalJobData) {\n  throw new Error('Missing job data from Job-Resume Input Processing node');\n}\n\nif (!originalJobData.title || !originalJobData.company) {\n  throw new Error(`Invalid job data: missing required fields (title: ${!!originalJobData.title}, company: ${!!originalJobData.company})`);\n}\n\n// Format output for Contact Tracking Workshop\nconst mergeCompatibleOutput = {\n  jobData: {\n    title: originalJobData.title,\n    company: originalJobData.company,\n    location: originalJobData.location,\n    description: originalJobData.description,\n    requirements: originalJobData.requirements || '',\n    skills: originalJobData.skills || [],\n    experience: originalJobData.experience || 'Not specified',\n    jobType: originalJobData.jobType || 'Not specified',\n    industry: originalJobData.industry || 'Not specified'\n  },\n  resumeGeneration: {\n    customizedResume: resumeData.customizedResume || '',\n    atsScore: resumeData.optimizationMetrics?.atsScore || 0,\n    relevanceScore: resumeData.optimizationMetrics?.relevanceScore || 0,\n    keywordDensity: resumeData.optimizationMetrics?.keywordDensity || 'unknown',\n    qualityPassed: (resumeData.optimizationMetrics?.atsScore || 0) >= 50,\n    customizationSummary: resumeData.customizationSummary || {},\n    recommendedActions: resumeData.recommendedActions || [],\n    qualityGate: resumeData.qualityGate || {}\n  },\n  // ✅ CRITICAL FIX: Pass through contactEnrichment from Contact Enrichment Workshop\n  contactEnrichment: originalInput?.contactEnrichment || {},\n  processingMetadata: {\n    workflowId: \"resume-generation-merge-ready\",\n    processedAt: new Date().toISOString(),\n    status: \"resume_generation_complete\",\n    version: \"2.0.0\"\n  }\n};\n\n// Return formatted output\nreturn [{ json: mergeCompatibleOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, -112],
+      "id": "0a08b646-6f40-4df8-9f5d-ca72bb1bb382",
+      "name": "Resume Generation Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [{ "node": "Job-Resume Input Processing", "type": "main", "index": 0 }]
+      ]
+    },
+    "Job-Resume Input Processing": {
+      "main": [[{ "node": "Get a document", "type": "main", "index": 0 }]]
+    },
+    "AI Resume Customization": {
+      "main": [
+        [{ "node": "Resume Identity  Validation", "type": "main", "index": 0 }]
+      ]
+    },
+    "Quality Gate Filter": {
+      "main": [
+        [
+          {
+            "node": "Resume Generation Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a document": {
+      "main": [
+        [{ "node": "AI Resume Customization", "type": "main", "index": 0 }]
+      ]
+    },
+    "Resume Identity  Validation": {
+      "main": [[{ "node": "Quality Gate Filter", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "610397d4-3bd4-4dec-aa60-50734087b7c2",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "id": "FrnybmIzoJd732QS",
+      "name": "Augment Code"
+    },
+    {
+      "id": "H8bAHR6C77zCCEmw",
+      "name": "sub-flow"
+    }
+  ]
+}

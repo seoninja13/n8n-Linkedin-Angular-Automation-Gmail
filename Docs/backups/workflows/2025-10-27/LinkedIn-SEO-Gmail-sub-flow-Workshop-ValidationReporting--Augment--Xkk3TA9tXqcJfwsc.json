@@ -1,0 +1,158 @@
+{
+  "createdAt": "2025-09-15T20:37:12.480Z",
+  "updatedAt": "2025-09-16T15:56:07.000Z",
+  "id": "Xkk3TA9tXqcJfwsc",
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ValidationReporting--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": { "content": "" },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-592, -448],
+      "typeVersion": 1,
+      "id": "35d32e0c-68ea-468d-9007-fd004dd579ae",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": { "inputSource": "passthrough" },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-976, -112],
+      "id": "6fea5abb-93a9-4274-9023-512e15b35a54",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// VALIDATION REPORTING - INPUT PROCESSING\nconst inputData = $json;\nconst jobData = inputData.jobData || {};\nconst jobMatching = inputData.jobMatching || {};\nconst resumeGeneration = inputData.resumeGeneration || {};\nconst contactEnrichment = inputData.contactEnrichment || {};\nconst outreachTracking = inputData.outreachTracking || {};\nconst validationChecks = { jobDataValid: !!(jobData.title && jobData.companyName), jobMatchingValid: !!(jobMatching.compatibilityScore && jobMatching.recommendation), resumeGenerationValid: !!(resumeGeneration.customizedResume && resumeGeneration.atsScore), contactEnrichmentValid: !!(contactEnrichment.primaryContact && contactEnrichment.primaryContact.email), outreachTrackingValid: !!(outreachTracking.emailSent && outreachTracking.emailId) };\nconst totalChecks = Object.keys(validationChecks).length;\nconst passedChecks = Object.values(validationChecks).filter(check => check).length;\nconst successRate = Math.round((passedChecks / totalChecks) * 100);\nconst validationData = { pipelineResults: { jobData, jobMatching, resumeGeneration, contactEnrichment, outreachTracking }, validationChecks, metrics: { successRate, totalChecks, passedChecks, failedChecks: totalChecks - passedChecks }, validationType: 'complete-pipeline-validation', timestamp: new Date().toISOString() };\nreturn [{ json: validationData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-784, -112],
+      "id": "ee6dda5d-6cd0-40b4-99ad-0d7a8d2406b5",
+      "name": "Validation Input Processing"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert Validation Reporting AI that analyzes LinkedIn automation pipeline results. Your task is to create comprehensive validation reports with quality assessments and recommendations.\n\n**INPUT DATA:**\nPipeline Results: {{ $json.pipelineResults }}\nValidation Checks: {{ $json.validationChecks }}\nMetrics: {{ $json.metrics }}\n\n**VALIDATION REQUIREMENTS:**\n\n1. **Quality Assessment**: Evaluate each pipeline component's performance\n2. **Success Metrics**: Calculate success rates and identify bottlenecks\n3. **Error Analysis**: Identify failures and their root causes\n4. **Performance Benchmarks**: Compare against expected standards\n5. **Improvement Recommendations**: Suggest optimizations and fixes\n6. **Compliance Check**: Ensure all components meet quality standards\n\n**VALIDATION CRITERIA:**\n- **Job Matching**: Compatibility score ≥70%, valid recommendation\n- **Resume Generation**: ATS score ≥80%, customization quality\n- **Contact Enrichment**: Valid email, verification status\n- **Outreach Tracking**: Email sent successfully, tracking active\n- **Overall Pipeline**: End-to-end completion without critical failures\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"validationSummary\": {\n    \"overallStatus\": \"PASS|FAIL|WARNING\",\n    \"successRate\": 85,\n    \"qualityScore\": 88,\n    \"pipelineHealth\": \"HEALTHY|DEGRADED|CRITICAL\"\n  },\n  \"componentAnalysis\": {\n    \"jobMatching\": {\n      \"status\": \"PASS\",\n      \"score\": 85,\n      \"issues\": [],\n      \"recommendations\": []\n    },\n    \"resumeGeneration\": {\n      \"status\": \"PASS\",\n      \"score\": 90,\n      \"issues\": [],\n      \"recommendations\": []\n    }\n  },\n  \"performanceMetrics\": {\n    \"processingTime\": \"2.5 minutes\",\n    \"apiCallsUsed\": 15,\n    \"creditsConsumed\": 8\n  },\n  \"recommendations\": [\n    \"Improve job matching threshold\",\n    \"Optimize resume customization\"\n  ],\n  \"nextActions\": [\n    \"Monitor email response rate\",\n    \"Schedule follow-up in 7 days\"\n  ]\n}\n```\n\nProvide comprehensive validation analysis with actionable insights for pipeline optimization."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-576, -112],
+      "id": "30705b9f-e4eb-4bc6-8a65-59b076005e45",
+      "name": "AI Validation Analysis",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "J1a6B3PrYjoBMN32",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "validation-success-filter",
+              "leftValue": "={{ $json.content.parts[0].text.validationSummary.successRate }}",
+              "rightValue": 70,
+              "operator": {
+                "type": "number",
+                "operation": "gte",
+                "name": "filter.operator.gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [-256, -112],
+      "id": "26fe3e2f-7908-4a48-bd5d-75b8fe684b50",
+      "name": "Validation Success Filter (≥70%)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// VALIDATION REPORTING - OUTPUT FORMATTING (Condensed)\nconst validationResults = $json.content.parts[0].text;\nconst originalValidationData = $('Validation Input Processing').item.json;\nlet analysisData;\ntry { analysisData = typeof validationResults === 'string' ? JSON.parse(validationResults) : validationResults; } catch (error) { analysisData = { validationSummary: { overallStatus: 'ERROR', successRate: 0, qualityScore: 0, pipelineHealth: 'CRITICAL' }, componentAnalysis: {}, recommendations: ['Fix validation analysis parsing error'] }; }\nconst validationReport = { reportId: `validation-${Date.now()}`, generatedAt: new Date().toISOString(), jobReference: { title: originalValidationData.pipelineResults.jobData.title, company: originalValidationData.pipelineResults.jobData.companyName, jobUrl: originalValidationData.pipelineResults.jobData.jobUrl }, validationSummary: analysisData.validationSummary || {}, componentAnalysis: analysisData.componentAnalysis || {}, performanceMetrics: analysisData.performanceMetrics || {}, qualityAssessment: { pipelineCompleteness: originalValidationData.metrics.successRate, componentHealth: analysisData.validationSummary?.pipelineHealth || 'UNKNOWN', overallQuality: analysisData.validationSummary?.qualityScore || 0, criticalIssues: (analysisData.componentAnalysis && Object.values(analysisData.componentAnalysis).filter(comp => comp.status === 'FAIL').length) || 0 }, recommendations: analysisData.recommendations || [], nextActions: analysisData.nextActions || [] };\nconst finalOutput = { jobData: originalValidationData.pipelineResults.jobData, validationReporting: validationReport, processingMetadata: { workflowId: \"validation-reporting-augment\", workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-ValidationReporting--Augment\", processedAt: new Date().toISOString(), status: \"validation_reporting_complete\", version: \"1.0.0\", executionId: $executionId, validationType: \"complete-pipeline-validation\" } };\nreturn [{ json: finalOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-32, -112],
+      "id": "9a379dc7-6bb4-47f2-9f96-595c0a1eb85b",
+      "name": "Validation Reporting Output Formatting"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [{ "node": "Validation Input Processing", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validation Input Processing": {
+      "main": [
+        [{ "node": "AI Validation Analysis", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Validation Analysis": {
+      "main": [
+        [
+          {
+            "node": "Validation Success Filter (≥70%)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Success Filter (≥70%)": {
+      "main": [
+        [
+          {
+            "node": "Validation Reporting Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c94c796a-e703-4223-a0d5-118049dee758",
+  "triggerCount": 1,
+  "tags": []
+}

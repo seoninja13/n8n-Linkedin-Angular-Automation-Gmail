@@ -1,0 +1,124 @@
+{
+  "createdAt": "2025-09-15T16:49:57.667Z",
+  "updatedAt": "2025-10-26T17:50:45.000Z",
+  "id": "wbkQo6X2R8XQOYgG",
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobDiscovery--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-544, -112],
+      "id": "f714cf16-2724-4f8b-8254-9cac4eb2bbfd",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "hKByXkMQaC5Qt9UMN",
+          "mode": "list",
+          "cachedResultName": "Linkedin Jobs Scraper - PPR (curious_coder/linkedin-jobs-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/hKByXkMQaC5Qt9UMN/input"
+        },
+        "customBody": "={\n    \"count\": 101,\n    \"scrapeCompany\": true,\n    \"urls\": [\n        \"https://www.linkedin.com/jobs/search/?currentJobId=4295700879&distance=25&f_TPR=r86400&f_WT=2&geoId=103644278&keywords=seo&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true\"\n    ]\n}",
+        "timeout": {},
+        "memory": 4096
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [-304, -112],
+      "id": "c75bbdb1-0de0-4fe8-8597-4d277639c373",
+      "name": "LinkedIn Jobs Scraper",
+      "credentials": {
+        "apifyApi": {
+          "id": "wI68UXmrV57w78X2",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [160, -112],
+      "id": "e2fe1f14-e8e2-4973-99a1-146d123fe271",
+      "name": "Limit - 5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JOB AGGREGATOR BLACKLIST FILTER\n// Version: 1.0.0 (2025-10-23)\n// Purpose: Filter out job aggregator platforms where we cannot find verified company emails\n// This prevents wasted API calls to Lead Finder and NeverBounce\n\n// Comprehensive job aggregator blacklist (expandable)\nconst jobAggregatorBlacklist = [\n  'Lensa',           // Primary issue - no company emails\n  'Indeed',          // Largest job aggregator\n  'ZipRecruiter',    // Major aggregator\n  'Glassdoor',       // Reviews + job aggregator\n  'Monster',         // Classic aggregator\n  'CareerBuilder',   // Major aggregator\n  'SimplyHired',     // Aggregator\n  'Snagajob',        // Hourly jobs aggregator\n  'LinkUp',          // Aggregator\n  'Jooble',          // International aggregator\n  'Adzuna',          // UK-based aggregator\n  'Jobrapido',       // International aggregator\n  'Neuvoo',          // Canadian aggregator\n  'Jora',            // Australian aggregator\n  'JobisJob'         // Spanish aggregator\n];\n\nconst items = $input.all();\nconst filteredItems = [];\nlet filteredCount = 0;\n\nfor (const item of items) {\n  const companyName = item.json.companyName || '';\n  \n  // Check if company name matches any blacklisted aggregator (case-insensitive)\n  const isAggregator = jobAggregatorBlacklist.some(aggregator => \n    companyName.toLowerCase().includes(aggregator.toLowerCase())\n  );\n  \n  if (isAggregator) {\n    // FILTER OUT - job aggregator detected\n    filteredCount++;\n  } else {\n    // PASS THROUGH - direct employer\n    filteredItems.push(item);\n  }\n}\n\nreturn filteredItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [384, -112],
+      "id": "03160a59-ed70-4a2b-9b89-be78d39d0614",
+      "name": "Blacklist - Companies With hard To Get Email"
+    },
+    {
+      "parameters": {
+        "jsCode": "// DATA NORMALIZATION & DEDUPLICATION - Version: 2.0.0-required-website (2025-10-24)\nconst REQUIRED_FIELDS = ['title', 'companyName', 'companyWebsite', 'location', 'link'];\nconst DOMAIN_BLACKLIST = ['lensa.com', 'indeed.com', 'ziprecruiter.com', 'glassdoor.com', 'monster.com', 'careerbuilder.com', 'simplyhired.com', 'dice.com', 'linkedin.com', 'sibelco.com'];\n\nfunction normalizeDomain(domain) {\n  if (!domain || typeof domain !== 'string') return null;\n  let normalized = domain.replace(/^(https?:\\/\\/)?(www\\.)?/i, '').toLowerCase().trim();\n  const pathIndex = normalized.indexOf('/');\n  if (pathIndex !== -1) normalized = normalized.substring(0, pathIndex);\n  normalized = normalized.replace('@', '');\n  if (!normalized.includes('.')) return null;\n  if (normalized.length === 0) return null;\n  return normalized;\n}\n\nfunction generateJobKey(job) {\n  const domain = job.normalizedDomain || '';\n  const title = (job.title || '').toLowerCase().trim();\n  const location = (job.location || '').toLowerCase().trim();\n  return `${domain}|${title}|${location}`;\n}\n\nfunction isBlacklisted(domain) {\n  if (!domain) return false;\n  return DOMAIN_BLACKLIST.some(blacklisted => domain.includes(blacklisted));\n}\n\nconst inputItems = $input.all();\nconst jobs = inputItems.map(item => item.json);\nconst stats = { totalInput: jobs.length, missingWebsite: 0, invalidWebsite: 0, validJobs: 0, invalidJobs: 0, blacklistedJobs: 0, duplicateJobs: 0, uniqueJobs: 0 };\nconst processedJobs = [];\nconst seenKeys = new Set();\n\nfor (const job of jobs) {\n  const missingFields = REQUIRED_FIELDS.filter(field => !job[field] || (typeof job[field] === 'string' && job[field].trim() === ''));\n  if (missingFields.length > 0) {\n    stats.invalidJobs++;\n    if (missingFields.includes('companyWebsite')) stats.missingWebsite++;\n    continue;\n  }\n  stats.validJobs++;\n  const normalizedDomain = normalizeDomain(job.companyWebsite);\n  if (!normalizedDomain) { stats.invalidWebsite++; continue; }\n  if (isBlacklisted(normalizedDomain)) { stats.blacklistedJobs++; continue; }\n  const jobData = { ...job, normalizedDomain, originalDomain: job.companyWebsite, hasWebsite: true, processedAt: new Date().toISOString() };\n  const jobKey = generateJobKey(jobData);\n  if (seenKeys.has(jobKey)) { stats.duplicateJobs++; continue; }\n  seenKeys.add(jobKey);\n  stats.uniqueJobs++;\n  processedJobs.push(jobData);\n}\n\nreturn processedJobs.map((job, index) => ({ json: job, pairedItem: { item: 0 } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-64, -112],
+      "id": "dd54a3ca-220c-4a1d-a755-cce5abe5c16e",
+      "name": "Data Normalization and Deduplication"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [{ "node": "LinkedIn Jobs Scraper", "type": "main", "index": 0 }]
+      ]
+    },
+    "LinkedIn Jobs Scraper": {
+      "main": [
+        [
+          {
+            "node": "Data Normalization and Deduplication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Normalization and Deduplication": {
+      "main": [[{ "node": "Limit - 5", "type": "main", "index": 0 }]]
+    },
+    "Limit - 5": {
+      "main": [
+        [
+          {
+            "node": "Blacklist - Companies With hard To Get Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "",
+  "triggerCount": 1,
+  "tags": []
+}

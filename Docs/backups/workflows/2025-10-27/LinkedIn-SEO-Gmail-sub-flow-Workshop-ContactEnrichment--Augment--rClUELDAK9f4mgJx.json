@@ -1,0 +1,35 @@
+{
+  "createdAt": "2025-09-15T17:24:05.973Z",
+  "updatedAt": "2025-10-26T18:42:12.000Z",
+  "id": "rClUELDAK9f4mgJx",
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactEnrichment--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "b635856e-fdaf-4563-95e8-2e13a5808b5a",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "id": "FrnybmIzoJd732QS",
+      "name": "Augment Code"
+    },
+    {
+      "id": "H8bAHR6C77zCCEmw",
+      "name": "sub-flow"
+    }
+  ]
+}
+

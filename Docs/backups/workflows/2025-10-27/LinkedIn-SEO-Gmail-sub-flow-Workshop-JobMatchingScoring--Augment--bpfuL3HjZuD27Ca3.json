@@ -1,0 +1,157 @@
+{
+  "createdAt": "2025-09-15T20:34:12.024Z",
+  "updatedAt": "2025-10-23T19:37:34.000Z",
+  "id": "bpfuL3HjZuD27Ca3",
+  "name": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatchingScoring--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": { "inputSource": "passthrough" },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-656, -160],
+      "id": "8abae2f4-a59f-4ac3-ba79-382cb0f12343",
+      "name": "Execute Workflow Trigger - From Orchestrator"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a job posting quality validator. Your task is to assess if this job posting is legitimate and contains sufficient information for application processing.\n\nJOB POSTING:\nTitle: {{ $json.title ? $json.title : 'Not specified' }}\nCompany: {{ $json.companyName ? $json.companyName : 'Not specified' }}\nLocation: {{ $json.location ? $json.location : 'Not specified' }}\nDescription: {{ $json.description ? $json.description : 'Not specified' }}\n\nVALIDATION CRITERIA:\n1. Is this a legitimate job posting (not spam, not a scam, not irrelevant content)?\n2. Does the job description contain sufficient detail about responsibilities and requirements?\n3. Is the job title clear and professional?\n4. Is the company information present and reasonable?\n\nQUALITY SCORE GUIDELINES:\n- 90-100: Excellent posting with comprehensive details\n- 70-89: Good posting with adequate information\n- 50-69: Acceptable but missing some details\n- 0-49: Poor quality, insufficient information, or suspicious content\n\nOUTPUT FORMAT:\nReturn ONLY a valid JSON object. Do NOT include markdown formatting, code blocks, or explanatory text.\n\n{\n  \"qualityScore\": <number between 0-100>,\n  \"isLegitimate\": <true or false>,\n  \"hasSufficientDetail\": <true or false>,\n  \"recommendation\": \"<approve or reject>\",\n  \"issues\": [\"<issue 1 if any>\", \"<issue 2 if any>\"],\n  \"summary\": \"<brief 1-sentence assessment>\"\n}\n\nCRITICAL: Return ONLY the JSON object. No additional text. No markdown. No code blocks."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [-320, -160],
+      "id": "bd0dee22-a938-42a7-951f-5e898061ae75",
+      "name": "AI Job Matching Analysis",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iSUthz6TcizkpxHs",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "match-threshold-filter",
+              "leftValue": "={{ $json.validation.qualityScore }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gte",
+                "name": "filter.operator.gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [400, -160],
+      "id": "b6e1b545-796e-48d2-b3d1-37dcc951ffff",
+      "name": "Compatibility Threshold Filter (≥70%)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JOB MATCHING - OUTPUT FORMATTING\nconst items = $input.all();\nconst formattedResults = [];\nfor (const item of items) {\n  const itemData = item.json;\n  const jobData = { title: itemData.title || '', companyName: itemData.companyName || '', companyWebsite: itemData.companyWebsite || '', location: itemData.location || '', salary: itemData.salary || '', description: itemData.description || '', url: itemData.url || '', id: itemData.id || '', postedDate: itemData.postedDate || '', employmentType: itemData.employmentType || '' };\n  const validation = itemData.validation || {};\n  const formattedResult = { jobData: jobData, qualityValidation: { qualityScore: validation.qualityScore || 0, isLegitimate: validation.isLegitimate || false, hasSufficientDetail: validation.hasSufficientDetail || false, recommendation: validation.recommendation || 'reject', issues: validation.issues || [], summary: validation.summary || 'No validation summary' }, metadata: { processedAt: new Date().toISOString(), workflowName: 'Job Matching Scoring Workshop', nodeName: 'Job Matching Output Formatting', jobIndex: itemData.jobIndex || 0, totalJobs: itemData.totalJobs || 1 } };\n  formattedResults.push({ json: formattedResult });\n}\nreturn formattedResults;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, -160],
+      "id": "dbf01e41-685a-479d-91a0-07b637942bf4",
+      "name": "Job Matching Output Formatting"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// AI RESPONSE VALIDATION - JOB QUALITY ASSESSMENT (Condensed)\nconst DEFAULT_VALIDATION = { qualityScore: 0, isLegitimate: false, hasSufficientDetail: false, recommendation: 'reject', issues: ['AI validation failed'], summary: 'Validation could not be completed' };\nconst upstreamNode = $('Execute Workflow Trigger - From Orchestrator');\nconst originalJobData = upstreamNode.item.json;\nconst aiResponse = $json;\nlet validation = null;\nlet hasErrors = false;\nlet responseContent = aiResponse;\nif (aiResponse.candidates && Array.isArray(aiResponse.candidates) && aiResponse.candidates.length > 0) {\n  const candidate = aiResponse.candidates[0];\n  if (candidate.content && candidate.content.parts && Array.isArray(candidate.content.parts) && candidate.content.parts.length > 0) {\n    const textContent = candidate.content.parts[0].text;\n    if (textContent) responseContent = textContent;\n  }\n}\nif (typeof responseContent === 'string') {\n  let cleanedResponse = responseContent.trim();\n  if (cleanedResponse.startsWith('```json')) cleanedResponse = cleanedResponse.replace(/^```json\\s*/, '').replace(/\\s*```$/, '');\n  else if (cleanedResponse.startsWith('```')) cleanedResponse = cleanedResponse.replace(/^```\\s*/, '').replace(/\\s*```$/, '');\n  try { validation = JSON.parse(cleanedResponse); } catch (e) { hasErrors = true; validation = { ...DEFAULT_VALIDATION }; }\n} else if (typeof responseContent === 'object' && responseContent !== null) {\n  if (responseContent.qualityScore !== undefined) validation = responseContent;\n  else { hasErrors = true; validation = { ...DEFAULT_VALIDATION }; }\n} else { hasErrors = true; validation = { ...DEFAULT_VALIDATION }; }\nif (!validation.qualityScore && validation.qualityScore !== 0) { validation.qualityScore = 0; hasErrors = true; }\nif (typeof validation.qualityScore !== 'number') {\n  const parsed = parseFloat(validation.qualityScore);\n  if (!isNaN(parsed)) validation.qualityScore = Math.max(0, Math.min(100, parsed));\n  else { validation.qualityScore = 0; hasErrors = true; }\n}\nif (validation.qualityScore < 0 || validation.qualityScore > 100) validation.qualityScore = Math.max(0, Math.min(100, validation.qualityScore));\nif (typeof validation.isLegitimate !== 'boolean') validation.isLegitimate = validation.qualityScore >= 70;\nif (typeof validation.hasSufficientDetail !== 'boolean') validation.hasSufficientDetail = validation.qualityScore >= 70;\nconst validRecommendations = ['approve', 'reject'];\nif (!validRecommendations.includes(validation.recommendation)) validation.recommendation = validation.qualityScore >= 70 ? 'approve' : 'reject';\nif (!Array.isArray(validation.issues)) validation.issues = [];\nif (typeof validation.summary !== 'string') validation.summary = 'No summary provided';\nconst preservedJobData = { title: originalJobData.title || '', companyName: originalJobData.companyName || '', companyWebsite: originalJobData.companyWebsite || '', location: originalJobData.location || '', salary: originalJobData.salary || '', description: originalJobData.descriptionText || originalJobData.description || '', url: originalJobData.link || originalJobData.url || '', id: originalJobData.id || '', postedDate: originalJobData.postedAt || originalJobData.postedDate || '', employmentType: originalJobData.employmentType || '', jobIndex: originalJobData.jobIndex || 0, totalJobs: originalJobData.totalJobs || 1 };\nreturn { json: { ...preservedJobData, validation: validation, validationMetadata: { hasErrors: hasErrors, validatedAt: new Date().toISOString() } } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [112, -160],
+      "id": "a5bc5925-b68e-48b8-8803-74c29eb2ebda",
+      "name": "AI Response Validation and Error Handling"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Orchestrator": {
+      "main": [
+        [{ "node": "AI Job Matching Analysis", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Job Matching Analysis": {
+      "main": [
+        [
+          {
+            "node": "AI Response Validation and Error Handling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compatibility Threshold Filter (≥70%)": {
+      "main": [
+        [
+          {
+            "node": "Job Matching Output Formatting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Response Validation and Error Handling": {
+      "main": [
+        [
+          {
+            "node": "Compatibility Threshold Filter (≥70%)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "5166c5ab-bf91-4ede-b971-d67d4c736553",
+  "triggerCount": 1,
+  "tags": []
+}

@@ -1,0 +1,373 @@
+{
+  "createdAt": "2025-09-17T03:50:51.928Z",
+  "updatedAt": "2025-10-27T01:57:52.000Z",
+  "id": "fGpR7xvrOO7PBa0c",
+  "name": "LinkedIn-SEO-Gmail-Orchestrator--Augment",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        192
+      ],
+      "id": "c60aaec5-7307-4af4-8099-f574619cfb54",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Execute LinkedIn automation: Find all available jobs for SEO, Search Engine optimization roles in Remote locations.",
+        "options": {
+          "systemMessage": "You are the **General Contractor** for a distributed job automation system. Your role is to orchestrate and coordinate multiple specialized subcontractor workflows to achieve comprehensive job application automation for ANY job type or industry.\n\n**ARCHITECTURAL ROLE:**\n- **General Contractor**: You coordinate the entire workflow execution regardless of job type\n- **Subcontractor Management**: You delegate specialized tasks to workshop subcontractors\n- **Quality Assurance**: You ensure proper workflow sequencing and data flow\n- **Decision Making**: You make intelligent decisions about workflow execution paths\n\n**AVAILABLE SUBCONTRACTORS:**\n1. **Job Discovery Workshop**: Discovers and qualifies job opportunities from any industry/role\n2. **Contact Enrichment Workshop**: Finds and verifies hiring manager contact information for any company\n3. **Job Matching Workshop**: Analyzes job-resume compatibility for any position type\n4. **Resume Generation Workshop**: Creates customized resumes for any opportunity\n5. **Outreach Tracking Workshop**: Manages email outreach and tracking for any job application\n\n**EXECUTION STRATEGY:**\n1. **Initiate Job Discovery**: Call the job_discovery_workflow tool to find relevant opportunities\n2. **Coordinate Parallel Processing**: Enable simultaneous contact enrichment and resume customization\n3. **Quality Control**: Ensure proper data flow between subcontractor workflows\n4. **Orchestrate Completion**: Coordinate final outreach and tracking activities\n\n**CRITICAL RULES:**\n- Your primary tool is `job_discovery_workflow` to initiate the process\n- You coordinate workflow execution, not individual task processing\n- Each subcontractor workshop handles its own specialized processing\n- You ensure proper sequencing: Discovery → Parallel Processing → Outreach\n- You maintain oversight of the entire distributed system\n- You process ANY job type dynamically without assumptions about keywords or industries\n\n**TEMPLATE EXECUTION:**\nExecute the comprehensive job automation workflow by calling the job_discovery_workflow tool. The Job Discovery Workshop contains the user-configured search parameters (keywords, location, preferences) and will return relevant opportunities for processing through the specialized subcontractor workshops.",
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1040,
+        192
+      ],
+      "id": "052528f9-76c5-4c8f-a5c7-8f7119514110",
+      "name": "AI Agent - Dynamic Interface"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 8192,
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        400
+      ],
+      "id": "218872e8-5319-4423-8072-3338d9e38ffb",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iSUthz6TcizkpxHs",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "zTtSVmTg3UaV9tPG",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/zTtSVmTg3UaV9tPG",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ResumeGeneration--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jobData": "={{ $json.jobData }}",
+            "qualityValidation": "={{ $json.qualityValidation }}",
+            "contactEnrichment": "={{ $json.contactEnrichment }}",
+            "metadata": "={{ $json.metadata }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        192
+      ],
+      "id": "19aaecd6-e948-43d1-ba6d-47b5bbc5c7d5",
+      "name": "Resume Generation Workshop"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "rClUELDAK9f4mgJx",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/rClUELDAK9f4mgJx",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactEnrichment--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jobData": "={{ $json.jobData }}",
+            "qualityValidation": "={{ $json.qualityValidation }}",
+            "metadata": "={{ $json.metadata }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        192
+      ],
+      "id": "99678a1c-8c77-4aaa-a022-44bea72e48cb",
+      "name": "Contact Enrichment Workshop"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "bpfuL3HjZuD27Ca3",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/bpfuL3HjZuD27Ca3",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobMatchingScoring--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jobData": "={{ $json.jobData }}",
+            "metadata": "={{ $json.metadata }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        192
+      ],
+      "id": "4ebfde54-21bd-481d-97cd-2065833d5d78",
+      "name": "Job Matching Scoring Workshop"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wZyxRjWShhnSFbSV",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/wZyxRjWShhnSFbSV",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-ContactTracking--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        192
+      ],
+      "id": "5630dfa1-604a-46de-9a3e-24d6ffd0c3c0",
+      "name": "Contact Tracking Workshop"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Vp9DpKF3xT2ysHhx",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Vp9DpKF3xT2ysHhx",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-OutreachTracking--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jobData": "={{ $json.jobData }}",
+            "qualityValidation": "={{ $json.qualityValidation }}",
+            "contactEnrichment": "={{ $json.contactEnrichment }}",
+            "resumeData": "={{ $json.resumeData }}",
+            "outreachData": "={{ $json.outreachData }}",
+            "metadata": "={{ $json.metadata }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        192
+      ],
+      "id": "e8cf329f-3747-4742-bc8e-5f216137695a",
+      "name": "Outreach Tracking Workshop"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wbkQo6X2R8XQOYgG",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/wbkQo6X2R8XQOYgG",
+          "cachedResultName": "LinkedIn-SEO-Gmail-sub-flow-Workshop-JobDiscovery--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -688,
+        192
+      ],
+      "id": "448c0b6a-58cf-4d55-9549-1812e4c52e64",
+      "name": "Job Discovery Workshop"
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Dynamic Interface",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Dynamic Interface": {
+      "main": [
+        [
+          {
+            "node": "Job Discovery Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Dynamic Interface",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Generation Workshop": {
+      "main": [
+        [
+          {
+            "node": "Contact Tracking Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Enrichment Workshop": {
+      "main": [
+        [
+          {
+            "node": "Resume Generation Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Matching Scoring Workshop": {
+      "main": [
+        [
+          {
+            "node": "Contact Enrichment Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Tracking Workshop": {
+      "main": [
+        [
+          {
+            "node": "Outreach Tracking Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Discovery Workshop": {
+      "main": [
+        [
+          {
+            "node": "Job Matching Scoring Workshop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "versionId": "71a7f9b2-a44b-4f0b-883d-6dad3cbc8075",
+  "tags": [
+    {
+      "id": "FrnybmIzoJd732QS",
+      "name": "Augment Code"
+    },
+    {
+      "id": "vLAu3k5rpJ6X1Zd0",
+      "name": "Main Orchestrator"
+    }
+  ]
+}
+

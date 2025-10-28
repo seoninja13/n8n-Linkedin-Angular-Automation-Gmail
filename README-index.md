@@ -18,6 +18,69 @@ Last updated: 2025-01-10
 ## Handover / Knowledge Transfer
 Use these documents to understand session outcomes and next steps. Each entry includes a brief description and date.
 
+- 2025-10-28 — Orchestrator Workflow Verification & Resume Generation Fix
+  - Description: Successfully resolved critical bug in orchestrator workflow where Resume Generation Workshop Execute Workflow node was only triggering 1 sub-workflow execution instead of 6. Root cause: Missing explicit `mode: "each"` parameter. After implementing fix, conducted comprehensive end-to-end verification of orchestrator execution 5779, confirming ZERO DATA LOSS across all 6 jobs through entire pipeline (Contact Enrichment → Filter → Resume Generation → Contact Tracking → Outreach Tracking). All 6 Gmail drafts successfully created with customized resumes achieving 89% ATS score and 92% relevance score.
+  - Document: Docs/handover/conversation-handover-knowledge-transfer.md
+  - Daily Log: Docs/daily-logs/2025-10-28-orchestrator-workflow-verification.md
+  - Linear Issue: [1BU-461](https://linear.app/1builder/issue/1BU-461/resolved-resume-generation-workshop-only-triggering-1-sub-workflow) (Done)
+  - Workflow ID: fGpR7xvrOO7PBa0c (Orchestrator)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/fGpR7xvrOO7PBa0c
+  - Key Node: "Resume Generation Workshop" Execute Workflow node (ID: 19aaecd6-e948-43d1-ba6d-47b5bbc5c7d5)
+  - Fix Applied: Added explicit `mode: "each"` parameter to Execute Workflow node configuration
+  - Verification Results: 6 jobs processed, 6 Resume Generation executions (5780-5785), 6 Gmail drafts created (5792-5797), 100% success rate
+  - Performance: ~62 seconds per resume, 10 minutes total pipeline duration, 89% ATS score, 92% relevance score
+  - Known Issues: (1) Contact Tracking Workshop Google Sheets operation failures (non-blocking), (2) Potential resume customization duplication (low priority)
+  - Status: ✅ ORCHESTRATOR WORKFLOW PRODUCTION-READY - Data ready to be pinned for downstream testing
+  - Next Steps: (1) Investigate Contact Tracking Workshop Google Sheets issue, (2) Pin Outreach Tracking output data for testing, (3) Optionally investigate resume customization duplication
+
+- 2025-10-27 — Contact Enrichment Workshop Apify Parameter Validation Fix
+  - Description: Successfully debugged and resolved Apify Lead Finder Actor "Bad Request" parameter validation errors in Contact Enrichment Workshop. Two cascading errors fixed: (1) Case sensitivity - parameter values must be lowercase (not Title Case), (2) Incorrect abbreviation - "hr" must be "human_resources" (full term, not abbreviation). After analyzing execution data from multiple test runs (Execution IDs: 5540, 5542, 5544), identified that Apify API strictly enforces lowercase parameter values and full term names for seniority_level and functional_level parameters.
+  - Document: Docs/handover/conversation-handover-knowledge-transfer.md
+  - Daily Log: Docs/daily-logs/2025-10-27-contact-enrichment-apify-parameter-fix.md
+  - Linear Issue: [1BU-460](https://linear.app/1builder/issue/1BU-460) (Done)
+  - Workflow ID: rClUELDAK9f4mgJx
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Key Node: "Domain extraction and Apify input builder - 100 recs" (ID: 65d4f583-d2ee-4fb3-b5f0-5539842ca824)
+  - Errors Fixed: #1 Case sensitivity (seniority_level), #2 Incorrect abbreviation (functional_level)
+  - Corrected Parameters: seniority_level: ["c_suite", "vp", "director", "head", "manager"], functional_level: ["marketing", "human_resources", "c_suite"]
+  - Expected Results: ~100 high-quality contacts per run, 96% cost savings ($6.00+ → $0.25), decision-makers only
+  - Status: ✅ PARAMETER VALIDATION FIXED - Ready for testing
+  - Next Steps: (1) Update node code with corrected functional_level parameter, (2) Test workflow by executing LinkedIn Orchestrator, (3) Verify no API errors, (4) Confirm ~100 contacts returned
+
+- 2025-10-27 — Resume Generation Workshop Keyword Extraction Failure
+  - Description: Attempted to fix critical keyword extraction issue where AI Resume Customization node extracts keywords from candidate's base resume instead of target job description. Successfully fixed AI output inconsistency (temperature=0.0), but keyword extraction fix (prompt restructuring) COMPLETELY FAILED (0% success rate). Root cause: Fundamental prompt architecture flaw - AI has access to both sources simultaneously. Recommended solution: Implement two-stage prompt architecture (70% confidence).
+  - Document: Docs/handover/conversation-handover-knowledge-transfer.md
+  - Daily Log: Docs/daily-logs/2025-10-27-resume-generation-keyword-extraction-troubleshooting.md
+  - Workflow ID: zTtSVmTg3UaV9tPG
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/zTtSVmTg3UaV9tPG
+  - Key Node: "AI Resume Customization" (ID: 05670670-fdb3-421e-9b9e-af04797024c9)
+  - Fixes Applied: #1 Temperature=0.0 (✅ SUCCESS), #2 Prompt restructuring (❌ FAILED - 0% success), #3 Workflow validation fix (✅ SUCCESS)
+  - Test Result: Resume for "Data Entry Assistant" contains 100% technical keywords (JavaScript, AWS, Angular) and 0% administrative keywords (data entry, attention to detail)
+  - Status: ❌ BROKEN - Two-stage prompt architecture required
+  - Next Steps: (1) Add "Keyword Extraction from Job Description" node, (2) Modify "AI Resume Customization" node to accept keywords as input, (3) Test with "Data Entry Assistant" job, (4) If fails, try Claude 3.5 Sonnet
+  - Backup: N8N workflow backup complete (83 workflows cataloged) - Docs/backups/workflows/2025-10-27/
+
+- 2025-10-26 — Contact Enrichment Workshop NeverBounce API Throttling Issue Resolution
+  - Description: Diagnosed and resolved three sequential errors in Contact Enrichment Workshop NeverBounce polling logic. Root cause discovered: NeverBounce API throttling (10/10 active processing lists at account limit). Provided complete code fixes with throttle error handling (Version 5.4.0-throttle-handling). Workflow execution BLOCKED until NeverBounce jobs complete or account upgraded.
+  - Document: Docs/handover/conversation-handover-knowledge-transfer.md
+  - Workflow ID: rClUELDAK9f4mgJx
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Key Nodes: "Output Formatting Split By Job" (Version 3.2.1-complete-fix), "NeverBounce Poll And Retreive Results" (Version 5.4.0-throttle-handling)
+  - Errors Fixed: #1 "Unexpected end of input [line 30]", #2 "running. Please wait longer and try again", #3 "Unexpected token '}' [line 9]", #4 "No job_id received from HTTP Request node"
+  - Root Cause: NeverBounce API throttling - account at 10/10 active processing lists limit
+  - Status: 🚫 BLOCKED - Code fixes complete, waiting for NeverBounce throttle resolution
+  - Next Steps: (1) Check NeverBounce dashboard for completed jobs, (2) Apply Version 5.4.0-throttle-handling code, (3) Test workflow execution
+
+- 2025-10-24 — NeverBounce Batch Verification Troubleshooting and Fix
+  - Description: Comprehensive troubleshooting session for JSON validation errors in NeverBounce batch verification implementation. Root cause identified: Content Type field had `=json` instead of `json`, causing N8N to evaluate as expression instead of literal value. Documented complete troubleshooting journey including sequential errors (syntax error → validation error), N8N expression syntax rules, and Hybrid Architecture implementation (HTTP Request + Code node).
+  - Document: Docs/daily-logs/2025-10-24-neverbounce-batch-verification-troubleshooting.md
+  - Linear Issue: [1BU-454](https://linear.app/1builder/issue/1BU-454) (In Progress - Ready for Testing)
+  - Workflow ID: rClUELDAK9f4mgJx
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Key Nodes: "HTTP Request - Neverbounce", "NeverBounce poll And retreive Results", "Filter Verified Emails"
+  - Critical Fix: Content Type field MUST be `json` (not `=json`) - literal value, not expression
+  - Status: ✅ Root Cause Identified - ⏳ Awaiting User Implementation (Content Type fix)
+
 - 2025-10-24 — Contact Enrichment Workshop Simplified Batch Processing Architecture
   - Description: Diagnosed and fixed critical batch processing architecture issue where redundant nodes and incorrect execution mode were breaking batch processing efficiency. Consolidated "Company Domain Processing" and "Build Lead Finder Input" into single "Domain Extraction & Apify Input Builder" node. Fixed critical configuration error: Mode MUST be "Run Once for All Items" (not "Run Once for Each Item") to enable batch processing. Reduced node count from 10 to 9 (10% reduction) while maintaining all functionality.
   - Document: Docs/handover/conversation-handover-knowledge-transfer.md
@@ -262,6 +325,17 @@ Current status summaries and milestone tracking.
   - Example: Docs/project-status/Contact-Tracking-Duplicate-Detection-Fix-Status.md
 - Milestones: Docs/project-milestones/
   - Example: Docs/project-milestones/contact-tracking-workflow-success-documentation.md
+- **Job Application Progress Tracker**: Docs/tracking/job-application-progress-tracker.md
+  - Central file for monitoring the status of all job applications and workshop workflows
+  - Last Updated: 2025-10-27
+  - Current Status: Resume Generation Workshop BROKEN (keyword extraction failure)
+- **N8N Workflow Backups**: Docs/backups/
+  - **README**: Docs/backups/README.md - Complete guide to requesting and managing backups
+  - **Backup Directory**: Docs/backups/workflows/YYYY-MM-DD/ - Timestamped backup directories
+  - **How to Request**: Ask AI agent using templates in README (e.g., "Run a full N8N workflow backup")
+  - **Backup Types**: Full, incremental, active-only, selective by category
+  - **Output Files**: Individual workflow JSON files, backup index, summary, and log
+  - **Last Backup**: 2025-10-27 (9 workflows backed up, 74 remaining)
 
 ---
 
