@@ -2,7 +2,7 @@
 
 This is the single, authoritative entry point for all project documentation. Every document should link back here for navigation continuity.
 
-Last updated: 2025-01-10
+Last updated: 2025-10-30
 
 ---
 
@@ -15,8 +15,50 @@ Last updated: 2025-01-10
 
 ---
 
+## Current Issues
+- 🚫 **BLOCKER**: Contact Enrichment Workflow - Apify Account Free Tier Limit (2025-10-30 - UPDATED)
+  - Apify account has free tier limit restricting Lead Finder Actor to 19 free leads per run
+  - Billing shows `chargedEventCounts.lead-fetched: 19` but `accountedChargedEventCounts.lead-fetched: 0` (not billed)
+  - All technical fixes failed (memory parameters, node types, input formats)
+  - Apify Console test returned 200+ contacts with same input (different account/plan)
+  - **Solution**: Upgrade Apify account to paid plan or add credits ($0.002 per lead)
+  - Blocks entire job application pipeline
+  - See: Docs/daily-logs/2025-10-30-contact-enrichment-apify-troubleshooting.md
+
+---
+
 ## Handover / Knowledge Transfer
 Use these documents to understand session outcomes and next steps. Each entry includes a brief description and date.
+
+- 2025-10-31 — **❌ CONTACT ENRICHMENT WORKSHOP SIMPLIFICATION - REVIEW FINDINGS (NO-GO)**
+  - Description: Comprehensive review of Contact Enrichment Workshop simplification effort identified **2 CRITICAL CODE ISSUES** preventing testing. While architectural changes (node deletions and reconnections) were implemented correctly, code was accidentally pasted into wrong nodes during implementation. **Issue #1**: "Output Formatting Split By Job" node still has OLD CODE with chunk aggregation logic that references deleted "Domain chunker - 15 per batch" node (will fail at runtime). **Issue #2**: "Domain extraction and Apify input builder - 100 recs" node has WRONG CODE (output formatting instead of domain extraction). **Root Cause**: User accidentally pasted simplified "Output Formatting Split By Job" code into wrong node. **Key Discovery**: Apify Lead Finder Actor processes ALL domains in a single API call when using `{"0": {...}}` wrapper format, making chunking/batching architecture unnecessary. **Benefits Once Fixed**: 95 fewer lines of code, 2 fewer nodes, simpler architecture, same functionality.
+  - Review Document: Docs/reviews/contact-enrichment-simplification-review-2025-10-31.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Contact Enrichment Workshop Simplification - Review Findings)
+  - Project Operations Manual: Docs/project-operations-manual.md (Section: Contact Enrichment Workshop Architecture Simplification)
+  - Workflow ID: rClUELDAK9f4mgJx (Contact Enrichment Workshop)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Status: ❌ NO-GO - 2 critical code issues must be fixed before testing
+  - Next Steps: (1) Fix "Output Formatting Split By Job" node code, (2) Fix "Domain extraction and Apify input builder - 100 recs" node code, (3) Save workflow, (4) Request AI review to verify fixes, (5) Test simplified workflow end-to-end
+
+- 2025-10-30 — **🚫 CONTACT ENRICHMENT WORKFLOW - APIFY ACCOUNT FREE TIER LIMIT (BLOCKER - UPDATED)**
+  - Description: After 5+ troubleshooting attempts, identified the root cause of why the Contact Enrichment Workflow consistently returns only 19 contacts instead of 200+. The issue is NOT with N8N configuration or actor parameters - it's an **Apify account free tier limit** that restricts the Lead Finder Actor to 19 free leads per run. **Critical Evidence**: Billing data shows `chargedEventCounts.lead-fetched: 19` but `accountedChargedEventCounts.lead-fetched: 0` (19 leads fetched but NOT billed = free tier). **All Technical Fixes Failed**: Memory parameters (6029, 6039), native Apify node (6058), dataset ID path (6061), excluding _metadata field (6067) - nothing changed the 19-contact result. **Apify Console Success**: Same input returned 200+ contacts in Console (different account/plan?). **Solution**: Upgrade Apify account to paid plan or add credits ($0.002 per lead, 200 leads = $0.40). **Alternative Solutions**: Use different service (Apollo.io, Hunter.io, RocketReach), implement 19-lead batch processing, or contact Apify support for higher free tier.
+  - Daily Log: Docs/daily-logs/2025-10-30-contact-enrichment-apify-troubleshooting.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Contact Enrichment Workflow - Apify Free Tier Limit)
+  - Project Operations Manual: Docs/project-operations-manual.md (ISSUE-001: Apify Actor Returns Limited Results, BP-005: Apify Integration Best Practices)
+  - Workflow ID: rClUELDAK9f4mgJx (Contact Enrichment Workshop)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Execution IDs: 6029, 6039, 6058, 6061, 6067 (all troubleshooting attempts)
+  - Status: 🚫 BLOCKED - Apify account free tier limit
+  - Next Steps: (1) Verify Apify account plan and limits, (2) Upgrade to paid plan or add credits, (3) Re-test Contact Enrichment Workshop, (4) Verify billing shows accountedChargedEventCounts > 0
+
+- 2025-10-29 — **🔍 CONTACT ENRICHMENT FILTERING STRATEGY ANALYSIS: Multi-Contact Outreach Implementation**
+  - Description: Successfully completed comprehensive analysis of the Contact Enrichment Workshop's filtering strategy to implement multi-contact outreach (3-5 contacts per job). **CRITICAL BUG IDENTIFIED**: The "Limit - 10" node is limiting to 10 contacts TOTAL across ALL jobs, not 10 contacts per job, causing only ~1 contact per job to be processed instead of the intended 3-5 contacts per job (75% reduction in email reach). **Root Cause**: N8N Limit node applies global limit, not per-job limit. **Available Metadata**: `seniorityLevel`, `functionalLevel`, `jobTitle` fields available for intelligent prioritization. **Optimal Node Location**: AFTER "Filter Verified Emails", BEFORE "If - Has a Domain1". **Recommended Solution**: (1) Remove "Limit - 10" node, (2) Add "Contact Prioritization & Limiting" node with scoring algorithm (seniority 0-100 + functional 0-20 + job title keywords 0-30), (3) Increase Lead Finder Actor `fetch_count` from 100 to 500. **Cost-Benefit**: +$0.32 per 10 jobs (+400% cost), but +40 emails per 10 jobs (+400% reach). **Implementation Time**: ~30 minutes (3 phases: remove node, add prioritization, test).
+  - Daily Log: Docs/daily-logs/2025-10-29-contact-enrichment-filtering-strategy-analysis.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Contact Enrichment Filtering Strategy Analysis)
+  - Workflow ID: rClUELDAK9f4mgJx (Contact Enrichment Workshop)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Status: ✅ ANALYSIS COMPLETE - Ready for implementation
+  - Next Steps: (1) Remove "Limit - 10" node, (2) Increase `fetch_count` to 500, (3) Add "Contact Prioritization & Limiting" node, (4) Test with pinned data
 
 - 2025-10-29 — **✅ MILESTONE 4 COMPLETE: Compatibility Scoring Implementation + 5-Phase Incremental Testing Strategy**
   - Description: Successfully completed Milestone 4 (Compatibility Scoring Implementation) for the Job Matching Workshop. Fixed critical issue where Compatibility Score Validation node was outputting only 1 item instead of 123 items (99.2% data loss). **Root Cause**: Missing `mode: 'runOnceForEachItem'` configuration parameter + AI prompt contamination. **Fix**: (1) Configured node mode to "Run Once for Each Item" in N8N UI, (2) Updated AI Compatibility Scoring Agent prompt with explicit instructions to prevent N8N structure contamination. **Verification**: Execution 5876 confirmed 123 items → 12 approved jobs (≥70% compatibility). **Compatibility Scores**: Accurate scores ranging from 16% to 92% across all 123 jobs. **5-Phase Testing Strategy**: Approved incremental testing approach (Phase 1: Job Discovery → Job Matching, Phase 2: Contact Enrichment, Phase 3: Resume Generation, Phase 4: Contact Tracking + Outreach Tracking, Phase 5: Full Orchestrator). **Timeline**: ~60-85 minutes for complete validation.

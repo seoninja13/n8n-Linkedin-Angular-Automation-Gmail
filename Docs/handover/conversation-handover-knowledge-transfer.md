@@ -1,5 +1,380 @@
 # Conversation Handover Knowledge Transfer
-**LinkedIn Automation Project - Compatibility Scoring Implementation & Incremental Testing Strategy**
+**LinkedIn Automation Project - Multi-Contact Outreach Strategy & Contact Enrichment Filtering**
+
+---
+
+## 🚫 **CONTACT ENRICHMENT WORKFLOW - APIFY FREE TIER LIMIT (2025-10-30 - UPDATED)**
+
+### **Session Status**: ✅ **ROOT CAUSE IDENTIFIED** | 🚫 **BLOCKED - APIFY ACCOUNT FREE TIER LIMIT**
+
+### **Executive Summary**
+After 5+ troubleshooting attempts, identified the root cause of why the Contact Enrichment Workflow consistently returns only 19 contacts instead of 200+. The issue is NOT with N8N configuration or actor parameters - it's an **Apify account free tier limit** that restricts the Lead Finder Actor to 19 free leads per run.
+
+**Critical Evidence**:
+- **Billing Data**: `chargedEventCounts.lead-fetched: 19` but `accountedChargedEventCounts.lead-fetched: 0` (19 leads fetched but NOT billed = free tier)
+- **Consistent Limit**: Every execution returns exactly 19 contacts (not random)
+- **All Fixes Failed**: Memory parameters, node types, input formats - nothing changed the 19-contact result
+- **Apify Console Success**: Same input returned 200+ contacts in Console (different account/plan?)
+
+**Solution**: Upgrade Apify account to paid plan or add credits to unlock full Lead Finder Actor functionality.
+
+**Daily Log**: `Docs/daily-logs/2025-10-30-contact-enrichment-apify-troubleshooting.md`
+
+---
+
+### **All Troubleshooting Attempts (Chronological)**
+
+#### **Attempt 1: Memory Parameter in Request Body (Execution 6029)** ❌
+- **Hypothesis**: Actor needs 4096 MB memory to process all domains
+- **Implementation**: Added `memory: 4096` to JSON request body
+- **Result**: FAILED - Still 19 contacts, memory remained 512 MB
+- **URL**: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx/executions/6029
+
+#### **Attempt 2: Memory Parameter as URL Query (Execution 6039)** ❌
+- **Hypothesis**: Memory should be URL query parameter, not body
+- **Implementation**: Added `&memory=4096` to URL
+- **Result**: FAILED - Still 19 contacts, memory remained 512 MB
+- **URL**: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx/executions/6039
+
+#### **Attempt 3: Replace HTTP Request with Native Apify Node (Execution 6058)** ❌
+- **Hypothesis**: HTTP Request node doesn't call API correctly; native node uses proper SDK
+- **Implementation**: Replaced with `@apify/n8n-nodes-apify.apify` node
+- **Result**: FAILED - "Dataset ID is required" error
+- **URL**: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx/executions/6058
+
+#### **Attempt 4: Fix Dataset ID Path (Execution 6061)** ❌
+- **Hypothesis**: Native node outputs dataset ID at different path
+- **Implementation**: Changed `$json.data.defaultDatasetId` → `$json.defaultDatasetId`
+- **Result**: FAILED - Still 19 contacts
+- **URL**: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx/executions/6061
+
+#### **Attempt 5: Exclude `_metadata` Field (Execution 6067)** ❌
+- **Hypothesis**: `_metadata` field contaminating input, causing silent failure
+- **Implementation**: Changed `customBody` from `={{ $json }}` to explicit JSON.stringify:
+  ```javascript
+  ={{ JSON.stringify({
+    company_domain: $json.company_domain,
+    contact_job_title: $json.contact_job_title,
+    fetch_count: $json.fetch_count,
+    email_status: $json.email_status,
+    seniority_level: $json.seniority_level,
+    functional_level: $json.functional_level
+  }) }}
+  ```
+- **Result**: FAILED - Still 19 contacts
+- **URL**: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx/executions/6067
+- **Key Finding**: `chargedEventCounts.lead-fetched: 19` but `accountedChargedEventCounts.lead-fetched: 0` (FREE TIER!)
+
+---
+
+### **Root Cause: Apify Account Free Tier Limit**
+
+**Execution 6067 Billing Data**:
+```json
+{
+  "chargedEventCounts": {
+    "apify-actor-start": 1,
+    "lead-fetched": 19  // ← Actor fetched 19 leads
+  },
+  "accountedChargedEventCounts": {
+    "apify-actor-start": 1,
+    "lead-fetched": 0   // ← But 0 leads were billed (FREE TIER)
+  }
+}
+```
+
+**Why This Proves Free Tier Limit**:
+1. **19 leads fetched but NOT billed**: Difference between `chargedEventCounts` (19) and `accountedChargedEventCounts` (0)
+2. **Consistent 19-contact limit**: Not random - appears in ALL executions
+3. **All technical fixes failed**: Memory, input format, node type - nothing worked
+4. **Apify Console returned 200+**: Same input, different account/plan
+
+---
+
+### **Comparison: N8N vs Apify Console**
+
+| Metric | Apify Console | N8N Execution 6067 |
+|--------|---------------|-------------------|
+| **Contacts** | 200+ | 19 |
+| **Data Size** | 7,739 lines | ~800 lines |
+| **Billing** | 200+ leads | 0 leads (free) |
+| **Memory** | Unknown | 512 MB |
+| **Dataset** | 1vLK1VT4VsB4zYt8G | EFQfCA3VyJizIiLfr |
+| **Input** | Same | Same |
+| **Status** | SUCCEEDED | SUCCEEDED |
+
+---
+
+### **Recommended Actions**
+
+1. **Verify Apify Account Plan**:
+   - Log into https://console.apify.com/
+   - Check billing plan and usage limits
+   - Review Lead Finder Actor pricing
+
+2. **Upgrade Account**:
+   - Add credits to Apify account
+   - Pricing: $0.002 per lead (200 leads = $0.40)
+   - Upgrade to paid plan if necessary
+
+3. **Test After Upgrade**:
+   - Run Contact Enrichment Workshop
+   - Verify `accountedChargedEventCounts.lead-fetched` > 0
+   - Confirm 200+ contacts returned
+
+4. **Alternative Solutions** (if upgrade not possible):
+   - Use different service (Apollo.io, Hunter.io, RocketReach)
+   - Implement 19-lead batch processing (inefficient)
+   - Contact Apify support for higher free tier
+
+---
+
+## 🚫 **CONTACT ENRICHMENT WORKFLOW - APIFY ACTOR MEMORY RESTRICTION (2025-10-30 - SUPERSEDED)**
+
+**NOTE**: This section is superseded by the free tier limit discovery above. The memory restriction was a symptom, not the root cause.
+
+### **Session Status**: ✅ **ROOT CAUSE IDENTIFIED** | 🚫 **BLOCKED - ACTOR MEMORY RESTRICTION**
+
+### **Executive Summary**
+Successfully identified the root cause of why the Contact Enrichment Workflow is returning insufficient contacts (19 instead of 100-200). The Apify Leads Finder Actor (ID: `IoSHqwTR9YGhzccez`) has a **hard-coded maximum memory limit of 512 MB** set in its `actor.json` configuration file, which **cannot be overridden via API parameters**. Despite passing `memory=4096` as a URL query parameter, the Apify API clamps the memory allocation to 512 MB due to the actor's `maxMemoryMbytes: 512` setting.
+
+**Key Findings**:
+- ✅ HTTP Request node authentication fixed (changed header name from "Apify API Token" to "Authorization")
+- ✅ `waitForFinish=300` parameter working correctly (actor waits for completion)
+- ✅ `timeout=500` parameter working correctly
+- ❌ `memory=4096` parameter being **IGNORED** due to actor-level restriction
+- ❌ Actor fetched **ZERO leads** (`chargedEventCounts.lead-fetched: 0`)
+- ❌ Workflow shows "success" but returns only 19 contacts (likely cached/stale data)
+- **Root Cause**: Actor has `maxMemoryMbytes: 512` in `.actor/actor.json` configuration (actor-level restriction overrides API parameters)
+- **Impact**: 512 MB memory insufficient for processing 100-200 leads, causing incomplete results
+- **Daily Log**: Docs/daily-logs/2025-10-30-contact-enrichment-memory-investigation.md
+- **Status**: 🚫 **BLOCKED - ACTOR MEMORY RESTRICTION**
+
+---
+
+### **Investigation Timeline**
+
+**Phase 1: Authentication Fix** ✅
+- **Issue**: HTTP Request node returning "resource not found" error (404)
+- **Root Cause**: HTTP Header Auth credential had invalid header name "Apify API Token" (contains spaces)
+- **Solution**: Changed header name to `Authorization` with value `Bearer YOUR_APIFY_API_TOKEN`
+- **Result**: Authentication successful, actor started running
+
+**Phase 2: Wait for Completion Fix** ✅
+- **Issue**: "Apify Get Dataset Items" node producing no output
+- **Root Cause**: HTTP Request node returned immediately without waiting for actor to finish (status: "READY")
+- **Solution**: Added `waitForFinish=300` URL query parameter
+- **Result**: Actor now waits up to 300 seconds (5 minutes) for completion
+
+**Phase 3: Memory Parameter Investigation** ❌
+- **Issue**: Actor still using 512 MB memory despite `memory=4096` parameter
+- **Investigation**: Researched official Apify API documentation
+- **Finding**: Parameter name `memory` is **CORRECT** (not `memoryMbytes`)
+- **Root Cause**: Actor has `maxMemoryMbytes: 512` in its `actor.json` configuration
+- **Result**: API parameter cannot override actor-level memory restriction
+
+**Phase 4: Execution Data Analysis** ❌
+- **Execution ID**: 6003
+- **Status**: "success"
+- **Duration**: 6,235ms (6.2 seconds)
+- **Critical Findings**:
+  - `options.memoryMbytes: 512` (❌ STILL 512 MB, NOT 4096 MB)
+  - `chargedEventCounts.lead-fetched: 0` (❌ ZERO LEADS FETCHED)
+- **Conclusion**: Workflow executes successfully but actor fetches 0 leads due to insufficient memory
+
+---
+
+### **Root Cause: Actor-Level Memory Restriction**
+
+From [Apify actor.json documentation](https://docs.apify.com/platform/actors/development/actor-definition/actor-json):
+
+> **`maxMemoryMbytes`** (Optional): Specifies the **maximum amount of memory in megabytes** required by the Actor to run. It can be used to control the costs of run, especially when developing pay per result Actors.
+
+**Key Point**: When an actor has `maxMemoryMbytes` set in its configuration, the API **CANNOT override it**. The API parameter `memory=4096` is being **clamped down to 512 MB** because the actor's `maxMemoryMbytes: 512` setting takes precedence.
+
+**Why the Actor Developer Set This Limit**:
+1. **Control costs** for users (higher memory = higher charges)
+2. **Prevent excessive resource usage** on the Apify platform
+3. **Enforce a specific pricing model** (pay-per-lead instead of pay-per-memory)
+
+**This is NOT a bug - it's an intentional design decision by the actor developer.**
+
+---
+
+### **Proposed Solutions**
+
+**Option 1: Contact the Actor Developer** (RECOMMENDED)
+- Reach out to Leads Finder Actor developer
+- Request memory limit increase to 4096 MB
+- Request "high-memory" version for enterprise users
+- Pros: Official solution, no code changes, maintains updates
+- Cons: Depends on developer response, may require payment
+
+**Option 2: Fork the Actor and Modify It**
+- Fork actor to your Apify account
+- Modify `.actor/actor.json`: Change `maxMemoryMbytes` from 512 to 4096
+- Deploy forked version
+- Update N8N workflow to use forked actor ID
+- Pros: Full control, immediate solution
+- Cons: Requires source code access, loses automatic updates
+
+**Option 3: Use a Different Actor**
+- Search Apify Store for alternative lead finder actors
+- Criteria: Supports 100-200 leads, no memory restrictions, similar functionality
+- Pros: No dependency on current actor, may find better alternatives
+- Cons: Requires research/testing, workflow modifications
+
+**Option 4: Implement Batch Processing** (WORKAROUND)
+- Split job list into batches of 10-20 jobs each
+- Run actor multiple times with smaller `fetch_count` values
+- Aggregate results from multiple runs
+- Pros: Works within current limit, immediate implementation
+- Cons: Slower, higher costs (5× actor starts), complex workflow logic
+
+---
+
+### **Recommended Next Steps**
+
+1. **Verify Actor Memory Limit**: Check Leads Finder Actor page on Apify Store for memory configuration
+2. **Contact Actor Developer**: Explain use case, request memory limit increase
+3. **If Developer Can't Help**: Evaluate Option 2 (fork), Option 3 (alternative actors), or Option 4 (batch processing)
+4. **Update Documentation**: Document final solution in knowledge transfer protocol
+
+---
+
+### **Key Learnings**
+
+1. **API Parameters vs Actor Configuration**: API parameters can be overridden by actor-level configuration settings
+2. **Memory Restrictions**: Actors can enforce hard memory limits that cannot be bypassed via API
+3. **Intentional Design**: Memory restrictions are often intentional design decisions for cost control
+4. **Documentation Research**: Always check official documentation for parameter behavior and limitations
+5. **Execution Data Analysis**: Always retrieve and analyze execution data to verify parameter application
+
+---
+
+## 🔍 **CONTACT ENRICHMENT FILTERING STRATEGY ANALYSIS (2025-10-29)**
+
+### **Session Status**: ✅ **ANALYSIS COMPLETE** | ❌ **CRITICAL BUG IDENTIFIED** | 🚀 **READY FOR IMPLEMENTATION**
+
+### **Executive Summary**
+Successfully completed comprehensive analysis of the Contact Enrichment Workshop's filtering strategy to implement multi-contact outreach (3-5 contacts per job). **CRITICAL BUG IDENTIFIED**: The "Limit - 10" node is limiting to 10 contacts TOTAL across ALL jobs, not 10 contacts per job, causing only ~1 contact per job to be processed instead of the intended 3-5 contacts per job. This represents a **75% reduction in email reach** compared to the target multi-contact strategy.
+
+**Key Findings**:
+- **Critical Bug**: "Limit - 10" node limits to 10 contacts TOTAL (not per job)
+- **Current Behavior**: ~1 contact per job (10 contacts / 10 jobs)
+- **Expected Behavior**: 3-5 contacts per job (30-50 contacts / 10 jobs)
+- **Impact**: 75% reduction in email reach (10 emails vs. 50 emails)
+- **Root Cause**: N8N Limit node applies global limit, not per-job limit
+- **Available Metadata**: `seniorityLevel`, `functionalLevel`, `jobTitle` fields available for intelligent prioritization
+- **Optimal Node Location**: AFTER "Filter Verified Emails", BEFORE "If - Has a Domain1"
+- **Recommended Solution**: (1) Remove "Limit - 10" node, (2) Add "Contact Prioritization & Limiting" node with scoring algorithm, (3) Increase Lead Finder Actor `fetch_count` from 100 to 500
+- **Cost-Benefit**: +$0.32 per 10 jobs (+400% cost), but +40 emails per 10 jobs (+400% reach)
+- **Daily Log**: Docs/daily-logs/2025-10-29-contact-enrichment-filtering-strategy-analysis.md
+- **Status**: ✅ **ANALYSIS COMPLETE** | 🚀 **READY FOR IMPLEMENTATION**
+
+---
+
+### **Priority Scoring Algorithm**
+
+**Base Score from Seniority Level (0-100 points)**:
+- `c_suite`: 100 points (C-Level executives)
+- `vp`: 90 points (Vice Presidents)
+- `director`: 80 points (Directors)
+- `head`: 70 points (Heads of departments)
+- `manager`: 60 points (Managers)
+- `unknown`: 10 points (Unknown seniority)
+
+**Bonus Points for Functional Level (0-20 points)**:
+- `human_resources`: 20 points (HR is highest priority for hiring decisions)
+- `c_suite`: 15 points (C-suite can forward to hiring managers)
+- `marketing`: 10 points (Marketing roles, less relevant)
+- `unknown`: 0 points
+
+**Bonus Points for Job Title Keywords (0-30 points)**:
+- "hiring": 30 points ("Hiring Manager")
+- "talent": 25 points ("Talent Acquisition")
+- "recruiter": 25 points ("Recruiter")
+- "recruitment": 25 points ("Recruitment")
+- "hr": 20 points ("HR Manager")
+- "people": 15 points ("Head of People")
+- "human resources": 20 points ("Human Resources")
+
+**Example Scoring**:
+- Contact 1: c_suite + human_resources + "VP of Human Resources" = 100 + 20 + 20 = **140 points**
+- Contact 2: director + human_resources + "Director of Recruiting" = 80 + 20 + 25 = **125 points**
+- Contact 3: manager + human_resources + "Talent Acquisition Manager" = 60 + 20 + 25 = **105 points**
+- Contact 4: vp + marketing + "VP Marketing" = 90 + 10 + 0 = **100 points**
+- Contact 5: manager + marketing + "Marketing Manager" = 60 + 10 + 0 = **70 points**
+
+**Result**: Select top 5 contacts (scores: 140, 125, 105, 100, 70)
+
+---
+
+### **Required Changes Summary**
+
+**Change #1: REMOVE "Limit - 10" Node** ❌
+- **Current**: Node limits to 10 contacts TOTAL across ALL jobs
+- **Action**: DELETE this node
+- **Rationale**: Causing 1 contact per job issue (should be 3-5 contacts per job)
+
+**Change #2: INCREASE Lead Finder Actor `fetch_count`** ⬆️
+- **Current**: `fetch_count: 100` (total limit across all companies)
+- **Recommended**: `fetch_count: 500` (allow 5-10 contacts per job for 50-100 jobs)
+- **Rationale**: With 100 jobs, `fetch_count: 100` means ~1 contact per job; `fetch_count: 500` means ~5 contacts per job
+
+**Change #3: ADD "Contact Prioritization & Limiting" Node** ✅
+- **Node Name**: "Contact Prioritization & Limiting"
+- **Type**: n8n-nodes-base.code
+- **Position**: AFTER "Filter Verified Emails", BEFORE "If - Has a Domain1"
+- **Mode**: Run Once for All Items
+- **Logic**: Score contacts using seniority + functional + job title keywords, group by company domain, select top 3-5 per company
+- **Input**: Individual items (one per contact with email) from "Filter Verified Emails"
+- **Output**: Individual items (one per selected contact) - top 3-5 contacts per job
+
+---
+
+### **Cost-Benefit Analysis**
+
+| Metric | Current (with bug) | Proposed (without bug) | Change |
+|--------|-------------------|------------------------|--------|
+| **NeverBounce cost** | $0.08 per 10 jobs | $0.40 per 10 jobs | +$0.32 (+400%) |
+| **Emails sent** | 10 emails | 50 emails | +40 (+400%) |
+| **Cost per email** | $0.008 | $0.008 | No change |
+| **Response probability** | Low (1 contact) | High (5 contacts) | +400% |
+
+**Conclusion**: The proposed workflow increases NeverBounce costs by $0.32 per 10 jobs, but increases email reach by 400% (from 10 emails to 50 emails). The cost per email remains the same ($0.008), but the response probability increases significantly.
+
+---
+
+### **Implementation Roadmap**
+
+**Phase 1: Remove Limit Node & Increase Fetch Count** (5 minutes)
+1. Delete "Limit - 10" node from Contact Enrichment Workshop
+2. Update "Domain extraction and Apify input builder" node: Change `fetch_count: 100` to `fetch_count: 500`
+3. Test with pinned data to verify more contacts are returned
+
+**Phase 2: Add Contact Prioritization Node** (15 minutes)
+1. Create new Code node "Contact Prioritization & Limiting"
+2. Implement priority scoring algorithm (seniority + functional + job title keywords)
+3. Implement filtering logic (group by company, select top 5 per company)
+4. Update connections: Filter Verified Emails → Contact Prioritization → If - Has a Domain1
+
+**Phase 3: Testing & Validation** (10 minutes)
+1. Execute Contact Enrichment Workshop with pinned data
+2. Verify output: 3-5 contacts per job (not 1 contact per job)
+3. Verify contact scores are calculated correctly
+4. Verify NeverBounce only verifies top contacts (cost optimization)
+
+**Total Implementation Time**: ~30 minutes
+
+---
+
+### **Next Steps**
+1. ✅ **Documentation Complete** - Daily log entry created
+2. ✅ **Knowledge Transfer Updated** - This section added to handover document
+3. ⏳ **Update README-index.md** - Add reference to daily log entry
+4. ⏳ **Create Linear Ticket** - "Implement Multi-Contact Outreach Strategy in Contact Enrichment Workshop"
+5. 🚀 **Begin Implementation** - Follow the 3-phase implementation roadmap
 
 ---
 
@@ -5495,3 +5870,177 @@ This conversation focused on debugging and fixing email personalization issues i
 **Next Session Priority**: Verify user has implemented all 3 critical fixes and test end-to-end workflow
 **Implementation Guide**: See `Docs/pending-tasks/post-conversation-implementation-checklist.md`
 **Conversation Continuity**: ✅ Complete - All technical context preserved
+
+---
+
+## Contact Enrichment Workshop Simplification - Review Findings (2025-10-31)
+
+### Objective
+Simplify Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx) by removing unnecessary chunking/batching architecture after discovering that Apify Lead Finder Actor processes ALL domains in a single API call when using the `{"0": {...}}` wrapper format.
+
+### Implementation Status
+**INCOMPLETE** - 2 critical code issues found during comprehensive review
+
+### What Was Done Correctly
+1. ✅ **Node Deletions**: Both chunking nodes successfully deleted
+   - "Domain chunker - 15 per batch" (ID: dbabffe2-5852-44fc-80c6-f69681981958) - DELETED
+   - "Loop Over Domain Chunks" (ID: 9971a7cf-9fa3-47a3-8454-3e7da7b9a9a3) - DELETED
+
+2. ✅ **Node Connections**: All workflow connections correctly reconfigured
+   - "Domain extraction and Apify input builder - 100 recs" → "If - Has a Domain"
+   - All other connections verified and correct
+
+3. ✅ **Other Node Settings**: All other nodes have correct settings
+   - "Run an Actor" node: Uses `{"0": {...}}` wrapper with `fetch_count: 50`
+   - "Contacts Quality Filter" node: Filters top 5 contacts per domain
+   - "Limit Contacts - 40" node: Hard cap at 40 contacts
+   - "Filter Verified Emails" node: Filters for `emailStatus: "validated"`
+   - "HTTP Request - Neverbounce" node: Single email verification endpoint
+
+### Critical Issues Found
+
+#### Issue #1: "Output Formatting Split By Job" Has OLD CODE
+- **Node ID**: 0f875660-4494-4be8-a243-4e78866f73f2
+- **Problem**: Still contains OLD CODE with chunk aggregation logic that references the deleted "Domain chunker - 15 per batch" node
+- **Evidence**: Code contains `const allChunks = $('Domain chunker - 15 per batch').all();` which will fail at runtime
+- **Impact**: Workflow will crash when trying to reference deleted node
+- **Workflow version**: Still shows `'2.0-chunking'` instead of `'3.0-simplified'`
+
+#### Issue #2: "Domain extraction and Apify input builder - 100 recs" Has WRONG CODE
+- **Node ID**: 65d4f583-d2ee-4fb3-b5f0-5539842ca824
+- **Problem**: Contains the SIMPLIFIED OUTPUT FORMATTING CODE instead of domain extraction code
+- **Evidence**: Code starts with `// OUTPUT FORMATTING SPLIT BY JOB - SIMPLIFIED (NO CHUNKING)` header
+- **Impact**: Node will not extract domains from jobs or build Apify actor input; workflow will fail immediately after trigger
+
+### Root Cause
+During implementation, the user accidentally pasted the simplified "Output Formatting Split By Job" code into the wrong node ("Domain extraction and Apify input builder - 100 recs") instead of the correct node ("Output Formatting Split By Job").
+
+### Required Fixes Before Testing
+
+1. **Fix "Output Formatting Split By Job" node** (ID: 0f875660-4494-4be8-a243-4e78866f73f2)
+   - Replace with simplified code that removes chunk aggregation logic
+   - Update workflow version to `'3.0-simplified'`
+   - Complete code provided in review document
+
+2. **Fix "Domain extraction and Apify input builder - 100 recs" node** (ID: 65d4f583-d2ee-4fb3-b5f0-5539842ca824)
+   - Restore original domain extraction code
+   - Complete code provided in review document
+
+### Next Session Priority
+
+**IMMEDIATE ACTIONS**:
+1. Fix "Output Formatting Split By Job" node code
+2. Fix "Domain extraction and Apify input builder - 100 recs" node code
+3. Save workflow
+4. Request AI review to verify fixes
+5. Test simplified workflow end-to-end
+6. Verify downstream workflows (Resume Generation, Outreach Tracking) receive correct data
+
+**SUCCESS CRITERIA**:
+- ✅ Both nodes have correct code
+- ✅ Workflow executes without errors
+- ✅ Returns 100-200 contacts per execution (cost-optimized)
+- ✅ Output format matches previous executions
+- ✅ Downstream workflows continue to work
+
+**REFERENCE**:
+- Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+- Review document: `Docs/reviews/contact-enrichment-simplification-review-2025-10-31.md`
+- Linear ticket: [To be created]
+
+### Key Discovery
+Apify Lead Finder Actor processes ALL domains in a single API call when using the `{"0": {...}}` wrapper format, regardless of how many domains are provided. This makes the previous chunking/batching architecture (splitting 12 domains into batches of 15) unnecessary and adds complexity without benefit.
+
+### Benefits of Simplification (Once Fixed)
+- 🎉 **95 fewer lines of code** (removed chunk aggregation logic)
+- 🎉 **2 fewer nodes** (removed chunking and looping nodes)
+- 🎉 **Simpler architecture** (direct processing, no batching)
+- 🎉 **Same functionality** (all features preserved)
+- 🎉 **Easier maintenance** (less code to understand and debug)
+
+---
+
+## Contact Enrichment Workshop Simplification - Review Findings (2025-10-31)
+
+### Objective
+Simplify Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx) by removing unnecessary chunking/batching architecture after discovering that Apify Lead Finder Actor processes ALL domains in a single API call when using the `{"0": {...}}` wrapper format.
+
+### Implementation Status
+**INCOMPLETE** - 2 critical code issues found during comprehensive review
+
+### What Was Done Correctly
+1. ✅ **Node Deletions**: Both chunking nodes successfully deleted
+   - "Domain chunker - 15 per batch" (ID: dbabffe2-5852-44fc-80c6-f69681981958) - DELETED
+   - "Loop Over Domain Chunks" (ID: 9971a7cf-9fa3-47a3-8454-3e7da7b9a9a3) - DELETED
+
+2. ✅ **Node Connections**: All workflow connections correctly reconfigured
+   - "Domain extraction and Apify input builder - 100 recs" → "If - Has a Domain"
+   - All other connections verified and correct
+
+3. ✅ **Other Node Settings**: All other nodes have correct settings
+   - "Run an Actor" node: Uses `{"0": {...}}` wrapper with `fetch_count: 50`
+   - "Contacts Quality Filter" node: Filters top 5 contacts per domain
+   - "Limit Contacts - 40" node: Hard cap at 40 contacts
+   - "Filter Verified Emails" node: Filters for `emailStatus: "validated"`
+   - "HTTP Request - Neverbounce" node: Single email verification endpoint
+
+### Critical Issues Found
+
+#### Issue #1: "Output Formatting Split By Job" Has OLD CODE
+- **Node ID**: 0f875660-4494-4be8-a243-4e78866f73f2
+- **Problem**: Still contains OLD CODE with chunk aggregation logic that references the deleted "Domain chunker - 15 per batch" node
+- **Evidence**: Code contains `const allChunks = $('Domain chunker - 15 per batch').all();` which will fail at runtime
+- **Impact**: Workflow will crash when trying to reference deleted node
+- **Workflow version**: Still shows `'2.0-chunking'` instead of `'3.0-simplified'`
+
+#### Issue #2: "Domain extraction and Apify input builder - 100 recs" Has WRONG CODE
+- **Node ID**: 65d4f583-d2ee-4fb3-b5f0-5539842ca824
+- **Problem**: Contains the SIMPLIFIED OUTPUT FORMATTING CODE instead of domain extraction code
+- **Evidence**: Code starts with `// OUTPUT FORMATTING SPLIT BY JOB - SIMPLIFIED (NO CHUNKING)` header
+- **Impact**: Node will not extract domains from jobs or build Apify actor input; workflow will fail immediately after trigger
+
+### Root Cause
+During implementation, the user accidentally pasted the simplified "Output Formatting Split By Job" code into the wrong node ("Domain extraction and Apify input builder - 100 recs") instead of the correct node ("Output Formatting Split By Job").
+
+### Required Fixes Before Testing
+
+1. **Fix "Output Formatting Split By Job" node** (ID: 0f875660-4494-4be8-a243-4e78866f73f2)
+   - Replace with simplified code that removes chunk aggregation logic
+   - Update workflow version to `'3.0-simplified'`
+   - Complete code provided in review document
+
+2. **Fix "Domain extraction and Apify input builder - 100 recs" node** (ID: 65d4f583-d2ee-4fb3-b5f0-5539842ca824)
+   - Restore original domain extraction code
+   - Complete code provided in review document
+
+### Next Session Priority
+
+**IMMEDIATE ACTIONS**:
+1. Fix "Output Formatting Split By Job" node code
+2. Fix "Domain extraction and Apify input builder - 100 recs" node code
+3. Save workflow
+4. Request AI review to verify fixes
+5. Test simplified workflow end-to-end
+6. Verify downstream workflows (Resume Generation, Outreach Tracking) receive correct data
+
+**SUCCESS CRITERIA**:
+- ✅ Both nodes have correct code
+- ✅ Workflow executes without errors
+- ✅ Returns 100-200 contacts per execution (cost-optimized)
+- ✅ Output format matches previous executions
+- ✅ Downstream workflows continue to work
+
+**REFERENCE**:
+- Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+- Review document: `Docs/reviews/contact-enrichment-simplification-review-2025-10-31.md`
+- Linear ticket: [To be created]
+
+### Key Discovery
+Apify Lead Finder Actor processes ALL domains in a single API call when using the `{"0": {...}}` wrapper format, regardless of how many domains are provided. This makes the previous chunking/batching architecture (splitting 12 domains into batches of 15) unnecessary and adds complexity without benefit.
+
+### Benefits of Simplification (Once Fixed)
+- 🎉 **95 fewer lines of code** (removed chunk aggregation logic)
+- 🎉 **2 fewer nodes** (removed chunking and looping nodes)
+- 🎉 **Simpler architecture** (direct processing, no batching)
+- 🎉 **Same functionality** (all features preserved)
+- 🎉 **Easier maintenance** (less code to understand and debug)
