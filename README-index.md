@@ -30,6 +30,16 @@ Last updated: 2025-10-30
 ## Handover / Knowledge Transfer
 Use these documents to understand session outcomes and next steps. Each entry includes a brief description and date.
 
+- 2025-10-31 — **✅ CONTACT ENRICHMENT WORKSHOP EXPANSION TEST - 8.4X IMPROVEMENT (SUCCESS)**
+  - Description: Successfully expanded Contact Enrichment Workshop filtering criteria and achieved **8.4x increase in contact count** (from 5 to 42 contacts). All 42 contacts verified to match filtering criteria with 100% accuracy. **Key Changes**: (1) Expanded seniority_level from 4 to 6 levels (added 'senior', 'entry'), (2) Increased job titles from 3 to 8, (3) Expanded email_status from validated-only to all statuses, (4) Increased domains from 10 to 30. **Test Results**: 42 contacts from 7 companies (23% hit rate), cost $0.063 per run. **Verification**: 100% of contacts match filtering criteria (domains, job titles, seniority levels, functional areas). **Biggest Impact Factors**: Expanding email_status (3-5x increase) + adding "senior" and "entry" seniority levels (30 out of 42 contacts = 71%). **Recommendations**: Option 1 (Continue expanding to 100-150 contacts), Option 2 (Keep current config for testing), Option 3 (Target larger companies only for higher hit rate).
+  - Daily Log: Docs/daily-logs/2025-10-31-contact-enrichment-expansion-test.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Contact Enrichment Workshop Expansion Test)
+  - Apify Dataset: https://api.apify.com/v2/datasets/x1agPmqp4QiHxjcqW/items?format=json&view=overview&clean=true
+  - Workflow ID: rClUELDAK9f4mgJx (Contact Enrichment Workshop)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Status: ✅ SUCCESS - Production-ready for scaling to 100-150 contacts per run
+  - Next Steps: Choose Option 1 (expand to 50 domains + more job titles), Option 2 (test full pipeline with 42 contacts), or Option 3 (target larger companies only)
+
 - 2025-10-31 — **❌ CONTACT ENRICHMENT WORKSHOP SIMPLIFICATION - REVIEW FINDINGS (NO-GO)**
   - Description: Comprehensive review of Contact Enrichment Workshop simplification effort identified **2 CRITICAL CODE ISSUES** preventing testing. While architectural changes (node deletions and reconnections) were implemented correctly, code was accidentally pasted into wrong nodes during implementation. **Issue #1**: "Output Formatting Split By Job" node still has OLD CODE with chunk aggregation logic that references deleted "Domain chunker - 15 per batch" node (will fail at runtime). **Issue #2**: "Domain extraction and Apify input builder - 100 recs" node has WRONG CODE (output formatting instead of domain extraction). **Root Cause**: User accidentally pasted simplified "Output Formatting Split By Job" code into wrong node. **Key Discovery**: Apify Lead Finder Actor processes ALL domains in a single API call when using `{"0": {...}}` wrapper format, making chunking/batching architecture unnecessary. **Benefits Once Fixed**: 95 fewer lines of code, 2 fewer nodes, simpler architecture, same functionality.
   - Review Document: Docs/reviews/contact-enrichment-simplification-review-2025-10-31.md

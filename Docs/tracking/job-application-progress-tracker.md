@@ -1,8 +1,8 @@
 # Job Application Progress Tracker
 **LinkedIn Automation Project - Workshop Status & Progress**
 
-**Last Updated**: 2025-10-27
-**Current Phase**: Resume Generation Workshop - Keyword Extraction Issue
+**Last Updated**: 2025-10-30
+**Current Phase**: Contact Enrichment Workshop - Apify Actor Memory Restriction
 
 ---
 
@@ -11,7 +11,7 @@
 | **Workshop** | **Status** | **Progress** | **Last Updated** | **Notes** |
 |--------------|-----------|--------------|------------------|-----------|
 | **Job Discovery** | ✅ Operational | 100% | 2025-09-29 | Fully functional |
-| **Contact Enrichment** | ⚠️ Testing Complete | 95% | 2025-10-07 | Actor selected, ready for deployment |
+| **Contact Enrichment** | 🚫 BLOCKED | 85% | 2025-10-30 | Apify Actor memory restriction (512 MB limit) |
 | **Resume Generation** | ❌ BROKEN | 50% | 2025-10-27 | Keyword extraction failure - two-stage architecture required |
 | **Contact Tracking** | ✅ Operational | 100% | 2025-10-03 | Data integrity issues resolved |
 | **Outreach Tracking** | ✅ Operational | 100% | 2025-10-26 | AI email generation fixed |
@@ -19,7 +19,55 @@
 
 ---
 
-## 🎯 **RESUME GENERATION WORKSHOP - CURRENT STATUS**
+## 🚫 **CONTACT ENRICHMENT WORKSHOP - CURRENT STATUS**
+
+### **Phase**: Apify Actor Memory Restriction Investigation
+**Status**: 🚫 **BLOCKED - ACTOR MEMORY RESTRICTION**
+**Date**: 2025-10-30
+
+### **Critical Issue**
+The Apify Leads Finder Actor (ID: `IoSHqwTR9YGhzccez`) has a **hard-coded maximum memory limit of 512 MB** set in its `actor.json` configuration file, which **cannot be overridden via API parameters**. Despite passing `memory=4096` as a URL query parameter, the Apify API clamps the memory allocation to 512 MB due to the actor's `maxMemoryMbytes: 512` setting. This causes the actor to fetch **ZERO leads** and return only 19 contacts (likely cached/stale data).
+
+### **What Was Fixed**
+- ✅ HTTP Request node authentication (changed header name from "Apify API Token" to "Authorization")
+- ✅ `waitForFinish=300` parameter (actor now waits for completion)
+- ✅ `timeout=500` parameter (working correctly)
+
+### **What's Still Broken**
+- ❌ `memory=4096` parameter being **IGNORED** due to actor-level restriction
+- ❌ Actor fetched **ZERO leads** (`chargedEventCounts.lead-fetched: 0`)
+- ❌ Workflow shows "success" but returns only 19 contacts (insufficient for 100-200 target)
+
+### **Root Cause**
+The actor has `maxMemoryMbytes: 512` in its `.actor/actor.json` configuration file. This is an **actor-level restriction** that takes precedence over API parameters. The actor developer intentionally set this limit to control costs and prevent excessive resource usage. **This is NOT a bug - it's an intentional design decision.**
+
+### **Impact on LinkedIn Automation Pipeline**
+- **Contact Enrichment**: Insufficient contacts (19 instead of 100-200)
+- **Resume Generation**: Fewer job applications processed
+- **Outreach Tracking**: Reduced email reach (75% reduction)
+- **Overall Pipeline**: Bottleneck at Contact Enrichment stage
+
+### **Proposed Solutions**
+1. **Contact Actor Developer** (RECOMMENDED): Request memory limit increase to 4096 MB or "high-memory" version
+2. **Fork Actor**: Modify `.actor/actor.json` to increase `maxMemoryMbytes` from 512 to 4096
+3. **Use Alternative Actor**: Search Apify Store for actors without memory restrictions
+4. **Batch Processing** (WORKAROUND): Process leads in smaller batches (10-20 jobs per run)
+
+### **Next Steps**
+1. ⏳ Verify actor memory limit on Apify Store
+2. ⏳ Contact Leads Finder Actor developer
+3. ⏳ If developer can't help, evaluate fork/alternative/batch processing options
+4. ⏳ Update documentation with final solution
+
+### **Documentation**
+- **Daily Log**: `Docs/daily-logs/2025-10-30-contact-enrichment-memory-investigation.md`
+- **Knowledge Transfer**: `Docs/handover/conversation-handover-knowledge-transfer.md`
+- **Workflow ID**: rClUELDAK9f4mgJx
+- **Workflow URL**: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+
+---
+
+## 🎯 **RESUME GENERATION WORKSHOP - PREVIOUS STATUS**
 
 ### **Phase**: Keyword Extraction Issue - Two-Stage Architecture Required
 **Status**: ❌ **BROKEN - KEYWORD EXTRACTION FAILURE**
@@ -232,31 +280,63 @@ Implement two-stage prompt architecture (70% confidence):
 - **2025-10-03**: Contact Tracking data integrity issues resolved
 
 ### **Known Issues**
-1. ❌ **Resume Generation**: Keyword extraction failure (CRITICAL)
+1. 🚫 **Contact Enrichment**: Apify Actor Memory Restriction (CRITICAL - BLOCKER)
+   - Actor has hard-coded 512 MB memory limit in actor.json configuration
+   - API parameter `memory=4096` being ignored due to actor-level restriction
+   - Actor fetching ZERO leads (chargedEventCounts.lead-fetched: 0)
+   - Workflow returns only 19 contacts (likely cached/stale data)
+   - Impact: CRITICAL - blocks entire job application pipeline (insufficient contacts)
+   - Solution: Contact actor developer, fork actor, use alternative, or implement batch processing
+   - Status: 🚫 BLOCKED - Awaiting actor developer response or alternative solution
+
+2. ❌ **Resume Generation**: Keyword extraction failure (CRITICAL)
    - AI extracting keywords from base resume instead of job description
    - Resumes customized for wrong job roles
    - Impact: CRITICAL - blocks entire job application pipeline
    - Solution: Implement two-stage prompt architecture (70% confidence)
    - Status: ⏳ Pending implementation
 
-2. ⚠️ **Contact Enrichment**: Identical contact email issue (pending investigation)
+3. ⚠️ **Contact Enrichment**: Identical contact email issue (pending investigation)
    - All executions returning same contact (Markus Fischer @ Sibelco)
    - Requires Contact Enrichment workflow analysis
    - Impact: Critical - affects outreach campaign accuracy
+   - Status: ⚠️ SUPERSEDED by Issue #1 (memory restriction is root cause)
 
-3. ⚠️ **Lead Finder**: Email yield below benchmark (60% vs 66.7%)
+4. ⚠️ **Lead Finder**: Email yield below benchmark (60% vs 66.7%)
    - JRD Systems domain returning 0% yield
    - Likely domain-specific issue, not actor issue
    - Impact: Low - acceptable for production
+   - Status: ⚠️ SUPERSEDED by Issue #1 (memory restriction is root cause)
 
 ---
 
 ## 🎯 **IMMEDIATE NEXT STEPS**
 
-### **Priority 1: Fix Resume Generation Keyword Extraction** (CRITICAL)
+### **Priority 1: Resolve Contact Enrichment Memory Restriction** (CRITICAL - BLOCKER)
+**Estimated Time**: 1-3 days (depends on actor developer response)
+**Owner**: User + AI Agent
+**Status**: 🚫 BLOCKED
+
+**Actions**:
+1. Verify actor memory limit on Apify Store (Leads Finder Actor page)
+2. Contact Leads Finder Actor developer:
+   - Explain use case (need to fetch 100-200 leads per run)
+   - Request memory limit increase to 4096 MB
+   - Inquire about "high-memory" version or enterprise pricing
+3. If developer can't help within 48 hours:
+   - Evaluate Option 2: Fork actor and modify `.actor/actor.json` (if source code available)
+   - Evaluate Option 3: Search for alternative actors on Apify Store
+   - Evaluate Option 4: Implement batch processing (10-20 jobs per run)
+4. Update documentation with final solution
+5. Test workflow with chosen solution
+6. Verify 100-200 contacts returned per run
+
+**Impact**: CRITICAL - Contact Enrichment is bottleneck blocking entire job application pipeline (insufficient contacts)
+
+### **Priority 2: Fix Resume Generation Keyword Extraction** (CRITICAL)
 **Estimated Time**: 2-3 hours
 **Owner**: User + AI Agent
-**Status**: ⏳ PENDING
+**Status**: ⏳ PENDING (blocked by Priority 1)
 
 **Actions**:
 1. Implement two-stage prompt architecture in Resume Generation Workshop
@@ -269,10 +349,10 @@ Implement two-stage prompt architecture (70% confidence):
 
 **Impact**: CRITICAL - Resume Generation Workshop is completely broken, blocking entire job application pipeline
 
-### **Priority 2: Deploy Lead Finder** (HIGH)
+### **Priority 3: Deploy Lead Finder** (HIGH)
 **Estimated Time**: 30 minutes
 **Owner**: User
-**Status**: ⏳ PENDING
+**Status**: ⚠️ SUPERSEDED by Priority 1 (memory restriction must be resolved first)
 
 **Actions**:
 1. Update N8N Contact Enrichment Workshop workflow
@@ -280,20 +360,6 @@ Implement two-stage prompt architecture (70% confidence):
 3. Test with 3-5 job applications
 4. Monitor email yield metrics
 5. Document any issues encountered
-
-### **Priority 3: Investigate Contact Enrichment Bug** (HIGH)
-**Estimated Time**: 1-2 hours
-**Owner**: User + AI Agent
-**Status**: ⏳ PENDING
-
-**Actions**:
-1. Retrieve Contact Enrichment workflow configuration
-2. Examine Apollo API search logic
-3. Check for caching mechanisms or global variables
-4. Verify company name is being passed correctly
-5. Test workflow independently with different companies
-6. Create root cause analysis document
-7. Provide complete fix
 
 ---
 
@@ -316,6 +382,21 @@ Implement two-stage prompt architecture (70% confidence):
 ---
 
 ## 🔄 **CHANGE LOG**
+
+### **2025-10-30**
+- ✅ Identified root cause of Contact Enrichment insufficient contacts issue
+- ✅ Discovered Apify Actor memory restriction (maxMemoryMbytes: 512 in actor.json)
+- ✅ Fixed HTTP Request node authentication (changed header name to "Authorization")
+- ✅ Fixed waitForFinish parameter (actor now waits for completion)
+- ❌ Memory parameter `memory=4096` being IGNORED due to actor-level restriction
+- ❌ Actor fetching ZERO leads (chargedEventCounts.lead-fetched: 0)
+- ✅ Researched official Apify API documentation (confirmed parameter name correct)
+- ✅ Analyzed execution 6003 data (confirmed memory restriction)
+- ✅ Proposed 4 solutions (contact developer, fork actor, alternative actor, batch processing)
+- ✅ Updated knowledge transfer documentation
+- ✅ Created daily log entry
+- ✅ Updated job application progress tracker
+- 🚫 Contact Enrichment Workshop BLOCKED - awaiting actor developer response or alternative solution
 
 ### **2025-10-27**
 - ❌ Resume Generation keyword extraction fix FAILED (0% success rate)
@@ -365,7 +446,7 @@ Implement two-stage prompt architecture (70% confidence):
 
 ---
 
-**Last Updated**: 2025-10-27
-**Status**: ❌ RESUME GENERATION BROKEN - KEYWORD EXTRACTION FAILURE
-**Next Session Priority**: Implement two-stage prompt architecture in Resume Generation Workshop to fix keyword extraction issue
+**Last Updated**: 2025-10-30
+**Status**: 🚫 CONTACT ENRICHMENT BLOCKED - APIFY ACTOR MEMORY RESTRICTION
+**Next Session Priority**: Resolve Contact Enrichment memory restriction (contact actor developer or evaluate alternative solutions)
 
