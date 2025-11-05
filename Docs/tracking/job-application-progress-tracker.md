@@ -1,8 +1,8 @@
 # Job Application Progress Tracker
 **LinkedIn Automation Project - Workshop Status & Progress**
 
-**Last Updated**: 2025-10-30
-**Current Phase**: Contact Enrichment Workshop - Apify Actor Memory Restriction
+**Last Updated**: 2025-11-05
+**Current Phase**: Contact Enrichment Workshop - firstName/lastName Extraction Bug
 
 ---
 
@@ -11,56 +11,78 @@
 | **Workshop** | **Status** | **Progress** | **Last Updated** | **Notes** |
 |--------------|-----------|--------------|------------------|-----------|
 | **Job Discovery** | ✅ Operational | 100% | 2025-09-29 | Fully functional |
-| **Contact Enrichment** | 🚫 BLOCKED | 85% | 2025-10-30 | Apify Actor memory restriction (512 MB limit) |
+| **Contact Enrichment** | ❌ BROKEN | 85% | 2025-11-05 | firstName/lastName extraction bug - NOT extracting from Lead Finder Actor |
 | **Resume Generation** | ❌ BROKEN | 50% | 2025-10-27 | Keyword extraction failure - two-stage architecture required |
-| **Contact Tracking** | ✅ Operational | 100% | 2025-10-03 | Data integrity issues resolved |
-| **Outreach Tracking** | ✅ Operational | 100% | 2025-10-26 | AI email generation fixed |
+| **Contact Tracking** | ✅ Operational | 100% | 2025-11-05 | Fixes deployed correctly (v2.1.0, v3.3.0), receiving empty data from upstream |
+| **Outreach Tracking** | ✅ Operational | 100% | 2025-11-05 | Working correctly - duplicate detection preventing duplicate outreach |
 | **Validation Reporting** | ⏳ Not Started | 0% | N/A | Pending implementation |
 
 ---
 
-## 🚫 **CONTACT ENRICHMENT WORKSHOP - CURRENT STATUS**
+## ❌ **CONTACT ENRICHMENT WORKSHOP - CURRENT STATUS**
 
-### **Phase**: Apify Actor Memory Restriction Investigation
-**Status**: 🚫 **BLOCKED - ACTOR MEMORY RESTRICTION**
-**Date**: 2025-10-30
+### **Phase**: firstName/lastName Extraction Bug Investigation
+**Status**: ❌ **BROKEN - UPSTREAM DATA EXTRACTION BUG**
+**Date**: 2025-11-05
 
 ### **Critical Issue**
-The Apify Leads Finder Actor (ID: `IoSHqwTR9YGhzccez`) has a **hard-coded maximum memory limit of 512 MB** set in its `actor.json` configuration file, which **cannot be overridden via API parameters**. Despite passing `memory=4096` as a URL query parameter, the Apify API clamps the memory allocation to 512 MB due to the actor's `maxMemoryMbytes: 512` setting. This causes the actor to fetch **ZERO leads** and return only 19 contacts (likely cached/stale data).
+The Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx) is **NOT extracting firstName/lastName from Lead Finder Actor output**, causing all downstream workflows to receive empty firstName/lastName data. This results in email personalization failure where AI Email Generation uses generic "Hi there," greeting instead of personalized greetings with hiring manager's first names (e.g., "Hi Julia,").
 
-### **What Was Fixed**
-- ✅ HTTP Request node authentication (changed header name from "Apify API Token" to "Authorization")
-- ✅ `waitForFinish=300` parameter (actor now waits for completion)
-- ✅ `timeout=500` parameter (working correctly)
+### **What Was Verified**
+- ✅ Contact Tracking Workshop fixes (v2.1.0 and v3.3.0) are correctly deployed and working
+- ✅ Data Flattener v3.3.0 correctly includes contactFirstName and contactLastName fields
+- ✅ Contact Tracking Output Formatting v2.1.0 correctly includes firstName/lastName in contactRecord
+- ✅ All downstream nodes correctly extract and pass firstName/lastName fields
+- ✅ Outreach Tracking duplicate detection working correctly (6 duplicate applications skipped)
 
-### **What's Still Broken**
-- ❌ `memory=4096` parameter being **IGNORED** due to actor-level restriction
-- ❌ Actor fetched **ZERO leads** (`chargedEventCounts.lead-fetched: 0`)
-- ❌ Workflow shows "success" but returns only 19 contacts (insufficient for 100-200 target)
+### **What's Broken**
+- ❌ Contact Enrichment Workshop NOT extracting firstName/lastName from Lead Finder Actor output
+- ❌ firstName/lastName fields are EMPTY in all execution data
+- ❌ Email personalization fails, causing generic "Hi there," greeting in all emails
 
 ### **Root Cause**
-The actor has `maxMemoryMbytes: 512` in its `.actor/actor.json` configuration file. This is an **actor-level restriction** that takes precedence over API parameters. The actor developer intentionally set this limit to control costs and prevent excessive resource usage. **This is NOT a bug - it's an intentional design decision.**
+The Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx) is NOT extracting firstName/lastName from the Lead Finder Actor output. This is an **UPSTREAM data extraction issue**, not a Contact Tracking Workshop issue. The downstream workflows are correctly deployed and working, but they're receiving empty data from the upstream Contact Enrichment Workshop.
 
 ### **Impact on LinkedIn Automation Pipeline**
-- **Contact Enrichment**: Insufficient contacts (19 instead of 100-200)
-- **Resume Generation**: Fewer job applications processed
-- **Outreach Tracking**: Reduced email reach (75% reduction)
-- **Overall Pipeline**: Bottleneck at Contact Enrichment stage
+- **Contact Enrichment**: NOT extracting firstName/lastName from Lead Finder Actor
+- **Contact Tracking**: Receiving empty firstName/lastName data from upstream
+- **Outreach Tracking**: Email personalization fails, generic "Hi there," greeting used
+- **Overall Pipeline**: Email personalization broken, reducing email effectiveness
 
-### **Proposed Solutions**
-1. **Contact Actor Developer** (RECOMMENDED): Request memory limit increase to 4096 MB or "high-memory" version
-2. **Fork Actor**: Modify `.actor/actor.json` to increase `maxMemoryMbytes` from 512 to 4096
-3. **Use Alternative Actor**: Search Apify Store for actors without memory restrictions
-4. **Batch Processing** (WORKAROUND): Process leads in smaller batches (10-20 jobs per run)
+### **Data Flow Analysis**
+```
+Contact Enrichment Workshop (firstName/lastName EMPTY) ❌
+  ↓
+Contact Data Merger & Processing (extracts empty data)
+  ↓
+Data Flattener v3.3.0 (passes through empty data)
+  ↓
+Contact Tracking Output Formatting v2.1.0 (outputs empty data)
+  ↓
+Outreach Tracking Workflow (receives empty data)
+  ↓
+AI Email Generation (uses generic "Hi there," greeting)
+```
+
+### **Recent Test Results (2025-11-05)**
+- **Executions Analyzed**: Contact Tracking 6732, Outreach Tracking 6720-6725, 6729-6738
+- **Duplicate Applications**: 6 duplicate applications correctly identified and skipped
+- **Email Tracking Sheet**: Empty (expected behavior for duplicate records)
+- **firstName/lastName Data**: Empty in all execution data (upstream bug)
 
 ### **Next Steps**
-1. ⏳ Verify actor memory limit on Apify Store
-2. ⏳ Contact Leads Finder Actor developer
-3. ⏳ If developer can't help, evaluate fork/alternative/batch processing options
-4. ⏳ Update documentation with final solution
+1. ⏳ Retrieve Contact Enrichment Workshop configuration (ID: rClUELDAK9f4mgJx)
+2. ⏳ Analyze Lead Finder Actor output structure to identify firstName/lastName field locations
+3. ⏳ Identify the node responsible for extracting contact data from Lead Finder Actor
+4. ⏳ Verify if firstName/lastName fields exist in Lead Finder Actor output
+5. ⏳ Implement fix to extract firstName/lastName from Lead Finder Actor output
+6. ⏳ Test workflow with non-duplicate job application
+7. ⏳ Verify firstName/lastName fields are populated in Contact Tracking execution data
 
 ### **Documentation**
-- **Daily Log**: `Docs/daily-logs/2025-10-30-contact-enrichment-memory-investigation.md`
+- **Daily Log**: `Docs/daily-logs/2025-11-05-contact-enrichment-data-flow-investigation.md`
+- **Bug Documentation**: `Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md`
+- **Data Integrity Analysis**: `Docs/architecture/data-integrity-analysis.md`
 - **Knowledge Transfer**: `Docs/handover/conversation-handover-knowledge-transfer.md`
 - **Workflow ID**: rClUELDAK9f4mgJx
 - **Workflow URL**: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
@@ -280,14 +302,16 @@ Implement two-stage prompt architecture (70% confidence):
 - **2025-10-03**: Contact Tracking data integrity issues resolved
 
 ### **Known Issues**
-1. 🚫 **Contact Enrichment**: Apify Actor Memory Restriction (CRITICAL - BLOCKER)
-   - Actor has hard-coded 512 MB memory limit in actor.json configuration
-   - API parameter `memory=4096` being ignored due to actor-level restriction
-   - Actor fetching ZERO leads (chargedEventCounts.lead-fetched: 0)
-   - Workflow returns only 19 contacts (likely cached/stale data)
-   - Impact: CRITICAL - blocks entire job application pipeline (insufficient contacts)
-   - Solution: Contact actor developer, fork actor, use alternative, or implement batch processing
-   - Status: 🚫 BLOCKED - Awaiting actor developer response or alternative solution
+1. ❌ **Contact Enrichment**: firstName/lastName Extraction Bug (CRITICAL - BLOCKER)
+   - Contact Enrichment Workshop NOT extracting firstName/lastName from Lead Finder Actor output
+   - firstName/lastName fields are EMPTY in all execution data
+   - Email personalization fails, causing generic "Hi there," greeting in all emails
+   - Impact: CRITICAL - blocks email personalization, reduces email effectiveness
+   - Root Cause: Upstream data extraction issue in Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx)
+   - Verified: Contact Tracking Workshop fixes (v2.1.0, v3.3.0) are correctly deployed and working
+   - Solution: Fix Contact Enrichment Workshop to extract firstName/lastName from Lead Finder Actor
+   - Status: ❌ BROKEN - Awaiting Contact Enrichment Workshop investigation and fix
+   - Documentation: `Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md`
 
 2. ❌ **Resume Generation**: Keyword extraction failure (CRITICAL)
    - AI extracting keywords from base resume instead of job description
@@ -296,42 +320,40 @@ Implement two-stage prompt architecture (70% confidence):
    - Solution: Implement two-stage prompt architecture (70% confidence)
    - Status: ⏳ Pending implementation
 
-3. ⚠️ **Contact Enrichment**: Identical contact email issue (pending investigation)
-   - All executions returning same contact (Markus Fischer @ Sibelco)
-   - Requires Contact Enrichment workflow analysis
-   - Impact: Critical - affects outreach campaign accuracy
-   - Status: ⚠️ SUPERSEDED by Issue #1 (memory restriction is root cause)
+3. ✅ **Contact Tracking**: Duplicate Detection Working Correctly (RESOLVED)
+   - 6 duplicate applications correctly identified and skipped (2025-11-05 test)
+   - Email Tracking Sheet empty is EXPECTED BEHAVIOR for duplicate records
+   - Outreach Tracking intentionally skips duplicate records to prevent duplicate outreach
+   - Impact: None - this is correct behavior
+   - Status: ✅ RESOLVED - Working as designed
 
-4. ⚠️ **Lead Finder**: Email yield below benchmark (60% vs 66.7%)
-   - JRD Systems domain returning 0% yield
-   - Likely domain-specific issue, not actor issue
-   - Impact: Low - acceptable for production
-   - Status: ⚠️ SUPERSEDED by Issue #1 (memory restriction is root cause)
+4. 🚫 **Contact Enrichment**: Apify Account Free Tier Limit (HISTORICAL - SUPERSEDED)
+   - Apify account has free tier limit restricting Lead Finder Actor to 19 free leads per run
+   - Billing shows `chargedEventCounts.lead-fetched: 19` but `accountedChargedEventCounts.lead-fetched: 0`
+   - Impact: CRITICAL - blocks entire job application pipeline (insufficient contacts)
+   - Solution: Upgrade Apify account to paid plan or add credits ($0.002 per lead)
+   - Status: 🚫 SUPERSEDED by Issue #1 (firstName/lastName extraction is current priority)
 
 ---
 
 ## 🎯 **IMMEDIATE NEXT STEPS**
 
-### **Priority 1: Resolve Contact Enrichment Memory Restriction** (CRITICAL - BLOCKER)
-**Estimated Time**: 1-3 days (depends on actor developer response)
+### **Priority 1: Fix Contact Enrichment firstName/lastName Extraction** (CRITICAL - BLOCKER)
+**Estimated Time**: 1-2 hours
 **Owner**: User + AI Agent
-**Status**: 🚫 BLOCKED
+**Status**: ❌ BROKEN
 
 **Actions**:
-1. Verify actor memory limit on Apify Store (Leads Finder Actor page)
-2. Contact Leads Finder Actor developer:
-   - Explain use case (need to fetch 100-200 leads per run)
-   - Request memory limit increase to 4096 MB
-   - Inquire about "high-memory" version or enterprise pricing
-3. If developer can't help within 48 hours:
-   - Evaluate Option 2: Fork actor and modify `.actor/actor.json` (if source code available)
-   - Evaluate Option 3: Search for alternative actors on Apify Store
-   - Evaluate Option 4: Implement batch processing (10-20 jobs per run)
-4. Update documentation with final solution
-5. Test workflow with chosen solution
-6. Verify 100-200 contacts returned per run
+1. Retrieve Contact Enrichment Workshop configuration (ID: rClUELDAK9f4mgJx)
+2. Analyze Lead Finder Actor output structure to identify firstName/lastName field locations
+3. Identify the node responsible for extracting contact data from Lead Finder Actor
+4. Verify if firstName/lastName fields exist in Lead Finder Actor output
+5. Implement fix to extract firstName/lastName from Lead Finder Actor output
+6. Test workflow with non-duplicate job application
+7. Verify firstName/lastName fields are populated in Contact Tracking execution data
+8. Verify AI Email Generation uses actual first name (e.g., "Hi Julia,") instead of "Hi there,"
 
-**Impact**: CRITICAL - Contact Enrichment is bottleneck blocking entire job application pipeline (insufficient contacts)
+**Impact**: CRITICAL - Email personalization broken, reducing email effectiveness and response rates
 
 ### **Priority 2: Fix Resume Generation Keyword Extraction** (CRITICAL)
 **Estimated Time**: 2-3 hours
@@ -382,6 +404,20 @@ Implement two-stage prompt architecture (70% confidence):
 ---
 
 ## 🔄 **CHANGE LOG**
+
+### **2025-11-05**
+- ✅ Completed comprehensive root cause analysis of email personalization failure
+- ✅ Verified Contact Tracking Workshop fixes (v2.1.0, v3.3.0) are correctly deployed and working
+- ✅ Identified Contact Enrichment Workshop as source of firstName/lastName extraction bug
+- ✅ Analyzed Contact Tracking execution 6732 and Outreach Tracking executions 6720-6725, 6729-6738
+- ✅ Confirmed Email Tracking Sheet empty is EXPECTED BEHAVIOR (6 duplicate applications skipped)
+- ✅ Documented complete data flow from Contact Enrichment → Contact Tracking → Outreach Tracking
+- ✅ Created bug documentation: `Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md`
+- ✅ Created data integrity analysis: `Docs/architecture/data-integrity-analysis.md`
+- ✅ Updated knowledge transfer documentation
+- ✅ Created daily log entry: `Docs/daily-logs/2025-11-05-contact-enrichment-data-flow-investigation.md`
+- ✅ Updated job application progress tracker
+- ❌ Contact Enrichment Workshop BROKEN - firstName/lastName NOT extracted from Lead Finder Actor
 
 ### **2025-10-30**
 - ✅ Identified root cause of Contact Enrichment insufficient contacts issue
@@ -446,7 +482,7 @@ Implement two-stage prompt architecture (70% confidence):
 
 ---
 
-**Last Updated**: 2025-10-30
-**Status**: 🚫 CONTACT ENRICHMENT BLOCKED - APIFY ACTOR MEMORY RESTRICTION
-**Next Session Priority**: Resolve Contact Enrichment memory restriction (contact actor developer or evaluate alternative solutions)
+**Last Updated**: 2025-11-05
+**Status**: ❌ CONTACT ENRICHMENT BROKEN - FIRSTNAME/LASTNAME EXTRACTION BUG
+**Next Session Priority**: Fix Contact Enrichment Workshop to extract firstName/lastName from Lead Finder Actor output
 

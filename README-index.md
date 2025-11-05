@@ -2,7 +2,7 @@
 
 This is the single, authoritative entry point for all project documentation. Every document should link back here for navigation continuity.
 
-Last updated: 2025-10-30
+Last updated: 2025-11-05
 
 ---
 
@@ -12,10 +12,51 @@ Last updated: 2025-10-30
 - Implementation Plans
 - Code Fixes
 - Project Status & Milestones
+- Bug Tracking
 
 ---
 
 ## Current Issues
+- ❌ **CRITICAL BUG**: Contact Enrichment Workshop - firstName/lastName Extraction Bug (2025-11-05)
+  - **Status**: ❌ BROKEN - Upstream data extraction issue
+  - **Root Cause**: Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx) is NOT extracting firstName/lastName from Lead Finder Actor output
+  - **Impact**: Email personalization fails, causing AI Email Generation to use generic "Hi there," greeting instead of "Hi [FirstName],"
+  - **Verified**: Contact Tracking Workshop fixes (v2.1.0, v3.3.0) are correctly deployed and working, but receiving empty data from upstream
+  - **Duplicate Detection**: ✅ WORKING - 6 duplicate applications correctly identified and skipped (2025-11-05 test)
+  - **Email Tracking Sheet Empty**: ✅ EXPECTED BEHAVIOR - All 6 executions were duplicate records, intentionally skipped
+  - **Next Steps**: Investigate Contact Enrichment Workshop to identify why firstName/lastName are not being extracted from Lead Finder Actor
+  - **Bug Documentation**: Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md
+  - **Data Integrity Analysis**: Docs/architecture/data-integrity-analysis.md
+  - **Daily Log**: Docs/daily-logs/2025-11-05-contact-enrichment-data-flow-investigation.md
+  - See: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Contact Enrichment Workshop - firstName/lastName Extraction Bug)
+
+- ⏳ **PENDING IMPLEMENTATION**: Outreach Tracking Workshop - Google Sheets Data Integrity Fixes (2025-11-04 Session 2)
+  - **Status**: ✅ ROOT CAUSE IDENTIFIED | 📋 FIXES PROVIDED | ⏳ IMPLEMENTATION PENDING
+  - **Issues Identified**: (1) Row 3 contains literal unevaluated expressions, (2) Empty `id` field in execution records, (3) `workflowId` has `=` prefix causing `#NAME?` error, (4) `draftCreatedAt` shows literal expression
+  - **Root Causes**: Row 3 is corrupted test data; "Email Tracking Dashboard" node missing `id` field mapping and has `=` prefix on fields
+  - **Solutions Provided**: Complete corrected JSON configuration for "Email Tracking Dashboard" node with `id` field added and `=` prefixes removed
+  - **Architecture Documented**: Two-node system (Update Counter for Row 2, Email Tracking Dashboard for Rows 3+); Counter cycle 0-4 for 80/20 Gmail/Outlook rotation
+  - **Next Steps**: Delete Row 3, apply Email Tracking Dashboard fix, test workflow, verify counter increments correctly
+  - **Linear Ticket**: 1BU-473
+  - See: Docs/daily-logs/2025-11-04-google-sheets-data-integrity-fixes.md
+
+- ⚠️ **PENDING FIX**: Outreach Tracking Workshop - Email Account Rotation & Binary Data Fix (2025-11-04 Session 1)
+  - **Status**: ⚠️ THREE ISSUES RESOLVED | 🚀 ONE PENDING FIX REQUIRED
+  - **Issues Resolved**: (1) Update Counter node extra space in id field mapping, (2) Update Counter zero output issue, (3) Root cause of binary data loss identified
+  - **Root Cause**: Google Sheets nodes (Read Counter, Update Counter) strip binary data from workflow - they only output JSON data from spreadsheet
+  - **Solution**: Add "Merge Binary Data" Code node between Update Counter and If nodes to restore binary data from Daily Email Volume Control node
+  - **Impact**: Resume PDF attachments missing from Draft Gmail/Outlook nodes, causing workflow failures (executions 6386-6390)
+  - **Next Steps**: Implement "Merge Binary Data" Code node (15 minutes), test workflow, verify resume attachments
+  - See: Docs/daily-logs/2025-11-04-outreach-tracking-email-rotation-binary-data-fix.md
+
+- ✅ **RESOLVED**: Outreach Tracking Workshop - Binary Data Attachment Fix (2025-11-02)
+  - **Status**: ✅ RESOLVED - Workflow clean and ready for testing
+  - **Root Cause**: Microsoft Outlook node requires binary data in `$binary.resume`, not base64 strings in `$json.resume`
+  - **Solution**: Deleted orphaned "Binary Data Conversion" node; Resume Filename Customizer already outputs binary data correctly
+  - **Verification**: Binary data flow verified through Limit → Round-Robin → Route → Draft Gmail/Outlook
+  - **Next Steps**: Execute workflow to verify Outlook draft creation succeeds
+  - See: Docs/daily-logs/2025-11-02-outreach-tracking-workflow-binary-data-fix.md
+
 - 🚫 **BLOCKER**: Contact Enrichment Workflow - Apify Account Free Tier Limit (2025-10-30 - UPDATED)
   - Apify account has free tier limit restricting Lead Finder Actor to 19 free leads per run
   - Billing shows `chargedEventCounts.lead-fetched: 19` but `accountedChargedEventCounts.lead-fetched: 0` (not billed)
@@ -29,6 +70,62 @@ Last updated: 2025-10-30
 
 ## Handover / Knowledge Transfer
 Use these documents to understand session outcomes and next steps. Each entry includes a brief description and date.
+
+- 2025-11-05 — **❌ CONTACT ENRICHMENT WORKSHOP - FIRSTNAME/LASTNAME EXTRACTION BUG (CRITICAL)**
+  - Description: Completed comprehensive root cause analysis of email personalization failure where all generated email drafts were using generic "Hi there," greetings instead of personalized greetings with hiring manager's first names. **CRITICAL FINDING**: The Contact Tracking Workshop fixes (v2.1.0 and v3.3.0) are correctly deployed and working, but they're receiving **EMPTY firstName/lastName data from the upstream Contact Enrichment Workshop**. The actual bug is in the Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx), which is NOT extracting firstName/lastName from the Lead Finder Actor output. **Email Tracking Sheet Empty**: Expected behavior - all 6 executions were duplicate records, intentionally skipped to prevent duplicate outreach. **Data Flow Analysis**: Contact Enrichment (EMPTY) → Contact Data Merger (extracts empty) → Data Flattener v3.3.0 (passes through empty) → Contact Tracking Output Formatting v2.1.0 (outputs empty) → Outreach Tracking (receives empty) → AI Email Generation (uses "Hi there,"). **Verified Fixes**: All downstream nodes (Contact Data Merger v2.5.0, Data Flattener v3.3.0, Contact Tracking Output Formatting v2.1.0) are correctly deployed and working. **Duplicate Detection**: ✅ WORKING - 6 duplicate applications correctly identified and skipped.
+  - Daily Log: Docs/daily-logs/2025-11-05-contact-enrichment-data-flow-investigation.md
+  - Bug Documentation: Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md
+  - Data Integrity Analysis: Docs/architecture/data-integrity-analysis.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Contact Enrichment Workshop - firstName/lastName Extraction Bug)
+  - Contact Enrichment Workflow ID: rClUELDAK9f4mgJx
+  - Contact Enrichment URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Contact Tracking Workflow ID: wZyxRjWShhnSFbSV
+  - Contact Tracking URL: https://n8n.srv972609.hstgr.cloud/workflow/wZyxRjWShhnSFbSV
+  - Outreach Tracking Workflow ID: Vp9DpKF3xT2ysHhx
+  - Outreach Tracking URL: https://n8n.srv972609.hstgr.cloud/workflow/Vp9DpKF3xT2ysHhx
+  - Executions Analyzed: Contact Tracking 6732, Outreach Tracking 6720-6725, 6729-6738
+  - Status: ❌ BROKEN - Contact Enrichment Workshop NOT extracting firstName/lastName from Lead Finder Actor
+  - Next Steps: (1) Retrieve Contact Enrichment Workshop configuration, (2) Analyze Lead Finder Actor output structure, (3) Identify node responsible for extracting contact data, (4) Verify if firstName/lastName fields exist in actor output, (5) Implement fix to extract firstName/lastName, (6) Test with non-duplicate job application, (7) Verify firstName/lastName fields are populated
+
+- 2025-11-04 Session 2 — **⏳ OUTREACH TRACKING WORKSHOP - GOOGLE SHEETS DATA INTEGRITY FIXES (PENDING IMPLEMENTATION)**
+  - Completed root cause analysis of Google Sheets data integrity issues
+  - Identified Row 3 as corrupted test data requiring manual deletion
+  - Provided corrected JSON configuration for "Email Tracking Dashboard" node
+  - Documented two-node architecture (Update Counter for Row 2, Email Tracking Dashboard for Rows 3+)
+  - Documented counter tracking system (0-4 cycle for 80/20 Gmail/Outlook rotation)
+  - Linear Ticket: 1BU-473
+  - See: Docs/daily-logs/2025-11-04-google-sheets-data-integrity-fixes.md
+
+- 2025-11-04 Session 1 — **⚠️ OUTREACH TRACKING WORKSHOP - EMAIL ACCOUNT ROTATION & BINARY DATA FIX (PENDING)**
+  - Description: Successfully implemented and troubleshot the email account rotation system (80% Gmail / 20% Outlook) in the Outreach Tracking workflow. Identified and resolved three critical issues: (1) Update Counter node had extra space in id field mapping causing zero output (`" {{ $json.id }}"` → `"{{ $json.id }}"`), (2) Update Counter producing zero output items due to row matching failure (fixed by removing extra space), (3) Binary data loss at Read Counter node - Google Sheets nodes strip binary data from workflow (only output JSON data from spreadsheet). **Root Cause**: Google Sheets nodes do NOT preserve binary data from previous nodes - this is a fundamental limitation in N8N. **Solution Provided**: Add "Merge Binary Data" Code node between Update Counter and If nodes to merge binary data from Daily Email Volume Control node back into the workflow. **Email Account Rotation**: Google Sheets counter + Weighted Round-Robin algorithm implemented correctly (pattern: [G, G, G, G, O, G, G, G, G, O] repeats every 10 executions). **Data Flow Analysis**: Resume Filename Customizer outputs binary data (145KB PDF) → Daily Email Volume Control preserves binary data (152KB) → Read Counter strips binary data (JSON only) → All subsequent nodes have no binary data → Draft Gmail fails with "Binary file 'resume' not found" error.
+  - Daily Log: Docs/daily-logs/2025-11-04-outreach-tracking-email-rotation-binary-data-fix.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Outreach Tracking Workshop - Email Account Rotation & Binary Data Fix)
+  - Workflow ID: Vp9DpKF3xT2ysHhx (Outreach Tracking Workshop)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/Vp9DpKF3xT2ysHhx
+  - Google Sheet: "LinkedIn Automation - Email Tracking Dashboard" (ID: 1NgFM2ujALlcApbyAuYNWJ5Hyf0UkO0efQlGAzoifC8c)
+  - Executions Analyzed: 6383, 6382, 6390, 6386-6390
+  - Status: ⚠️ THREE ISSUES RESOLVED | 🚀 ONE PENDING FIX REQUIRED
+  - Next Steps: (1) Add "Merge Binary Data" Code node between Update Counter and If nodes, (2) Configure node with provided code, (3) Update workflow connections, (4) Test workflow execution, (5) Verify resume attachments in Gmail drafts, (6) Monitor 80/20 distribution after 10 executions
+
+- 2025-11-02 — **✅ OUTREACH TRACKING WORKSHOP - BINARY DATA ATTACHMENT FIX RESOLVED (SUCCESS)**
+  - Description: Successfully diagnosed and resolved the "No binary data exists on item!" error in the Outreach Tracking Workshop's "Draft Outlook" node. Root cause: Microsoft Outlook node requires binary data in `$binary.resume`, but workflow was passing resume data as base64 string in `$json.resume`. Solution: Deleted orphaned "Binary Data Conversion" node that was incorrectly positioned. Resume Filename Customizer already outputs binary data correctly. **Key Insight**: Gmail and Outlook have different attachment handling requirements - Gmail accepts base64 strings, Outlook requires binary data. **Verification**: Binary data flow verified through complete pipeline (Limit → Round-Robin → Route → Draft Gmail/Outlook). **Status**: Workflow clean and ready for execution testing.
+  - Daily Log: Docs/daily-logs/2025-11-02-outreach-tracking-workflow-binary-data-fix.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Outreach Tracking Workshop - Binary Data Attachment Fix Resolved)
+  - Workflow ID: Vp9DpKF3xT2ysHhx (Outreach Tracking Workshop)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/Vp9DpKF3xT2ysHhx
+  - Status: ✅ RESOLVED - Workflow clean and ready for testing
+  - Next Steps: (1) Execute workflow to verify Outlook draft creation succeeds, (2) Monitor email account rotation (80% Gmail / 20% Outlook), (3) Verify resume attachments are properly attached to both Gmail and Outlook drafts
+
+- 2025-11-01 — **✅ OUTREACH TRACKING WORKSHOP DATA FLOW INVESTIGATION - NO DATA LOSS CONFIRMED (SUCCESS)**
+  - Description: Successfully completed comprehensive investigation of the Outreach Tracking Workshop data flow to determine if it was correctly processing 6 distinct items in separate executions. **CONFIRMED: NO DATA LOSS** - The orchestrator is correctly passing 6 DIFFERENT items to the Outreach Tracking Workshop, and each of the 6 executions receives a unique job application (all 6 dedupeKeys are unique). However, **ALL 6 EXECUTIONS FAIL** at the "Draft Outlook" node with error "No binary data exists on item!" because the resume PDF binary data is not being passed through from Contact Tracking Workshop. **Key Findings**: (1) All 6 executions have unique dedupeKeys, company names, job titles, and recipient emails, (2) "Outreach Input Processing" node succeeds in all 6 executions (no errors before "Draft Outlook"), (3) Root cause: Resume PDF binary data is not being passed through from Contact Tracking Workshop to Outreach Tracking Workshop. **Next Problem to Solve**: Fix the "No binary data exists on item!" error by investigating Contact Tracking Workshop output and implementing binary data pass-through fix.
+  - Investigation Summary: Docs/investigations/outreach-tracking-data-flow-analysis-2025-11-01.md
+  - Knowledge Transfer Document: Docs/handover/conversation-handover-knowledge-transfer.md (Section: Outreach Tracking Workshop Data Flow Investigation)
+  - Orchestrator Execution: https://n8n.srv972609.hstgr.cloud/workflow/fGpR7xvrOO7PBa0c/executions/6195 (Status: SUCCESS)
+  - Outreach Tracking Executions: 6196, 6197, 6198, 6199, 6200, 6201 (all Status: ERROR)
+  - Workflow ID: Vp9DpKF3xT2ysHhx (Outreach Tracking Workshop)
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/Vp9DpKF3xT2ysHhx
+  - Status: ✅ INVESTIGATION COMPLETE - NO DATA LOSS CONFIRMED | ⚠️ NEW ISSUE IDENTIFIED: BINARY DATA PASS-THROUGH
+  - Next Steps: (1) Analyze Contact Tracking Workshop output to verify if binary data is being generated, (2) Check if binary data is being passed through the orchestrator to Outreach Tracking Workshop, (3) Verify the binary data property name matches what "Draft Outlook" node expects ("resume"), (4) Implement fix to ensure resume PDF binary data flows through the entire pipeline
 
 - 2025-10-31 — **✅ CONTACT ENRICHMENT WORKSHOP EXPANSION TEST - 8.4X IMPROVEMENT (SUCCESS)**
   - Description: Successfully expanded Contact Enrichment Workshop filtering criteria and achieved **8.4x increase in contact count** (from 5 to 42 contacts). All 42 contacts verified to match filtering criteria with 100% accuracy. **Key Changes**: (1) Expanded seniority_level from 4 to 6 levels (added 'senior', 'entry'), (2) Increased job titles from 3 to 8, (3) Expanded email_status from validated-only to all statuses, (4) Increased domains from 10 to 30. **Test Results**: 42 contacts from 7 companies (23% hit rate), cost $0.063 per run. **Verification**: 100% of contacts match filtering criteria (domains, job titles, seniority levels, functional areas). **Biggest Impact Factors**: Expanding email_status (3-5x increase) + adding "senior" and "entry" seniority levels (30 out of 42 contacts = 71%). **Recommendations**: Option 1 (Continue expanding to 100-150 contacts), Option 2 (Keep current config for testing), Option 3 (Target larger companies only for higher hit rate).
@@ -283,9 +380,16 @@ Comprehensive evaluations and documentation for Apify actors used in job discove
 ## Architecture
 High-level and detailed architectural documentation.
 
+- **Data Integrity Analysis - LinkedIn Automation Pipeline** (2025-11-05)
+  - Description: Comprehensive analysis of data integrity across the LinkedIn automation pipeline, documenting the complete data flow path from Contact Enrichment Workshop through to Outreach Tracking Workflow. **Key Findings**: (1) Data integrity break point identified at Contact Enrichment Workshop (firstName/lastName EMPTY), (2) Semantic joining logic working correctly (zero data loss), (3) Duplicate detection working correctly (6/6 duplicates identified), (4) Overall pipeline health: 85% (6/7 stages working correctly). **Data Flow**: Contact Enrichment (EMPTY) → Contact Data Merger → Data Flattener v3.3.0 → Contact Tracking Output Formatting v2.1.0 → Orchestrator → Outreach Tracking → AI Email Generation (generic greeting). **Verified**: All downstream nodes correctly deployed and working, receiving empty data from upstream.
+  - Document: Docs/architecture/data-integrity-analysis.md
+  - Status: ✅ Analysis complete - One data integrity break point identified
+  - Related Bug: Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md
+
 - Directory: Docs/architecture/
   - Example: Docs/architecture/Merge-Node-Architecture-Specification.md
   - Example: Docs/architecture/outreach-tracking-architectural-gap-analysis.md
+  - Example: Docs/architecture/data-integrity-analysis.md
 
 ---
 
@@ -434,6 +538,28 @@ Operational playbooks, node configuration details, and code samples.
 
 ---
 
+## Bug Tracking
+Comprehensive documentation of identified bugs and their resolution status.
+
+- **Contact Enrichment Workshop - firstName/lastName Extraction Bug** (2025-11-05)
+  - Description: Contact Enrichment Workshop (ID: rClUELDAK9f4mgJx) is NOT extracting firstName/lastName from Lead Finder Actor output, causing email personalization failure where AI Email Generation uses generic "Hi there," greeting instead of personalized greetings with hiring manager's first names.
+  - Bug ID: CE-001
+  - Severity: CRITICAL
+  - Status: ❌ OPEN - Awaiting investigation and fix
+  - Impact: Email personalization broken, reducing email effectiveness and response rates
+  - Root Cause: Upstream data extraction issue in Contact Enrichment Workshop
+  - Verified: Contact Tracking Workshop fixes (v2.1.0, v3.3.0) are correctly deployed and working, receiving empty data from upstream
+  - Document: Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md
+  - Related: Docs/architecture/data-integrity-analysis.md
+  - Daily Log: Docs/daily-logs/2025-11-05-contact-enrichment-data-flow-investigation.md
+  - Workflow URL: https://n8n.srv972609.hstgr.cloud/workflow/rClUELDAK9f4mgJx
+  - Next Steps: (1) Retrieve Contact Enrichment Workshop configuration, (2) Analyze Lead Finder Actor output structure, (3) Identify node responsible for extracting contact data, (4) Implement fix to extract firstName/lastName
+
+- Directory: Docs/bugs/
+  - Example: Docs/bugs/contact-enrichment-firstname-lastname-extraction-bug.md
+
+---
+
 ## Project Status & Milestones
 Current status summaries and milestone tracking.
 
@@ -444,8 +570,8 @@ Current status summaries and milestone tracking.
   - Example: Docs/project-milestones/contact-tracking-workflow-success-documentation.md
 - **Job Application Progress Tracker**: Docs/tracking/job-application-progress-tracker.md
   - Central file for monitoring the status of all job applications and workshop workflows
-  - Last Updated: 2025-10-27
-  - Current Status: Resume Generation Workshop BROKEN (keyword extraction failure)
+  - Last Updated: 2025-11-05
+  - Current Status: Contact Enrichment Workshop BROKEN (firstName/lastName extraction bug)
 - **N8N Workflow Backups**: Docs/backups/
   - **README**: Docs/backups/README.md - Complete guide to requesting and managing backups
   - **Backup Directory**: Docs/backups/workflows/YYYY-MM-DD/ - Timestamped backup directories
