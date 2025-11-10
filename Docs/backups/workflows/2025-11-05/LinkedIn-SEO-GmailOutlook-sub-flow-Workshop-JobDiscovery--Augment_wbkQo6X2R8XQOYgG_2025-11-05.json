@@ -1,0 +1,237 @@
+﻿{
+    "updatedAt":  "2025-10-29T15:57:35.000Z",
+    "createdAt":  "2025-09-15T16:49:57.667Z",
+    "id":  "wbkQo6X2R8XQOYgG",
+    "name":  "LinkedIn-SEO-GmailOutlook-sub-flow-Workshop-JobDiscovery--Augment",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -544,
+                                       -112
+                                   ],
+                      "id":  "f714cf16-2724-4f8b-8254-9cac4eb2bbfd",
+                      "name":  "Execute Workflow Trigger - From Orchestrator"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "Run actor and get dataset",
+                                         "actorSource":  "store",
+                                         "actorId":  {
+                                                         "__rl":  true,
+                                                         "value":  "hKByXkMQaC5Qt9UMN",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "Linkedin Jobs Scraper - PPR (curious_coder/linkedin-jobs-scraper)",
+                                                         "cachedResultUrl":  "https://console.apify.com/actors/hKByXkMQaC5Qt9UMN/input"
+                                                     },
+                                         "customBody":  "={\n    \"count\": 999,\n    \"scrapeCompany\": true,\n    \"urls\": [\n        \"https://www.linkedin.com/jobs/search/?f_TPR=r86400\u0026f_WT=2\u0026geoId=103644278\u0026keywords=seo\u0026origin=JOB_SEARCH_PAGE_SEARCH_BUTTON\u0026refresh=true\"\n    ]\n}",
+                                         "timeout":  {
+
+                                                     },
+                                         "memory":  4096
+                                     },
+                      "type":  "@apify/n8n-nodes-apify.apify",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -304,
+                                       -112
+                                   ],
+                      "id":  "c75bbdb1-0de0-4fe8-8597-4d277639c373",
+                      "name":  "LinkedIn Jobs Scraper",
+                      "credentials":  {
+                                          "apifyApi":  {
+                                                           "id":  "wI68UXmrV57w78X2",
+                                                           "name":  "Apify account"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// =============================================================================\n// DATA NORMALIZATION \u0026 DEDUPLICATION\n// Version: 2.0.0-required-website (2025-10-24)\n// =============================================================================\n\n// CONFIGURATION\nconst REQUIRED_FIELDS = [\u0027title\u0027, \u0027companyName\u0027, \u0027companyWebsite\u0027, \u0027location\u0027, \u0027link\u0027];\n\nconst DOMAIN_BLACKLIST = [\n  \u0027lensa.com\u0027,\n  \u0027indeed.com\u0027,\n  \u0027ziprecruiter.com\u0027,\n  \u0027glassdoor.com\u0027,\n  \u0027monster.com\u0027,\n  \u0027careerbuilder.com\u0027,\n  \u0027simplyhired.com\u0027,\n  \u0027dice.com\u0027,\n  \u0027linkedin.com\u0027,\n  \u0027sibelco.com\u0027\n];\n\n// =============================================================================\n// HELPER FUNCTIONS\n// =============================================================================\n\nfunction normalizeDomain(domain) {\n  if (!domain || typeof domain !== \u0027string\u0027) {\n    return null;\n  }\n  \n  // Remove protocol, www prefix (case-insensitive), convert to lowercase\n  let normalized = domain\n    .replace(/^(https?:\\/\\/)?(www\\.)?/i, \u0027\u0027)\n    .toLowerCase()\n    .trim();\n  \n  // Remove trailing slashes and paths\n  const pathIndex = normalized.indexOf(\u0027/\u0027);\n  if (pathIndex !== -1) {\n    normalized = normalized.substring(0, pathIndex);\n  }\n  \n  // Remove @ symbol\n  normalized = normalized.replace(\u0027@\u0027, \u0027\u0027);\n  \n  // Validate: must contain at least one dot for TLD\n  if (!normalized.includes(\u0027.\u0027)) {\n    return null;\n  }\n  \n  // Validate: must not be empty\n  if (normalized.length === 0) {\n    return null;\n  }\n  \n  return normalized;\n}\n\nfunction generateJobKey(job) {\n  const domain = job.normalizedDomain || \u0027\u0027;\n  const title = (job.title || \u0027\u0027).toLowerCase().trim();\n  const location = (job.location || \u0027\u0027).toLowerCase().trim();\n  \n  return `${domain}|${title}|${location}`;\n}\n\nfunction isBlacklisted(domain) {\n  if (!domain) return false;\n  return DOMAIN_BLACKLIST.some(blacklisted =\u003e domain.includes(blacklisted));\n}\n\n// =============================================================================\n// MAIN PROCESSING\n// =============================================================================\n\nconst inputItems = $input.all();\nconst jobs = inputItems.map(item =\u003e item.json);\n\nconst stats = {\n  totalInput: jobs.length,\n  missingWebsite: 0,\n  invalidWebsite: 0,\n  validJobs: 0,\n  invalidJobs: 0,\n  blacklistedJobs: 0,\n  duplicateJobs: 0,\n  uniqueJobs: 0\n};\n\nconst processedJobs = [];\nconst invalidJobs = [];\nconst blacklistedJobs = [];\nconst duplicateJobs = [];\nconst jobsWithoutWebsite = [];\nconst seenKeys = new Set();\n\nfor (const job of jobs) {\n  // STEP 1: Validate required fields\n  const missingFields = REQUIRED_FIELDS.filter(field =\u003e {\n    const value = job[field];\n    return !value || (typeof value === \u0027string\u0027 \u0026\u0026 value.trim() === \u0027\u0027);\n  });\n  \n  if (missingFields.length \u003e 0) {\n    stats.invalidJobs++;\n    \n    if (missingFields.includes(\u0027companyWebsite\u0027)) {\n      stats.missingWebsite++;\n      jobsWithoutWebsite.push({\n        job: job,\n        reason: \u0027Missing companyWebsite field\u0027\n      });\n    } else {\n      invalidJobs.push({\n        job: job,\n        reason: `Missing required fields: ${missingFields.join(\u0027, \u0027)}`\n      });\n    }\n    continue;\n  }\n  \n  stats.validJobs++;\n  \n  // STEP 2: Normalize domain\n  const originalDomain = job.companyWebsite;\n  const normalizedDomain = normalizeDomain(originalDomain);\n  \n  if (!normalizedDomain) {\n    stats.invalidWebsite++;\n    invalidJobs.push({\n      job: job,\n      domain: originalDomain,\n      reason: \u0027Invalid companyWebsite format\u0027\n    });\n    continue;\n  }\n  \n  // STEP 3: Check blacklist\n  if (isBlacklisted(normalizedDomain)) {\n    stats.blacklistedJobs++;\n    blacklistedJobs.push({\n      job: job,\n      domain: normalizedDomain,\n      reason: \u0027Domain is blacklisted\u0027\n    });\n    continue;\n  }\n  \n  // STEP 4: Create normalized job data\n  const jobData = {\n    ...job,\n    normalizedDomain: normalizedDomain,\n    originalDomain: originalDomain,\n    hasWebsite: true,\n    processedAt: new Date().toISOString()\n  };\n  \n  // STEP 5: Deduplication\n  const jobKey = generateJobKey(jobData);\n  \n  if (seenKeys.has(jobKey)) {\n    stats.duplicateJobs++;\n    duplicateJobs.push({\n      job: jobData,\n      key: jobKey,\n      reason: \u0027Duplicate job\u0027\n    });\n    continue;\n  }\n  \n  seenKeys.add(jobKey);\n  stats.uniqueJobs++;\n  processedJobs.push(jobData);\n}\n\n// =============================================================================\n// LOGGING\n// =============================================================================\n\nconst percentMissingWebsite = ((stats.missingWebsite / stats.totalInput) * 100).toFixed(1);\nconst percentInvalidWebsite = ((stats.invalidWebsite / stats.totalInput) * 100).toFixed(1);\nconst percentFiltered = (((stats.missingWebsite + stats.invalidWebsite + stats.blacklistedJobs + stats.duplicateJobs) / stats.totalInput) * 100).toFixed(1);\nconst percentPassed = ((stats.uniqueJobs / stats.totalInput) * 100).toFixed(1);\n\nconsole.log(\u0027=\u0027.repeat(80));\nconsole.log(\u0027DATA NORMALIZATION \u0026 DEDUPLICATION - STATISTICS\u0027);\nconsole.log(\u0027=\u0027.repeat(80));\nconsole.log(`Total Input Jobs:                 ${stats.totalInput}`);\nconsole.log(`Valid Jobs (all fields present):  ${stats.validJobs}`);\nconsole.log(\u0027\u0027);\nconsole.log(\u0027FILTERING BREAKDOWN:\u0027);\nconsole.log(`  Missing companyWebsite:         ${stats.missingWebsite} (${percentMissingWebsite}%)`);\nconsole.log(`  Invalid companyWebsite format:  ${stats.invalidWebsite} (${percentInvalidWebsite}%)`);\nconsole.log(`  Other missing fields:           ${stats.invalidJobs - stats.missingWebsite}`);\nconsole.log(`  Blacklisted domains:            ${stats.blacklistedJobs}`);\nconsole.log(`  Duplicate jobs:                 ${stats.duplicateJobs}`);\nconsole.log(`  TOTAL FILTERED:                 ${stats.missingWebsite + stats.invalidWebsite + stats.invalidJobs + stats.blacklistedJobs + stats.duplicateJobs} (${percentFiltered}%)`);\nconsole.log(\u0027\u0027);\nconsole.log(`UNIQUE JOBS (OUTPUT):             ${stats.uniqueJobs} (${percentPassed}%)`);\nconsole.log(\u0027=\u0027.repeat(80));\n\nif (stats.missingWebsite \u003e 0) {\n  console.log(\u0027\u0027);\n  console.log(\u0027SAMPLE JOBS FILTERED FOR MISSING WEBSITE (first 5):\u0027);\n  jobsWithoutWebsite.slice(0, 5).forEach((item, index) =\u003e {\n    console.log(`  ${index + 1}. ${item.job.title || \u0027N/A\u0027} at ${item.job.companyName || \u0027N/A\u0027}`);\n  });\n}\n\nif (stats.invalidWebsite \u003e 0) {\n  console.log(\u0027\u0027);\n  console.log(\u0027SAMPLE JOBS WITH INVALID WEBSITE FORMAT (first 3):\u0027);\n  invalidJobs.filter(item =\u003e item.domain).slice(0, 3).forEach((item, index) =\u003e {\n    console.log(`  ${index + 1}. ${item.job.title} at ${item.job.companyName}`);\n    console.log(`     Invalid domain: ${item.domain}`);\n  });\n}\n\nif (stats.blacklistedJobs \u003e 0) {\n  console.log(\u0027\u0027);\n  console.log(\u0027SAMPLE BLACKLISTED JOBS (first 3):\u0027);\n  blacklistedJobs.slice(0, 3).forEach((item, index) =\u003e {\n    console.log(`  ${index + 1}. ${item.job.title} at ${item.job.companyName}`);\n    console.log(`     Blacklisted domain: ${item.domain}`);\n  });\n}\n\nif (stats.duplicateJobs \u003e 0) {\n  console.log(\u0027\u0027);\n  console.log(\u0027SAMPLE DUPLICATE JOBS (first 3):\u0027);\n  duplicateJobs.slice(0, 3).forEach((item, index) =\u003e {\n    console.log(`  ${index + 1}. ${item.job.title} at ${item.job.companyName}`);\n    console.log(`     Deduplication key: ${item.key}`);\n  });\n}\n\n// =============================================================================\n// OUTPUT\n// =============================================================================\n\nreturn processedJobs.map((job, index) =\u003e ({\n  json: job,\n  pairedItem: { item: 0 }\n}));"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -64,
+                                       -112
+                                   ],
+                      "id":  "dd54a3ca-220c-4a1d-a755-cce5abe5c16e",
+                      "name":  "Data Normalization and Deduplication"
+                  },
+                  {
+                      "parameters":  {
+                                         "maxItems":  200
+                                     },
+                      "type":  "n8n-nodes-base.limit",
+                      "typeVersion":  1,
+                      "position":  [
+                                       160,
+                                       -112
+                                   ],
+                      "id":  "e2fe1f14-e8e2-4973-99a1-146d123fe271",
+                      "name":  "Limit - 200"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// JOB AGGREGATOR \u0026 SPAM COMPANY BLACKLIST FILTER\n// Version: 2.0.0 (2025-10-27)\n// Purpose: Filter out job aggregators AND spam companies where we cannot find verified company emails\n// This prevents wasted API calls to Lead Finder and NeverBounce\n\n// =============================================================================\n// BLACKLIST CONFIGURATION\n// =============================================================================\n\n// Job aggregator platforms (no company emails available)\nconst jobAggregatorBlacklist = [\n  \u0027Lensa\u0027,           // Primary issue - no company emails\n  \u0027Indeed\u0027,          // Largest job aggregator\n  \u0027ZipRecruiter\u0027,    // Major aggregator\n  \u0027Glassdoor\u0027,       // Reviews + job aggregator\n  \u0027Monster\u0027,         // Classic aggregator\n  \u0027CareerBuilder\u0027,   // Major aggregator\n  \u0027SimplyHired\u0027,     // Aggregator\n  \u0027Snagajob\u0027,        // Hourly jobs aggregator\n  \u0027LinkUp\u0027,          // Aggregator\n  \u0027Jooble\u0027,          // International aggregator\n  \u0027Adzuna\u0027,          // UK-based aggregator\n  \u0027Jobrapido\u0027,       // International aggregator\n  \u0027Neuvoo\u0027,          // Canadian aggregator\n  \u0027Jora\u0027,            // Australian aggregator\n  \u0027JobisJob\u0027         // Spanish aggregator\n];\n\n// Spam companies identified in search quality analysis (2025-10-27)\nconst spamCompanyBlacklist = [\n  \u0027EMK CONSULTORIA\u0027,                    // 50+ identical data entry spam postings\n  \u0027Altın Post\u0027,                         // Multiple data entry spam postings\n  \u0027ES-PAT\u0027,                             // Multiple data entry spam postings\n  \u0027Rüzgar Dijital Reklam Ajansı\u0027,      // Multiple data entry spam postings\n  \u0027DIY Standing Desk Kit\u0027               // Data entry spam postings\n];\n\n// =============================================================================\n// FILTERING LOGIC\n// =============================================================================\n\nconst items = $input.all();\nconst filteredItems = [];\nlet aggregatorFilteredCount = 0;\nlet spamFilteredCount = 0;\n\nfor (const item of items) {\n  const companyName = item.json.companyName || \u0027\u0027;\n  \n  // Check if company name matches any blacklisted aggregator (case-insensitive)\n  const isAggregator = jobAggregatorBlacklist.some(aggregator =\u003e \n    companyName.toLowerCase().includes(aggregator.toLowerCase())\n  );\n  \n  // Check if company name matches any spam company (case-insensitive)\n  const isSpamCompany = spamCompanyBlacklist.some(spamCompany =\u003e \n    companyName.toLowerCase().includes(spamCompany.toLowerCase())\n  );\n  \n  if (isAggregator) {\n    // FILTER OUT - job aggregator detected\n    aggregatorFilteredCount++;\n  } else if (isSpamCompany) {\n    // FILTER OUT - spam company detected\n    spamFilteredCount++;\n  } else {\n    // PASS THROUGH - direct employer (not aggregator, not spam)\n    filteredItems.push(item);\n  }\n}\n\n// =============================================================================\n// LOGGING\n// =============================================================================\n\nconst totalInput = items.length;\nconst totalFiltered = aggregatorFilteredCount + spamFilteredCount;\nconst totalPassed = filteredItems.length;\nconst percentFiltered = ((totalFiltered / totalInput) * 100).toFixed(1);\nconst percentPassed = ((totalPassed / totalInput) * 100).toFixed(1);\n\nconsole.log(\u0027=\u0027.repeat(80));\nconsole.log(\u0027BLACKLIST FILTER - STATISTICS\u0027);\nconsole.log(\u0027=\u0027.repeat(80));\nconsole.log(`Total Input Jobs:                 ${totalInput}`);\nconsole.log(\u0027\u0027);\nconsole.log(\u0027FILTERING BREAKDOWN:\u0027);\nconsole.log(`  Job Aggregators Filtered:       ${aggregatorFilteredCount}`);\nconsole.log(`  Spam Companies Filtered:        ${spamFilteredCount}`);\nconsole.log(`  TOTAL FILTERED:                 ${totalFiltered} (${percentFiltered}%)`);\nconsole.log(\u0027\u0027);\nconsole.log(`JOBS PASSED (OUTPUT):             ${totalPassed} (${percentPassed}%)`);\nconsole.log(\u0027=\u0027.repeat(80));\n\n// =============================================================================\n// OUTPUT\n// =============================================================================\n\nreturn filteredItems;"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       384,
+                                       -112
+                                   ],
+                      "id":  "03160a59-ed70-4a2b-9b89-be78d39d0614",
+                      "name":  "Blacklist - Companies and Email"
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow Trigger - From Orchestrator":  {
+                                                                             "main":  [
+                                                                                          [
+                                                                                              {
+                                                                                                  "node":  "LinkedIn Jobs Scraper",
+                                                                                                  "type":  "main",
+                                                                                                  "index":  0
+                                                                                              }
+                                                                                          ]
+                                                                                      ]
+                                                                         },
+                        "LinkedIn Jobs Scraper":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Data Normalization and Deduplication",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Data Normalization and Deduplication":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Limit - 200",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                        "Limit - 200":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Blacklist - Companies and Email",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ]
+                                                     ]
+                                        }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "saveManualExecutions":  true,
+                     "saveExecutionProgress":  true
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "20acbaa1-3711-4c3a-9b16-e5b3b34231f2",
+    "versionCounter":  1,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-09-15T16:49:57.671Z",
+                       "createdAt":  "2025-09-15T16:49:57.671Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "wbkQo6X2R8XQOYgG",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-04T23:00:00.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-04",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-09-10T16:23:08.235Z",
+                     "createdAt":  "2025-09-10T16:23:08.235Z",
+                     "id":  "FrnybmIzoJd732QS",
+                     "name":  "Augment Code"
+                 },
+                 {
+                     "updatedAt":  "2025-09-13T21:08:18.122Z",
+                     "createdAt":  "2025-09-13T21:08:18.122Z",
+                     "id":  "H8bAHR6C77zCCEmw",
+                     "name":  "sub-flow"
+                 }
+             ]
+}

@@ -1,0 +1,392 @@
+﻿{
+    "updatedAt":  "2025-10-29T19:12:34.000Z",
+    "createdAt":  "2025-09-15T20:35:34.416Z",
+    "id":  "zTtSVmTg3UaV9tPG",
+    "name":  "LinkedIn-GmailOutlook-sub-flow-Workshop-ResumeGeneration--Augment",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -720,
+                                       -64
+                                   ],
+                      "id":  "706eea04-4a25-4765-ae47-c9d19fa53fc8",
+                      "name":  "Execute Workflow Trigger - From Orchestrator"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// RESUME GENERATION - INPUT PROCESSING (FIXED FOR DOUBLE NESTING)\n// Processes job data and matching results for resume customization\n// FIXED: Handles Contact Enrichment Workshop\u0027s double nested jobData structure\n\nconst inputData = $json;\nconsole.log(\u0027🔍 Resume Generation Input Debug:\u0027);\nconsole.log(\u0027   Input keys:\u0027, Object.keys(inputData));\nconsole.log(\u0027   JobData keys:\u0027, inputData.jobData ? Object.keys(inputData.jobData) : \u0027No jobData\u0027);\n\n// CRITICAL FIX: Handle double nested jobData structure from Contact Enrichment\n// Contact Enrichment outputs: { jobData: { jobData: {...}, qualityValidation: {...} } }\n// We need to extract the INNER jobData object\nconst jobData = (inputData.jobData \u0026\u0026 inputData.jobData.jobData) \n  ? inputData.jobData.jobData \n  : (inputData.jobData || inputData);\n\nconsole.log(\u0027   Extracted jobData keys:\u0027, Object.keys(jobData));\n\n// CRITICAL FIX: Extract qualityValidation from the outer jobData wrapper\n// This contains the Job Matching Workshop\u0027s quality analysis\nconst jobAnalysis = (inputData.jobData \u0026\u0026 inputData.jobData.qualityValidation)\n  ? inputData.jobData.qualityValidation\n  : (inputData.jobAnalysis || inputData.jobMatching || null);\n\nconsole.log(\u0027   JobAnalysis keys:\u0027, jobAnalysis ? Object.keys(jobAnalysis) : \u0027No jobAnalysis\u0027);\n\n// ✅ CRITICAL FIX: Handle field name differences between workshops\nconst jobTitle = jobData.jobTitle || jobData.title; // ← FIXED: Now checks both \u0027jobTitle\u0027 and \u0027title\u0027\nconst companyName = jobData.company || jobData.companyName; // Handle both field names\nconst jobLocation = jobData.location || \u0027Not specified\u0027;\nconst jobDescription = jobData.description || jobData.descriptionText || jobData.descriptionHtml || \u0027\u0027;\n\n// FIXED: Validate required inputs with proper field names\nif (!jobTitle || !companyName) {\n  console.error(\u0027❌ Validation failed:\u0027);\n  console.error(\u0027   Title:\u0027, jobTitle);\n  console.error(\u0027   Company:\u0027, companyName);\n  console.error(\u0027   Available jobData fields:\u0027, Object.keys(jobData));\n  console.error(\u0027   Input structure:\u0027, JSON.stringify(inputData, null, 2));\n  throw new Error(`Invalid job data: missing required fields (title: ${!!jobTitle}, company: ${!!companyName})`);\n}\n\n// FIXED: Handle analysis data structure differences\nlet analysisScore = 0;\nlet analysisRecommendation = \u0027UNKNOWN\u0027;\nlet keyStrengths = [];\nlet potentialConcerns = [];\nlet skillsAnalysis = {};\nlet matchingKeywords = [];\n\nif (jobAnalysis) {\n  // Handle both Job Matching Workshop output (qualityValidation) and direct jobAnalysis\n  analysisScore = jobAnalysis.qualityScore || jobAnalysis.score || jobAnalysis.compatibilityScore || 75;\n  analysisRecommendation = jobAnalysis.recommendation || \u0027GOOD_MATCH\u0027;\n  keyStrengths = jobAnalysis.keyStrengths || [];\n  potentialConcerns = jobAnalysis.issues || jobAnalysis.potentialConcerns || [];\n  skillsAnalysis = jobAnalysis.skillsAnalysis || {};\n  matchingKeywords = jobAnalysis.matchingKeywords || [];\n} else {\n  console.log(\u0027⚠️ No job analysis data found - using defaults\u0027);\n  analysisScore = 75; // Default passing score\n  analysisRecommendation = \u0027DEFAULT_MATCH\u0027;\n}\n\n// Extract key job requirements for resume customization\nconst jobRequirements = {\n  title: jobTitle,\n  company: companyName,\n  location: jobLocation,\n  description: jobDescription,\n  requirements: jobData.requirements || \u0027\u0027,\n  skills: jobData.skills || [],\n  experience: jobData.experienceLevel || \u0027Not specified\u0027,\n  jobType: jobData.jobType || jobData.employmentType || \u0027Not specified\u0027,\n  industry: jobData.industry || \u0027Not specified\u0027\n};\n\n// Extract matching analysis for customization guidance\nconst matchingGuidance = {\n  compatibilityScore: analysisScore,\n  score: analysisScore, // Provide both field names for compatibility\n  recommendation: analysisRecommendation,\n  keyStrengths: keyStrengths,\n  potentialConcerns: potentialConcerns,\n  skillsAnalysis: skillsAnalysis,\n  matchingKeywords: matchingKeywords,\n  analysisType: jobAnalysis?.analysisType || \u0027job-resume-match\u0027\n};\n\n// Prepare data for resume customization\nconst customizationInput = {\n  job: jobRequirements,\n  matching: matchingGuidance,\n  customizationType: \u0027job-specific-resume-generation\u0027,\n  timestamp: new Date().toISOString(),\n  originalInput: inputData // Keep original for debugging\n};\n\nconsole.log(\u0027✅ Resume Generation Input Processing Success:\u0027);\nconsole.log(`   Job: ${jobTitle} at ${companyName}`);\nconsole.log(`   Compatibility Score: ${analysisScore}%`);\nconsole.log(`   Recommendation: ${analysisRecommendation}`);\nconsole.log(`   Key Strengths: ${keyStrengths.length} items`);\nconsole.log(`   Analysis Type: ${jobAnalysis?.analysisType || \u0027default\u0027}`);\n\nreturn [{ json: customizationInput }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -560,
+                                       -64
+                                   ],
+                      "id":  "544f3e8a-bb95-4152-aa53-7b003139d366",
+                      "name":  "Job-Resume Input Processing"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// RESUME GENERATION - OUTPUT FORMATTING (v2.0.0)\n// Transforms AI Resume Customization output into Merge-compatible format\n// FIXED: Passes through contactEnrichment field to Contact Tracking Workshop\n\n// Get the AI Resume Customization output from current node\nconst aiOutput = $json;\n\n// Parse the JSON from AI Resume Customization (nested in content.parts[0].text)\nlet resumeData;\ntry {\n  resumeData = JSON.parse(aiOutput.content.parts[0].text);\n} catch (parseError) {\n  throw new Error(`Failed to parse AI Resume Customization output: ${parseError.message}`);\n}\n\n// Get original job data from Job-Resume Input Processing node\nconst inputProcessingData = $(\u0027Job-Resume Input Processing\u0027).item.json;\nconst originalJobData = inputProcessingData.job;\n\n// Get original input data (includes contactEnrichment from Contact Enrichment Workshop)\nconst originalInput = inputProcessingData.originalInput;\n\n// Validate required data\nif (!originalJobData) {\n  throw new Error(\u0027Missing job data from Job-Resume Input Processing node\u0027);\n}\n\nif (!originalJobData.title || !originalJobData.company) {\n  throw new Error(`Invalid job data: missing required fields (title: ${!!originalJobData.title}, company: ${!!originalJobData.company})`);\n}\n\n// Format output for Contact Tracking Workshop\nconst mergeCompatibleOutput = {\n  jobData: {\n    title: originalJobData.title,\n    company: originalJobData.company,\n    location: originalJobData.location,\n    description: originalJobData.description,\n    requirements: originalJobData.requirements || \u0027\u0027,\n    skills: originalJobData.skills || [],\n    experience: originalJobData.experience || \u0027Not specified\u0027,\n    jobType: originalJobData.jobType || \u0027Not specified\u0027,\n    industry: originalJobData.industry || \u0027Not specified\u0027\n  },\n  resumeGeneration: {\n    customizedResume: resumeData.customizedResume || \u0027\u0027,\n    atsScore: resumeData.optimizationMetrics?.atsScore || 0,\n    relevanceScore: resumeData.optimizationMetrics?.relevanceScore || 0,\n    keywordDensity: resumeData.optimizationMetrics?.keywordDensity || \u0027unknown\u0027,\n    qualityPassed: (resumeData.optimizationMetrics?.atsScore || 0) \u003e= 50,\n    customizationSummary: resumeData.customizationSummary || {},\n    recommendedActions: resumeData.recommendedActions || [],\n    qualityGate: resumeData.qualityGate || {}\n  },\n  // ✅ CRITICAL FIX: Pass through contactEnrichment from Contact Enrichment Workshop\n  contactEnrichment: originalInput?.contactEnrichment || {},\n  processingMetadata: {\n    workflowId: \"resume-generation-merge-ready\",\n    processedAt: new Date().toISOString(),\n    status: \"resume_generation_complete\",\n    version: \"2.0.0\"\n  }\n};\n\n// Return formatted output\nreturn [{ json: mergeCompatibleOutput }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       768,
+                                       -48
+                                   ],
+                      "id":  "0a08b646-6f40-4df8-9f5d-ca72bb1bb382",
+                      "name":  "Resume Generation Output Formatting"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  false,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "1542f3f6-6146-4037-a547-40cafa5d1a85",
+                                                                                   "leftValue":  "={{ JSON.parse($json.content.parts[0].text).optimizationMetrics.atsScore }}",
+                                                                                   "rightValue":  0,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gte",
+                                                                                                    "name":  "filter.operator.gte"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+                                                         "ignoreCase":  true
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.filter",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       496,
+                                       -48
+                                   ],
+                      "id":  "be6d8e0f-c97c-4bcb-bba7-ab218b166ecf",
+                      "name":  "Quality Gate Filter"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "get",
+                                         "documentURL":  "1_ipN7oOtDQlytBARapdxjJytUNuyCb4CvZfzfA8gAFs"
+                                     },
+                      "type":  "n8n-nodes-base.googleDocs",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -384,
+                                       -64
+                                   ],
+                      "id":  "88194991-49a4-485a-b7a2-a77dac8218fc",
+                      "name":  "Get a document",
+                      "credentials":  {
+                                          "googleDocsOAuth2Api":  {
+                                                                      "id":  "nrRB0AHydhQRDsRy",
+                                                                      "name":  "Google Docs account"
+                                                                  }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "// RESUME IDENTITY VALIDATION NODE (v1.0.0)\n// Validates that AI Resume Customization preserved candidate\u0027s actual identity\n// Rejects generic or fictional content\n\nconst aiOutput = $json;\n\n// Parse the AI Resume Customization output\nlet resumeData;\ntry {\n  resumeData = JSON.parse(aiOutput.content.parts[0].text);\n} catch (parseError) {\n  throw new Error(`Failed to parse AI Resume Customization output: ${parseError.message}`);\n}\n\nconst customizedResume = resumeData.customizedResume || \u0027\u0027;\n\n// Validation checks\nconst validationResults = {\n  hasActualName: customizedResume.includes(\u0027IVO DACHEV\u0027),\n  hasActualPhone: customizedResume.includes(\u0027(650) 222-7923\u0027),\n  hasActualEmail: customizedResume.includes(\u0027dachevivo@gmail.com\u0027),\n  hasPlaceholderName: customizedResume.includes(\u0027[Your Name]\u0027) || customizedResume.includes(\u0027[Your name]\u0027),\n  hasPlaceholderCompany: customizedResume.includes(\u0027[Previous Company]\u0027) || customizedResume.includes(\u0027[Company Name]\u0027),\n  hasPlaceholderEmail: customizedResume.includes(\u0027[Your Email]\u0027) || customizedResume.includes(\u0027[Your email]\u0027),\n  hasPlaceholderPhone: customizedResume.includes(\u0027[Your Phone]\u0027) || customizedResume.includes(\u0027[Phone Number]\u0027)\n};\n\n// Count actual company names from base resume\nconst actualCompanies = [\n  \u00271BuilderMedia\u0027,\n  \u0027Incedo Inc\u0027,\n  \u0027CSSI Inc\u0027,\n  \u0027Atos Syntel\u0027,\n  \u0027SF Fire Credit Union\u0027,\n  \u0027Sutter Health\u0027,\n  \u0027SF Website Design\u0027,\n  \u0027Coding Dojo\u0027,\n  \u0027SCITON INC\u0027,\n  \u0027REALTRAX INC\u0027,\n  \u0027MOBILE ELECTRONICS\u0027\n];\n\nlet companyCount = 0;\nfor (const company of actualCompanies) {\n  if (customizedResume.includes(company)) {\n    companyCount++;\n  }\n}\n\nvalidationResults.actualCompanyCount = companyCount;\nvalidationResults.hasMinimumCompanies = companyCount \u003e= 3;\n\n// Determine if validation passed\nconst validationPassed = \n  validationResults.hasActualName \u0026\u0026\n  validationResults.hasActualPhone \u0026\u0026\n  validationResults.hasActualEmail \u0026\u0026\n  !validationResults.hasPlaceholderName \u0026\u0026\n  !validationResults.hasPlaceholderCompany \u0026\u0026\n  !validationResults.hasPlaceholderEmail \u0026\u0026\n  !validationResults.hasPlaceholderPhone \u0026\u0026\n  validationResults.hasMinimumCompanies;\n\n// Build validation report\nconst validationReport = {\n  validationPassed: validationPassed,\n  timestamp: new Date().toISOString(),\n  checks: validationResults,\n  errors: []\n};\n\n// Collect validation errors\nif (!validationResults.hasActualName) {\n  validationReport.errors.push(\u0027CRITICAL: Resume does not contain candidate\\\u0027s actual name \"IVO DACHEV\"\u0027);\n}\nif (!validationResults.hasActualPhone) {\n  validationReport.errors.push(\u0027CRITICAL: Resume does not contain candidate\\\u0027s actual phone \"(650) 222-7923\"\u0027);\n}\nif (!validationResults.hasActualEmail) {\n  validationReport.errors.push(\u0027CRITICAL: Resume does not contain candidate\\\u0027s actual email \"dachevivo@gmail.com\"\u0027);\n}\nif (validationResults.hasPlaceholderName) {\n  validationReport.errors.push(\u0027CRITICAL: Resume contains placeholder text \"[Your Name]\"\u0027);\n}\nif (validationResults.hasPlaceholderCompany) {\n  validationReport.errors.push(\u0027CRITICAL: Resume contains placeholder text \"[Previous Company]\" or \"[Company Name]\"\u0027);\n}\nif (validationResults.hasPlaceholderEmail) {\n  validationReport.errors.push(\u0027CRITICAL: Resume contains placeholder text \"[Your Email]\"\u0027);\n}\nif (validationResults.hasPlaceholderPhone) {\n  validationReport.errors.push(\u0027CRITICAL: Resume contains placeholder text \"[Your Phone]\" or \"[Phone Number]\"\u0027);\n}\nif (!validationResults.hasMinimumCompanies) {\n  validationReport.errors.push(`CRITICAL: Resume contains only ${companyCount} actual company names (minimum 3 required)`);\n}\n\n// If validation failed, throw error with details\nif (!validationPassed) {\n  const errorMessage = `Resume Identity Validation FAILED:\\n${validationReport.errors.join(\u0027\\n\u0027)}`;\n  throw new Error(errorMessage);\n}\n\n// If validation passed, pass through the AI output with validation metadata\n// FIXED: Return a single object, not an array\nreturn {\n  json: {\n    ...aiOutput,\n    validationReport: validationReport\n  }\n};"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       208,
+                                       -48
+                                   ],
+                      "id":  "fd36f04e-df4e-4a43-8bd9-a97513025fea",
+                      "name":  "Resume Identity  Validation"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "models/gemini-2.5-pro",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "models/gemini-2.5-pro"
+                                                     },
+                                         "messages":  {
+                                                          "values":  [
+                                                                         {
+                                                                             "content":  "🎯 KEYWORD EXTRACTION AGENT\n═══════════════════════════════════════════════════════════════\n\n**YOUR ROLE:**\nYou are a keyword extraction specialist. Your ONLY job is to extract and validate keywords from the job description provided below.\n\n**FUNDAMENTAL RULES:**\n1. Extract keywords from the TARGET JOB DESCRIPTION ONLY\n2. Do NOT extract keywords from any other source\n3. Do NOT evaluate job appropriateness or candidate qualification\n4. Do NOT make judgments about what the employer \"really wants\"\n5. Use EXACT wording from the job description (not synonyms)\n\n═══════════════════════════════════════════════════════════════\n📋 EXTRACTION PROCESS (4 STEPS)\n═══════════════════════════════════════════════════════════════\n\n**STEP 1: READ THE ENTIRE JOB DESCRIPTION**\n- Read every word in the job description below\n- Pay attention to: job title, responsibilities, qualifications, requirements, skills\n\n**STEP 2: EXTRACT 10-15 KEYWORDS**\n- Write down 10-15 keywords/phrases that appear in the job description\n- Use the EXACT wording from the job description\n- Prioritize keywords that appear multiple times\n- Include both technical skills and soft skills\n\n**STEP 3: CATEGORIZE EACH KEYWORD**\n- Assign each keyword to a category:\n  * `technical_skill` - Programming languages, tools, technologies\n  * `soft_skill` - Communication, teamwork, leadership\n  * `methodology` - Agile, Scrum, DevOps\n  * `responsibility` - Job duties and responsibilities\n  * `qualification` - Education, certifications, experience level\n\n**STEP 4: ASSIGN PRIORITY**\n- Assign priority based on frequency in job description:\n  * `high` - Appears 3+ times\n  * `medium` - Appears 2 times\n  * `low` - Appears 1 time\n\n═══════════════════════════════════════════════════════════════\n🎯 TARGET JOB DESCRIPTION\n═══════════════════════════════════════════════════════════════\n\n{{ $(\u0027Job-Resume Input Processing\u0027).item.json.job }}\n\n═══════════════════════════════════════════════════════════════\n📤 OUTPUT FORMAT (JSON)\n═══════════════════════════════════════════════════════════════\n\n{\n  \"extractedKeywords\": [\n    {\n      \"keyword\": \"exact phrase from job description\",\n      \"category\": \"technical_skill|soft_skill|methodology|responsibility|qualification\",\n      \"priority\": \"high|medium|low\",\n      \"frequency\": 5,\n      \"context\": \"Brief description of where it appears\"\n    }\n  ],\n  \"keywordSummary\": {\n    \"totalKeywords\": 12,\n    \"technicalSkills\": 6,\n    \"softSkills\": 3,\n    \"methodologies\": 2,\n    \"responsibilities\": 1,\n    \"qualifications\": 0\n  },\n  \"validationReport\": {\n    \"allKeywordsValidated\": true,\n    \"invalidKeywords\": []\n  }\n}\n\n**EXAMPLE OUTPUT:**\n\n{\n  \"extractedKeywords\": [\n    {\n      \"keyword\": \"C# programming\",\n      \"category\": \"technical_skill\",\n      \"priority\": \"high\",\n      \"frequency\": 5,\n      \"context\": \"Appears in requirements and responsibilities\"\n    },\n    {\n      \"keyword\": \"attention to detail\",\n      \"category\": \"soft_skill\",\n      \"priority\": \"medium\",\n      \"frequency\": 2,\n      \"context\": \"Appears in qualifications\"\n    }\n  ],\n  \"keywordSummary\": {\n    \"totalKeywords\": 12,\n    \"technicalSkills\": 6,\n    \"softSkills\": 3,\n    \"methodologies\": 2,\n    \"responsibilities\": 1,\n    \"qualifications\": 0\n  },\n  \"validationReport\": {\n    \"allKeywordsValidated\": true,\n    \"invalidKeywords\": []\n  }\n}\n\n**FINAL REMINDER:**\nExtract keywords from the TARGET JOB DESCRIPTION ONLY. Use EXACT wording. Do NOT make judgments."
+                                                                         }
+                                                                     ]
+                                                      },
+                                         "jsonOutput":  true,
+                                         "options":  {
+                                                         "temperature":  0
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.googleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -240,
+                                       -352
+                                   ],
+                      "id":  "05670670-fdb3-421e-9b9e-af04797024c9",
+                      "name":  "AI Keyword Extraction Agent",
+                      "retryOnFail":  true,
+                      "credentials":  {
+                                          "googlePalmApi":  {
+                                                                "id":  "iSUthz6TcizkpxHs",
+                                                                "name":  "Google Gemini(PaLM) Api account 2"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// KEYWORD PROCESSING \u0026 VALIDATION NODE (v1.0.0)\n// Transforms AI Keyword Extraction output into structured guidance for Resume Customization\n\nconst items = $input.all();\n\nif (items.length === 0) {\n  throw new Error(\u0027No input data received from AI Keyword Extraction Agent\u0027);\n}\n\nconst aiOutput = items[0].json;\n\n// Parse the AI Keyword Extraction output\nlet keywordData;\ntry {\n  // Handle nested structure from Google Gemini\n  if (aiOutput.content \u0026\u0026 aiOutput.content.parts \u0026\u0026 aiOutput.content.parts[0]) {\n    keywordData = JSON.parse(aiOutput.content.parts[0].text);\n  } else {\n    keywordData = aiOutput;\n  }\n} catch (parseError) {\n  throw new Error(`Failed to parse AI Keyword Extraction output: ${parseError.message}`);\n}\n\n// Validate required fields\nif (!keywordData.extractedKeywords || !Array.isArray(keywordData.extractedKeywords)) {\n  throw new Error(\u0027Invalid keyword extraction output: missing extractedKeywords array\u0027);\n}\n\nif (keywordData.extractedKeywords.length === 0) {\n  throw new Error(\u0027No keywords extracted from job description\u0027);\n}\n\n// Get original job data from Job-Resume Input Processing node\nconst inputProcessingData = $(\u0027Job-Resume Input Processing\u0027).item.json;\nconst originalJobData = inputProcessingData.job;\n\n// Get base resume from Get a document node\nconst baseResumeData = $(\u0027Get a document\u0027).item.json;\nconst baseResume = baseResumeData.content || \u0027\u0027;\n\n// Prepare keyword guidance for Resume Customization Agent\nconst priorityKeywords = keywordData.extractedKeywords\n  .filter(k =\u003e k.priority === \u0027high\u0027)\n  .map(k =\u003e k.keyword);\n\nconst mediumKeywords = keywordData.extractedKeywords\n  .filter(k =\u003e k.priority === \u0027medium\u0027)\n  .map(k =\u003e k.keyword);\n\nconst lowKeywords = keywordData.extractedKeywords\n  .filter(k =\u003e k.priority === \u0027low\u0027)\n  .map(k =\u003e k.keyword);\n\n// Build structured output for Prompt 2\nconst keywordGuidance = {\n  baseResume: baseResume,\n  validatedKeywords: keywordData.extractedKeywords,\n  keywordGuidance: {\n    priorityKeywords: priorityKeywords,\n    mediumKeywords: mediumKeywords,\n    lowKeywords: lowKeywords,\n    totalKeywords: keywordData.extractedKeywords.length,\n    maxFrequencyPerKeyword: 5,\n    integrationStrategy: \u0027natural_phrasing_priority\u0027\n  },\n  jobContext: {\n    title: originalJobData.title,\n    company: originalJobData.company,\n    location: originalJobData.location\n  },\n  keywordSummary: keywordData.keywordSummary,\n  validationReport: keywordData.validationReport,\n  processingMetadata: {\n    processedAt: new Date().toISOString(),\n    nodeVersion: \u00271.0.0\u0027\n  }\n};\n\nconsole.log(\u0027✅ Keyword Processing Success:\u0027);\nconsole.log(`   Total Keywords: ${keywordData.extractedKeywords.length}`);\nconsole.log(`   High Priority: ${priorityKeywords.length}`);\nconsole.log(`   Medium Priority: ${mediumKeywords.length}`);\nconsole.log(`   Low Priority: ${lowKeywords.length}`);\n\nreturn [{ json: keywordGuidance }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       144,
+                                       -352
+                                   ],
+                      "id":  "2347deb8-5343-4ed8-93b8-0fe04d0e1b83",
+                      "name":  "Keyword Processing And Validation"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "models/gemini-2.5-pro",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "models/gemini-2.5-pro"
+                                                     },
+                                         "messages":  {
+                                                          "values":  [
+                                                                         {
+                                                                             "content":  "🎨 RESUME CUSTOMIZATION AGENT\n═══════════════════════════════════════════════════════════════\n\n**YOUR ROLE:**\nYou are a resume customization specialist. Your ONLY job is to integrate the pre-validated keywords (provided below) into the candidate\u0027s base resume.\n\n**FUNDAMENTAL RULES:**\n1. Use ONLY the keywords provided in the VALIDATED KEYWORDS section below\n2. Do NOT extract new keywords from the job description\n3. Do NOT extract keywords from the base resume\n4. Integrate keywords naturally into the resume\n5. Preserve the candidate\u0027s actual identity and work history\n\n═══════════════════════════════════════════════════════════════\n🚫 IDENTITY PRESERVATION RULES (NEVER CHANGE THESE)\n═══════════════════════════════════════════════════════════════\n\n**YOU MUST PRESERVE THESE EXACT VALUES:**\n- **Name**: IVO DACHEV\n- **Phone**: (650) 222-7923\n- **Email**: dachevivo@gmail.com\n- **Location**: Sacramento, CA\n- **Years of Experience**: 13+ years\n- **Actual Companies**: 1BuilderMedia Marketing LLC, Incedo Inc, CSSI Inc, Atos Syntel, Sutter Health, SF Fire Credit Union, SF Website Design, Coding Dojo, SCITON INC, REALTRAX INC, MOBILE ELECTRONICS\n- **Actual Education**: M.S. Forest Science, University of Sofia\n\n❌ NEVER use placeholder names like \"John Doe\", \"[Your Name]\", or fictional companies\n✅ ALWAYS use IVO DACHEV\u0027s actual information\n\n═══════════════════════════════════════════════════════════════\n📄 CANDIDATE\u0027S BASE RESUME\n═══════════════════════════════════════════════════════════════\n\n{{ $json.baseResume }}\n\n═══════════════════════════════════════════════════════════════\n✅ VALIDATED KEYWORDS (YOUR ONLY SOURCE)\n═══════════════════════════════════════════════════════════════\n\n**HIGH PRIORITY KEYWORDS (use 4-5 times each):**\n{{ $json.keywordGuidance.priorityKeywords }}\n\n**MEDIUM PRIORITY KEYWORDS (use 2-3 times each):**\n{{ $json.keywordGuidance.mediumKeywords }}\n\n**LOW PRIORITY KEYWORDS (use 1-2 times each):**\n{{ $json.keywordGuidance.lowKeywords }}\n\n**JOB CONTEXT:**\n- Job Title: {{ $json.jobContext.title }}\n- Company: {{ $json.jobContext.company }}\n- Location: {{ $json.jobContext.location }}\n\n═══════════════════════════════════════════════════════════════\n✏️ CUSTOMIZATION INSTRUCTIONS\n═══════════════════════════════════════════════════════════════\n\n**WHAT TO CUSTOMIZE:**\n\n1. **Summary Section**\n   - Rewrite to emphasize HIGH PRIORITY keywords\n   - Keep IVO DACHEV\u0027s actual 13+ years of experience\n   - Use natural, professional phrasing\n\n2. **Work Experience Bullet Points**\n   - Rewrite EACH bullet point to incorporate 2-3 keywords\n   - Maintain factual accuracy about IVO DACHEV\u0027s actual work\n   - Preserve specific technologies (Okta, AWS, Angular, etc.)\n   - Use the EXACT keyword wording provided above\n\n3. **Skills Section**\n   - Reorder skills to prioritize HIGH PRIORITY keywords\n   - Keep all of IVO DACHEV\u0027s actual skills\n\n4. **Achievement Descriptions**\n   - Emphasize accomplishments that align with keywords\n   - Use IVO DACHEV\u0027s actual metrics and results\n\n**KEYWORD INTEGRATION RULES:**\n\n1. **Frequency Limits**:\n   - High priority keywords: 4-5 times maximum\n   - Medium priority keywords: 2-3 times maximum\n   - Low priority keywords: 1-2 times maximum\n\n2. **Natural Phrasing**: Professional phrasing is MORE IMPORTANT than keyword count\n\n3. **Technical Preservation**: NEVER remove specific technologies (Okta, OIDC, AWS, Angular, etc.) to make room for keywords\n\n4. **Balance**: Aim for 60% technical content + 40% keyword integration in each bullet point\n\n**EXAMPLE BULLET POINT REWRITING:**\n\nORIGINAL:\n\"Architected and deployed a comprehensive Customer Identity and Access Management (IAM) platform for custom client applications, leveraging Okta, OIDC, and SAML2 for robust SSO and secure data access.\"\n\nKEYWORDS TO INTEGRATE:\n- \"data entry\" (high priority)\n- \"attention to detail\" (medium priority)\n- \"accuracy\" (medium priority)\n\nREWRITTEN:\n\"Maintained accurate data entry for customer identity records across multiple client applications using Okta, OIDC, and SAML2, demonstrating strong attention to detail and organizational skills to ensure data accuracy and secure access.\"\n\nANALYSIS:\n✅ Integrated 3 keywords from validated list\n✅ Preserved technical specifics (Okta, OIDC, SAML2)\n✅ Maintained factual accuracy\n✅ Natural, professional phrasing\n\n═══════════════════════════════════════════════════════════════\n📤 OUTPUT FORMAT (JSON)\n═══════════════════════════════════════════════════════════════\n\n{\n  \"customizedResume\": \"IVO DACHEV\\nSacramento, CA | (650) 222-7923 | dachevivo@gmail.com\\n\\nSUMMARY\\n[Your customized summary here]\\n\\n[Rest of resume]...\",\n  \"customizationSummary\": {\n    \"changesApplied\": [\"List of changes made\"],\n    \"skillsEmphasized\": [\"Skills from validated keywords\"],\n    \"keywordsIntegrated\": [\"Keywords from validated list\"],\n    \"sectionsModified\": [\"summary\", \"experience\", \"skills\"]\n  },\n  \"optimizationMetrics\": {\n    \"atsScore\": 85,\n    \"keywordDensity\": \"optimal\",\n    \"relevanceScore\": 88\n  },\n  \"qualityGate\": {\n    \"meetsStandards\": true,\n    \"atsThresholdMet\": true,\n    \"readyForSubmission\": true,\n    \"thresholdUsed\": 50\n  },\n  \"recommendedActions\": [\"Optional recommendations\"]\n}\n\n**FINAL REMINDER:**\nUse ONLY the keywords from the VALIDATED KEYWORDS section above. Preserve IVO DACHEV\u0027s actual identity and work history. Ensure natural, professional phrasing."
+                                                                         }
+                                                                     ]
+                                                      },
+                                         "jsonOutput":  true,
+                                         "options":  {
+                                                         "temperature":  0
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.googleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       416,
+                                       -352
+                                   ],
+                      "id":  "85fc6516-8734-4129-a2b0-424431b49bee",
+                      "name":  "AI Resume Customization Agent",
+                      "retryOnFail":  true,
+                      "credentials":  {
+                                          "googlePalmApi":  {
+                                                                "id":  "iSUthz6TcizkpxHs",
+                                                                "name":  "Google Gemini(PaLM) Api account 2"
+                                                            }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow Trigger - From Orchestrator":  {
+                                                                             "main":  [
+                                                                                          [
+                                                                                              {
+                                                                                                  "node":  "Job-Resume Input Processing",
+                                                                                                  "type":  "main",
+                                                                                                  "index":  0
+                                                                                              }
+                                                                                          ]
+                                                                                      ]
+                                                                         },
+                        "Job-Resume Input Processing":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Get a document",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Quality Gate Filter":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Resume Generation Output Formatting",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Get a document":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "AI Keyword Extraction Agent",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "Resume Identity  Validation":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Quality Gate Filter",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "AI Keyword Extraction Agent":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Keyword Processing And Validation",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Keyword Processing And Validation":  {
+                                                                  "main":  [
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "AI Resume Customization Agent",
+                                                                                       "type":  "main",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ]
+                                                                           ]
+                                                              },
+                        "AI Resume Customization Agent":  {
+                                                              "main":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "Resume Identity  Validation",
+                                                                                   "type":  "main",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                                          }
+                    },
+    "settings":  {
+                     "saveExecutionProgress":  true,
+                     "saveManualExecutions":  true,
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "executionOrder":  "v1"
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "17ae1ce6-68a3-4a6a-8c13-cad37b121256",
+    "versionCounter":  1,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-09-15T20:35:34.424Z",
+                       "createdAt":  "2025-09-15T20:35:34.424Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "zTtSVmTg3UaV9tPG",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-04T23:00:00.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-04",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-09-10T16:23:08.235Z",
+                     "createdAt":  "2025-09-10T16:23:08.235Z",
+                     "id":  "FrnybmIzoJd732QS",
+                     "name":  "Augment Code"
+                 },
+                 {
+                     "updatedAt":  "2025-09-13T21:08:18.122Z",
+                     "createdAt":  "2025-09-13T21:08:18.122Z",
+                     "id":  "H8bAHR6C77zCCEmw",
+                     "name":  "sub-flow"
+                 }
+             ]
+}

@@ -1,0 +1,1110 @@
+﻿{
+    "updatedAt":  "2025-11-05T14:21:32.000Z",
+    "createdAt":  "2025-09-18T15:55:14.358Z",
+    "id":  "wZyxRjWShhnSFbSV",
+    "name":  "LinkedIn-GmailOutlook-sub-flow-Workshop-ContactTracking--Augment",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "content":  ""
+                                     },
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "position":  [
+                                       -1712,
+                                       -1232
+                                   ],
+                      "typeVersion":  1,
+                      "id":  "8c9374b6-d46f-4623-96b2-14c469ff73d4",
+                      "name":  "Sticky Note"
+                  },
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -1744,
+                                       -832
+                                   ],
+                      "id":  "0be0b01e-8c1b-4051-a35b-ab94ce3def31",
+                      "name":  "When Executed by Another Workflow"
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "// CONTACT DATA MERGER \u0026 PROCESSING - CORRECTED NESTED DATA EXTRACTION\n// Mode: \"Run Once for Each Item\" - PREVENTS BATCH PROCESSING ERRORS\n// Purpose: Process exactly ONE job application and merge with contact data\n// FIX: Properly extract data from nested jobData and contactEnrichment structures\n// VERSION: 2.5.0 - ADDED RESUME CONTENT EXTRACTION FOR PDF GENERATION\n\nconsole.log(\u0027🔧 CONTACT DATA MERGER - Corrected Nested Data Extraction v2.5\u0027);\n\n// ✅ GET SINGLE ITEM (not $input.all() which causes the error)\nconst jobApplication = $json;\n\nif (!jobApplication) {\n  throw new Error(\u0027CRITICAL: No job application data received\u0027);\n}\n\nconsole.log(\u0027📋 Processing job application with nested structure extraction...\u0027);\nconsole.log(\u0027🔍 Input structure analysis:\u0027);\nconsole.log(`   Has jobData: ${!!jobApplication.jobData}`);\nconsole.log(`   Has contactEnrichment: ${!!jobApplication.contactEnrichment}`);\n\n// ✅ EXTRACT JOB INFORMATION FROM NESTED JOBDATA STRUCTURE\nconst extractedJobData = {\n  companyName: jobApplication.jobData?.company || jobApplication.jobData?.companyName || \u0027\u0027,\n  jobTitle: jobApplication.jobData?.title || \u0027\u0027,\n  jobUrl: jobApplication.jobData?.url || \u0027\u0027,\n  companyWebsite: jobApplication.jobData?.companyWebsite || jobApplication.jobData?.website || \u0027\u0027,\n  jobLocation: jobApplication.jobData?.location || \u0027\u0027,\n  jobDescription: jobApplication.jobData?.description || \u0027\u0027,\n  jobDescriptionHtml: jobApplication.jobData?.descriptionHtml || \u0027\u0027\n};\n\nconsole.log(\u0027📊 Extracted Job Data:\u0027);\nconsole.log(`   Company: \"${extractedJobData.companyName}\"`);\nconsole.log(`   Job Title: \"${extractedJobData.jobTitle}\"`);\nconsole.log(`   Job Location: \"${extractedJobData.jobLocation}\"`);\nconsole.log(`   Job URL: \"${extractedJobData.jobUrl}\"`);\nconsole.log(`   Company Website: \"${extractedJobData.companyWebsite}\"`);\n\n// ✅ EXTRACT CONTACT INFORMATION FROM NESTED CONTACTENRICHMENT STRUCTURE\n// SUPPORTS BOTH DATA STRUCTURES: primaryContact (new) AND verifiedContacts[0] (legacy)\nconst extractedContactData = {\n  contactEmail: jobApplication.contactEnrichment?.primaryContact?.email || \n                jobApplication.contactEnrichment?.verifiedContacts?.[0]?.email || \u0027\u0027,\n  contactFirstName: jobApplication.contactEnrichment?.primaryContact?.firstName || \n                    jobApplication.contactEnrichment?.verifiedContacts?.[0]?.firstName || \u0027\u0027,\n  contactLastName: jobApplication.contactEnrichment?.primaryContact?.lastName || \n                   jobApplication.contactEnrichment?.verifiedContacts?.[0]?.lastName || \u0027\u0027,\n  contactJobTitle: jobApplication.contactEnrichment?.primaryContact?.jobTitle || \n                   jobApplication.contactEnrichment?.verifiedContacts?.[0]?.jobTitle || \u0027\u0027,\n  contactCompany: jobApplication.contactEnrichment?.primaryContact?.company || \n                  jobApplication.jobData?.company || \n                  jobApplication.jobData?.companyName || \u0027\u0027,\n  contactLinkedIn: jobApplication.contactEnrichment?.primaryContact?.linkedinUrl || \n                   jobApplication.contactEnrichment?.verifiedContacts?.[0]?.linkedin || \u0027\u0027,\n  emailStatus: jobApplication.contactEnrichment?.emailVerification?.result || \n               jobApplication.contactEnrichment?.verifiedContacts?.[0]?.neverBounceResult || \u0027unknown\u0027,\n  emailQualityScore: jobApplication.contactEnrichment?.emailVerification?.qualityScore || \n                     (jobApplication.contactEnrichment?.verifiedContacts?.[0]?.neverBounceVerified ? 100 : 0)\n};\n\nconsole.log(\u0027📧 Extracted Contact Data:\u0027);\nconsole.log(`   Contact Email: \"${extractedContactData.contactEmail}\"`);\nconsole.log(`   Contact Name: \"${extractedContactData.contactFirstName} ${extractedContactData.contactLastName}\"`);\nconsole.log(`   Contact Title: \"${extractedContactData.contactJobTitle}\"`);\nconsole.log(`   Email Status: \"${extractedContactData.emailStatus}\"`);\n\n// ✅ ADDED v2.1: CANDIDATE DATA FOR AI EMAIL GENERATION\n// This represents the job applicant (Ivo Dachev) and is constant across all applications\nconst candidateData = {\n  name: \"Ivo Dachev\",\n  firstName: \"Ivo\",\n  lastName: \"Dachev\",\n  email: \"dachevivo@gmail.com\",\n  phone: \"+1 (650)-222-7923\",\n  linkedin: \"https://www.linkedin.com/in/ivodachev/\"\n};\n\nconsole.log(\u0027👤 Candidate Data (Job Applicant):\u0027);\nconsole.log(`   Name: \"${candidateData.name}\"`);\nconsole.log(`   Email: \"${candidateData.email}\"`);\nconsole.log(`   Phone: \"${candidateData.phone}\"`);\n\n// ✅ UPDATED v2.4: GENERATE DEDUPEKEY WITH LOCATION FOR DUPLICATE DETECTION\nconst generateDedupeKey = (company, jobTitle, location) =\u003e {\n  if (!company || !jobTitle) {\n    console.warn(\u0027⚠️ Missing company or job title for dedupeKey generation\u0027);\n    console.warn(`   Company: \"${company || \u0027MISSING\u0027}\"`);\n    console.warn(`   Job Title: \"${jobTitle || \u0027MISSING\u0027}\"`);\n    console.warn(`   Location: \"${location || \u0027MISSING\u0027}\"`);\n    return `incomplete-${Date.now()}`;\n  }\n  \n  // Normalize company name, job title, and location\n  const normalizedCompany = company\n    .toLowerCase()\n    .replace(/[^a-z0-9]/g, \u0027\u0027)\n    .trim();\n  \n  const normalizedJobTitle = jobTitle\n    .toLowerCase()\n    .replace(/[^a-z0-9]/g, \u0027\u0027)\n    .trim();\n  \n  const normalizedLocation = location\n    ? location.toLowerCase().replace(/[^a-z0-9]/g, \u0027\u0027).trim()\n    : \u0027\u0027;\n  \n  // Include location in dedupeKey to treat same job in different locations as unique\n  const dedupeKey = normalizedLocation\n    ? `${normalizedCompany}-${normalizedJobTitle}-${normalizedLocation}`\n    : `${normalizedCompany}-${normalizedJobTitle}`;\n  \n  console.log(`🔑 Generated DedupeKey (v2.4 - with location): \"${dedupeKey}\"`);\n  console.log(`   Company: \"${normalizedCompany}\"`);\n  console.log(`   Job Title: \"${normalizedJobTitle}\"`);\n  console.log(`   Location: \"${normalizedLocation || \u0027NOT_PROVIDED\u0027}\"`);\n  \n  return dedupeKey;\n};\n\n// ✅ UPDATED v2.4: GENERATE PROPER DEDUPEKEY USING EXTRACTED VALUES INCLUDING LOCATION\nconst dedupeKey = generateDedupeKey(\n  extractedJobData.companyName,\n  extractedJobData.jobTitle,\n  extractedJobData.jobLocation\n);\n\n// ✅ DETERMINE OUTREACH STATUS BASED ON CONTACT DATA QUALITY\nlet outreachStatus = \u0027no_contact\u0027;\nif (extractedContactData.contactEmail \u0026\u0026 extractedContactData.emailStatus === \u0027valid\u0027) {\n  outreachStatus = \u0027ready_for_outreach\u0027;\n} else if (extractedContactData.contactEmail) {\n  outreachStatus = \u0027email_needs_verification\u0027;\n}\n\nconsole.log(`📈 Outreach Status: \"${outreachStatus}\"`);\n\n// ✅ ADDED v2.5: EXTRACT RESUME CONTENT FOR PDF GENERATION\n// Resume Generation Workshop outputs: resumeGeneration.customizedResume\n// This is the actual resume text that needs to be inserted into Google Docs\nconst resumeContent = jobApplication.resumeGeneration?.customizedResume || \u0027\u0027;\nconsole.log(\u0027📄 Resume Content Extraction (v2.5):\u0027);\nconsole.log(`   Has resumeGeneration object: ${!!jobApplication.resumeGeneration}`);\nconsole.log(`   Resume content length: ${resumeContent.length} characters`);\nif (resumeContent.length === 0) {\n  console.warn(\u0027⚠️ WARNING: No resume content found in resumeGeneration.customizedResume\u0027);\n}\n\n// ✅ MERGE JOB APPLICATION WITH CONTACT DATA (CORRECTED STRUCTURE)\nconst mergedRecord = {\n  // ✅ CORRECTED: Core job information from nested jobData\n  companyName: extractedJobData.companyName,\n  jobTitle: extractedJobData.jobTitle,\n  jobUrl: extractedJobData.jobUrl,\n  companyWebsite: extractedJobData.companyWebsite,\n  jobLocation: extractedJobData.jobLocation,\n  jobDescription: extractedJobData.jobDescription,\n  jobDescriptionHtml: extractedJobData.jobDescriptionHtml,\n  \n  // ✅ CORRECTED: Contact information from nested contactEnrichment\n  contactEmail: extractedContactData.contactEmail,\n  recipientEmail: extractedContactData.contactEmail, // Alias for compatibility\n  contactFirstName: extractedContactData.contactFirstName,\n  contactLastName: extractedContactData.contactLastName,\n  contactName: `${extractedContactData.contactFirstName} ${extractedContactData.contactLastName}`.trim(),\n  contactJobTitle: extractedContactData.contactJobTitle,\n  contactCompany: extractedContactData.contactCompany,\n  contactLinkedIn: extractedContactData.contactLinkedIn,\n  \n  // ✅ UPDATED v2.4: Generate dedupeKey from company, job title, AND location\n  dedupeKey: dedupeKey,\n  \n  // ✅ Email verification metadata\n  emailStatus: extractedContactData.emailStatus,\n  emailQualityScore: extractedContactData.emailQualityScore,\n  \n  // ✅ Timestamps and metadata\n  timeStamp: new Date().toISOString(),\n  processingTimestamp: new Date().toISOString(),\n  \n  // ✅ Status and tracking\n  status: \u0027pending\u0027,\n  outreachStatus: outreachStatus,\n  \n  // ✅ ADDED v2.1: CANDIDATE DATA FOR AI EMAIL GENERATION\n  // This is required by the AI Email Template Generator prompt\n  // The prompt references ${$json.candidate.name}, ${$json.candidate.email}, etc.\n  candidate: candidateData,\n  \n  // ✅ ADDED v2.2: NESTED OBJECTS FOR AI EMAIL TEMPLATE GENERATOR\n  // The AI prompt expects job, contact, and resume objects (not just flat fields)\n  // This matches the prompt\u0027s variable references: ${$json.job.title}, ${$json.contact.firstName}, etc.\n  job: {\n    title: extractedJobData.jobTitle,\n    company: extractedJobData.companyName,\n    location: extractedJobData.jobLocation,\n    description: extractedJobData.jobDescription,\n    url: extractedJobData.jobUrl,\n    website: extractedJobData.companyWebsite\n  },\n  \n  contact: {\n    firstName: extractedContactData.contactFirstName,\n    lastName: extractedContactData.contactLastName,\n    name: `${extractedContactData.contactFirstName} ${extractedContactData.contactLastName}`.trim(),\n    email: extractedContactData.contactEmail,\n    jobTitle: extractedContactData.contactJobTitle,\n    company: extractedContactData.contactCompany,\n    linkedin: extractedContactData.contactLinkedIn\n  },\n  \n  resume: jobApplication.resumeGeneration || {},\n  \n  // ✅ ADDED v2.5: EXTRACT RESUME CONTENT FOR DOWNSTREAM NODES\n  // This field will be used by Contact Tracking Output Formatting and Outreach Tracking\n  content: resumeContent,\n  \n  // ✅ PRESERVE: All original nested data for downstream processing\n  jobData: jobApplication.jobData,\n  resumeGeneration: jobApplication.resumeGeneration,\n  processingMetadata: jobApplication.processingMetadata,\n  contactEnrichment: jobApplication.contactEnrichment,\n  \n  // ✅ UPDATED v2.5: Processing metadata\n  contactDataMergerTimestamp: new Date().toISOString(),\n  processingMode: \u0027NESTED_EXTRACTION_CORRECTED_V2.5_RESUME_CONTENT_EXTRACTED\u0027,\n  dataExtractionSuccess: {\n    jobDataExtracted: !!extractedJobData.companyName \u0026\u0026 !!extractedJobData.jobTitle,\n    contactDataExtracted: !!extractedContactData.contactEmail,\n    candidateDataAdded: true,\n    nestedObjectsCreated: true,\n    dedupeKeyGenerated: !dedupeKey.startsWith(\u0027incomplete-\u0027),\n    locationIncludedInDedupeKey: !!extractedJobData.jobLocation,\n    resumeContentExtracted: resumeContent.length \u003e 0,\n    extractionTimestamp: new Date().toISOString()\n  }\n};\n\n// ✅ VALIDATION AND LOGGING\nconsole.log(\u0027✅ CORRECTED MERGER RESULTS v2.5:\u0027);\nconsole.log(`   Company: \"${mergedRecord.companyName}\" (${mergedRecord.companyName ? \u0027EXTRACTED\u0027 : \u0027MISSING\u0027})`);\nconsole.log(`   Job Title: \"${mergedRecord.jobTitle}\" (${mergedRecord.jobTitle ? \u0027EXTRACTED\u0027 : \u0027MISSING\u0027})`);\nconsole.log(`   Job Location: \"${mergedRecord.jobLocation}\" (${mergedRecord.jobLocation ? \u0027EXTRACTED\u0027 : \u0027MISSING\u0027})`);\nconsole.log(`   Contact Email: \"${mergedRecord.contactEmail}\" (${mergedRecord.contactEmail ? \u0027EXTRACTED\u0027 : \u0027MISSING\u0027})`);\nconsole.log(`   Candidate Name: \"${mergedRecord.candidate.name}\" (${mergedRecord.candidate ? \u0027ADDED\u0027 : \u0027MISSING\u0027})`);\nconsole.log(`   Job Object: ${mergedRecord.job ? \u0027CREATED\u0027 : \u0027MISSING\u0027}`);\nconsole.log(`   Contact Object: ${mergedRecord.contact ? \u0027CREATED\u0027 : \u0027MISSING\u0027}`);\nconsole.log(`   Resume Content: ${mergedRecord.content.length} chars (${mergedRecord.content.length \u003e 0 ? \u0027EXTRACTED ✅\u0027 : \u0027MISSING ❌\u0027})`);\nconsole.log(`   DedupeKey: \"${mergedRecord.dedupeKey}\" (${mergedRecord.dedupeKey.startsWith(\u0027incomplete-\u0027) ? \u0027FALLBACK\u0027 : \u0027PROPER\u0027})`);\nconsole.log(`   Location in DedupeKey: ${mergedRecord.dataExtractionSuccess.locationIncludedInDedupeKey ? \u0027YES ✅\u0027 : \u0027NO (location not provided)\u0027}`);\nconsole.log(`   Outreach Status: \"${mergedRecord.outreachStatus}\"`);\n\n// ✅ WARNINGS FOR MISSING CRITICAL DATA\nif (!mergedRecord.companyName) {\n  console.warn(\u0027⚠️ WARNING: Company name not extracted - check jobData.companyName or jobData.company\u0027);\n}\nif (!mergedRecord.jobTitle) {\n  console.warn(\u0027⚠️ WARNING: Job title not extracted - check jobData.title\u0027);\n}\nif (!mergedRecord.jobLocation) {\n  console.warn(\u0027⚠️ WARNING: Job location not extracted - dedupeKey will not include location\u0027);\n}\nif (!mergedRecord.contactEmail) {\n  console.warn(\u0027⚠️ WARNING: Contact email not extracted - check contactEnrichment.primaryContact.email or contactEnrichment.verifiedContacts[0].email\u0027);\n}\nif (!mergedRecord.candidate) {\n  console.warn(\u0027⚠️ WARNING: Candidate data not added - AI Email Generator will fail\u0027);\n}\nif (!mergedRecord.job || !mergedRecord.contact) {\n  console.warn(\u0027⚠️ WARNING: Nested objects not created - AI Email Generator prompt will fail\u0027);\n}\nif (mergedRecord.content.length === 0) {\n  console.warn(\u0027⚠️ WARNING: Resume content not extracted - PDF generation will fail with \"Content not available\"\u0027);\n}\n\n// ✅ SUCCESS CONFIRMATION\nconsole.log(`✅ Contact Data Merger completed successfully (v2.5)`);\nconsole.log(`   Data extraction success: Job=${mergedRecord.dataExtractionSuccess.jobDataExtracted}, Contact=${mergedRecord.dataExtractionSuccess.contactDataExtracted}, Candidate=${mergedRecord.dataExtractionSuccess.candidateDataAdded}, NestedObjects=${mergedRecord.dataExtractionSuccess.nestedObjectsCreated}, LocationInDedupeKey=${mergedRecord.dataExtractionSuccess.locationIncludedInDedupeKey}, ResumeContent=${mergedRecord.dataExtractionSuccess.resumeContentExtracted}`);\n\n// CRITICAL: Return single item, not array\nreturn { json: mergedRecord };"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1536,
+                                       -832
+                                   ],
+                      "id":  "5f45a0b0-7edb-4b4e-9839-53f13f684d1f",
+                      "name":  "Contact Data Merger \u0026 Processing"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "models/gemini-2.5-pro",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "models/gemini-2.5-pro"
+                                                     },
+                                         "messages":  {
+                                                          "values":  [
+                                                                         {
+                                                                             "content":  "=You are an expert Email Outreach AI that creates personalized job application emails. Your task is to create a compelling, professional email that highlights the candidate\u0027s qualifications.\n\n**INPUT DATA PROVIDED TO YOU:**\n\nJob Information:\n- Job Title: {{ $json.job.title }}\n- Company Name: {{ $json.job.company }}\n- Job Location: {{ $json.job.location }}\n- Job Description: {{ $json.job.description }}\n- Job URL: {{ $json.job.url }}\n- Company Website: {{ $json.job.website }}\n\nContact Information (Hiring Manager):\n- First Name: {{ $json.contact.firstName }}\n- Last Name: {{ $json.contact.lastName }}\n- Full Name: {{ $json.contact.name }}\n- Email: {{ $json.contact.email }}\n- Job Title: {{ $json.contact.jobTitle }}\n- Company: {{ $json.contact.company }}\n- LinkedIn: {{ $json.contact.linkedin }}\n\nCandidate Information (Job Applicant):\n- Full Name: {{ $json.candidate.name }}\n- First Name: {{ $json.candidate.firstName }}\n- Last Name: {{ $json.candidate.lastName }}\n- Email: {{ $json.candidate.email }}\n- Phone: {{ $json.candidate.phone }}\n- LinkedIn: {{ $json.candidate.linkedin }}\n\nResume Data:\n{{ JSON.stringify($json.resume) }}\n\n---\n\n**YOUR TASK:**\n\nCreate a professional job application email using the EXACT information provided above. You MUST use the actual names, emails, and phone numbers from the input data - DO NOT generate placeholder names or contact information.\n\n**CRITICAL REQUIREMENTS:**\n\n1. **Recipient Greeting:**\n   - If the contact\u0027s first name is provided above, use: \"Dear [First Name],\"\n   - If the contact\u0027s first name is empty or missing, use: \"Dear Hiring Manager,\"\n   - DO NOT use generic placeholder names like \"Mr. Johnson\", \"Ms. Smith\", or \"John Doe\"\n   - Use the EXACT first name shown in the Contact Information section above\n\n2. **Candidate Signature:**\n   - MUST use the candidate\u0027s EXACT name, phone, and email from the Candidate Information section above\n   - DO NOT generate placeholder information\n   - The signature MUST match the candidate information provided in the input data\n\n3. **Email Content:**\n   - Reference the specific job title and company name from the Job Information section\n   - Include relevant qualifications and achievements from the resume data\n   - Maintain a professional, engaging tone\n   - Keep the email concise (2-3 body paragraphs)\n\n**EMAIL STRUCTURE:**\n\n**Subject Line:**\nFormat: \"Application for [Job Title] - [Candidate Full Name]\"\nUse the exact job title and candidate name from the input data provided above.\n\n**Greeting:**\nUse the contact\u0027s first name from the Contact Information section if available.\nIf not available, use \"Dear Hiring Manager,\"\n\n**Opening Paragraph:**\n- Brief introduction stating the purpose\n- Reference the specific job title and company name from the input data\n- Express enthusiasm for the opportunity\n\n**Body Paragraphs (1-2 paragraphs):**\n- Highlight relevant qualifications and achievements from the resume data\n- Explain why the candidate is a strong fit for the role\n- Demonstrate knowledge of the company (if company information is available)\n- Provide specific examples of skills and accomplishments\n\n**Closing Paragraph:**\n- Express interest in discussing the opportunity further\n- Include a call to action (request for interview or meeting)\n- Thank the recipient for their time and consideration\n\n**Sign-off:**\nUse \"Sincerely,\" followed by the candidate\u0027s signature block\n\n**Signature Block (CRITICAL - MUST BE EXACT):**\nThe signature MUST contain the following three lines in this exact order:\nLine 1: Candidate\u0027s full name (from Candidate Information section)\nLine 2: Candidate\u0027s phone number (from Candidate Information section)\nLine 3: Candidate\u0027s email address (from Candidate Information section)\n\nDO NOT add any additional text, formatting, or information to the signature block.\nDO NOT use placeholder information - use the EXACT values from the input data.\n\n**OUTPUT FORMAT:**\n\nReturn a JSON array with ONE object containing two fields:\n\n[\n  {\n    \"emailSubject\": \"[Subject line following the format above]\",\n    \"emailBody\": \"[Complete email including greeting, body paragraphs, closing, sign-off, and signature block]\"\n  }\n]\n\n**VERIFICATION CHECKLIST:**\n\nBefore returning your response, verify that:\n1. ✓ The greeting uses the contact\u0027s ACTUAL first name from the input data (or \"Hiring Manager\" if not provided)\n2. ✓ The email body references the ACTUAL job title and company name from the input data\n3. ✓ The signature block contains the candidate\u0027s ACTUAL name, phone, and email from the input data\n4. ✓ NO placeholder names appear anywhere in the email\n5. ✓ NO placeholder phone numbers appear\n6. ✓ NO placeholder emails appear\n7. ✓ The output is valid JSON with \"emailSubject\" and \"emailBody\" fields\n8. ✓ The emailBody is a complete, professional email ready to send\n\n**FINAL REMINDER:**\n\nYou have been provided with all the necessary information at the top of this prompt in the \"INPUT DATA PROVIDED TO YOU\" section. Use that EXACT information - do not generate, assume, or create any placeholder data. Every name, email, phone number, job title, and company name in your response must come directly from the input data provided.\n\nThe candidate\u0027s name is available in the Candidate Information section at the top of this prompt. The contact\u0027s name is available in the Contact Information section. The job details are available in the Job Information section. Use these ACTUAL values in your response.\n\n"
+                                                                         }
+                                                                     ]
+                                                      },
+                                         "jsonOutput":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.googleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -1360,
+                                       -832
+                                   ],
+                      "id":  "bad444f7-d57a-4c31-a4da-cabc43bb322b",
+                      "name":  "AI Email Template Generator",
+                      "retryOnFail":  true,
+                      "credentials":  {
+                                          "googlePalmApi":  {
+                                                                "id":  "iSUthz6TcizkpxHs",
+                                                                "name":  "Google Gemini(PaLM) Api account 2"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "/*\n  Contact Tracking Output Formatting Node\n  Version: 2.2.0\n  Last Updated: 2025-11-05\n  Workflow: LinkedIn-GmailOutlook-sub-flow-Workshop-ContactTracking--Augment (ID: wZyxRjWShhnSFbSV)\n  \n  CHANGELOG v2.2.0:\n  - FIXED contactFirstName/contactLastName extraction to use Contact Data Merger \u0026 Processing node\n  - Previously these fields were extracted from recordData (Duplicate Detection node) which didn\u0027t have them\n  - Now correctly extracts from upstream Contact Data Merger \u0026 Processing node where they exist\n  - This fixes the email personalization issue in Outreach Tracking workflow\n  \n  Purpose:\n  - Format final output with comprehensive metadata and verify Google Sheets operations\n  - Extract contact data from upstream nodes (Contact Data Merger \u0026 Processing, Duplicate Detection)\n  - Create contactRecord object for downstream workflows (Outreach Tracking)\n  - Verify Google Sheets operation success and provide detailed troubleshooting info\n  - Maintain audit trails for compliance and debugging\n  \n  Input:\n  - Operation results from Google Sheets nodes (Insert or Update)\n  - Original record data from Duplicate Detection \u0026 Logging node\n  - Contact data from Contact Data Merger \u0026 Processing node\n  \n  Output:\n  - contactRecord: Core contact data for outreach (NOW INCLUDES firstName/lastName from correct source)\n  - outreachData: Email template data for draft generation\n  - processingMetadata: Workflow execution metadata\n  - troubleshooting: Error details and recommendations\n*/\n\ntry {\n  console.log(\u0027=== ENHANCED OUTPUT FORMATTING WITH VERIFICATION v2.2.0 ===\u0027);\n  \n  // ========================================\n  // STEP 1: GET OPERATION RESULTS FROM GOOGLE SHEETS NODES\n  // ========================================\n  const items = $input.all();\n  if (items.length === 0) {\n    throw new Error(\u0027No operation results received from Google Sheets nodes\u0027);\n  }\n\n  const operationResult = items[0].json;\n  \n  // ========================================\n  // STEP 2: GET ORIGINAL RECORD FROM DUPLICATE DETECTION NODE\n  // ========================================\n  let originalRecord;\n  try {\n    originalRecord = $(\u0027Duplicate Detection \u0026 Logging\u0027).item.json;\n  } catch (nodeError) {\n    console.warn(\u0027Could not access Duplicate Detection \u0026 Logging node, using operation result\u0027);\n    originalRecord = operationResult;\n  }\n\n  // ========================================\n  // STEP 2.5: GET CONTACT DATA FROM CONTACT DATA MERGER \u0026 PROCESSING NODE\n  // ✅ ADDED v2.2.0: This is where contactFirstName/contactLastName actually exist\n  // ========================================\n  let contactDataFromMerger;\n  try {\n    contactDataFromMerger = $(\u0027Contact Data Merger \u0026 Processing\u0027).item.json;\n    console.log(\u0027✅ Successfully accessed Contact Data Merger \u0026 Processing node\u0027);\n    console.log(`   contactFirstName: \"${contactDataFromMerger.contactFirstName || \u0027\u0027}\"`);\n    console.log(`   contactLastName: \"${contactDataFromMerger.contactLastName || \u0027\u0027}\"`);\n    console.log(`   contactName: \"${contactDataFromMerger.contactName || \u0027\u0027}\"`);\n  } catch (nodeError) {\n    console.warn(\u0027⚠️ Could not access Contact Data Merger \u0026 Processing node\u0027);\n    contactDataFromMerger = null;\n  }\n\n  console.log(\u0027Operation Result Keys:\u0027, Object.keys(operationResult || {}));\n  console.log(\u0027Original Record Keys:\u0027, Object.keys(originalRecord || {}));\n\n  // ========================================\n  // STEP 3: VERIFY GOOGLE SHEETS OPERATION SUCCESS\n  // ========================================\n  let operationSuccess = false;\n  let operationDetails = {};\n  let errorMessage = null;\n\n  if (operationResult) {\n    if (operationResult.spreadsheetId || operationResult.updatedRows || operationResult.tableRange) {\n      operationSuccess = true;\n      operationDetails = {\n        spreadsheetId: operationResult.spreadsheetId,\n        updatedRows: operationResult.updatedRows,\n        updatedRange: operationResult.updatedRange,\n        tableRange: operationResult.tableRange,\n        updatedCells: operationResult.updatedCells\n      };\n      console.log(\u0027✅ Google Sheets operation successful\u0027);\n    } else {\n      operationSuccess = false;\n      errorMessage = \u0027Google Sheets operation returned no success indicators\u0027;\n      console.warn(\u0027⚠️ Google Sheets operation may have failed\u0027);\n    }\n  } else {\n    operationSuccess = false;\n    errorMessage = \u0027No operation result received from Google Sheets\u0027;\n    console.error(\u0027❌ No operation result received\u0027);\n  }\n\n  // ========================================\n  // STEP 4: EXTRACT CORE CONTACT DATA\n  // ========================================\n  // Use originalRecord data, fallback to operationResult if needed\n  const recordData = originalRecord || operationResult || {};\n\n  // ✅ FIXED v2.2.0: Extract contactFirstName/contactLastName from Contact Data Merger \u0026 Processing node\n  // These fields exist in contactDataFromMerger but NOT in recordData (Duplicate Detection output)\n  const contactFirstName = contactDataFromMerger?.contactFirstName || \n                           contactDataFromMerger?.contact?.firstName || \n                           recordData.contactFirstName || \u0027\u0027;\n  \n  const contactLastName = contactDataFromMerger?.contactLastName || \n                          contactDataFromMerger?.contact?.lastName || \n                          recordData.contactLastName || \u0027\u0027;\n  \n  const contactName = contactDataFromMerger?.contactName || \n                      contactDataFromMerger?.contact?.name || \n                      recordData.contactName || \n                      (contactFirstName \u0026\u0026 contactLastName ? `${contactFirstName} ${contactLastName}`.trim() : \u0027\u0027);\n\n  console.log(\u0027✅ CONTACT NAME EXTRACTION v2.2.0:\u0027);\n  console.log(`   Source: Contact Data Merger \u0026 Processing node`);\n  console.log(`   contactFirstName: \"${contactFirstName}\" ${contactFirstName ? \u0027✅\u0027 : \u0027❌\u0027}`);\n  console.log(`   contactLastName: \"${contactLastName}\" ${contactLastName ? \u0027✅\u0027 : \u0027❌\u0027}`);\n  console.log(`   contactName: \"${contactName}\" ${contactName ? \u0027✅\u0027 : \u0027❌\u0027}`);\n\n  const contactRecord = {\n    trackingId: `${recordData.dedupeKey || \u0027unknown\u0027}-${Date.now()}`,\n    dedupeKey: recordData.dedupeKey || \u0027unknown\u0027,\n    companyName: recordData.companyName || \u0027Unknown Company\u0027,\n    jobTitle: recordData.jobTitle || \u0027Unknown Position\u0027,\n    jobUrl: recordData.jobUrl || \u0027Not provided\u0027,\n    recepientEmail: recordData.recepientEmail || \u0027no-email@placeholder.com\u0027,\n    contactName: contactName,                    // ✅ FIXED v2.2.0: Now from Contact Data Merger\n    contactFirstName: contactFirstName,          // ✅ FIXED v2.2.0: Now from Contact Data Merger\n    contactLastName: contactLastName,            // ✅ FIXED v2.2.0: Now from Contact Data Merger\n    content: recordData.content || \u0027Content not available\u0027,\n    emailSubject: recordData.emailSubject || `Application for ${recordData.jobTitle || \u0027Position\u0027} - Ivo Dachev`,\n    emailBody: recordData.emailBody || \u0027Email body not available\u0027,\n    status: operationSuccess ? (recordData.isDuplicate ? \u0027DUPLICATE_UPDATED\u0027 : \u0027INSERTED\u0027) : \u0027OPERATION_FAILED\u0027,\n    timeStamp: recordData.timeStamp || new Date().toISOString(),\n    processedAt: recordData.processedAt || new Date().toISOString(),\n    isDuplicate: recordData.isDuplicate || false,\n    duplicateCount: recordData.duplicateCount || 1,\n    duplicateDetectedAt: recordData.duplicateDetectedAt || null,\n    originalApplicationDate: recordData.originalApplicationDate || null,\n    duplicateReason: recordData.duplicateReason || null,\n    operationVerified: operationSuccess,\n    operationStatus: operationSuccess ? \u0027SUCCESS\u0027 : \u0027FAILED\u0027,\n    outreachReady: operationSuccess \u0026\u0026 !recordData.isDuplicate\n  };\n\n  // ========================================\n  // STEP 5: EXTRACT OUTREACH DATA\n  // ========================================\n  const outreachData = {\n    emailSubject: recordData.emailSubject || contactRecord.emailSubject,\n    emailBody: recordData.emailBody || contactRecord.emailBody,\n    emailTemplate: recordData.emailTemplate || \u0027job-application-outreach\u0027,\n    estimatedResponseRate: recordData.estimatedResponseRate || 15,\n    finishReason: recordData.finishReason || \u0027STOP\u0027,\n    avgLogprobs: recordData.avgLogprobs || -0.092308,\n    trackingPixelUrl: `https://tracking.linkedin-automation.com/pixel/${contactRecord.trackingId}`,\n    personalizedElements: [\u0027company_name\u0027, \u0027job_title\u0027, \u0027contact_name\u0027, \u0027contact_firstName\u0027, \u0027contact_lastName\u0027],\n    followUpSubject: `Following up on ${contactRecord.jobTitle} application - Ivo Dachev`,\n    followUpBody: `Dear Hiring Manager,\\n\\nI wanted to follow up on my application for the ${contactRecord.jobTitle} position at ${contactRecord.companyName}.\\n\\nBest regards,\\nIvo Dachev`\n  };\n\n  // ========================================\n  // STEP 6: CREATE COMPREHENSIVE PROCESSING METADATA\n  // ========================================\n  const processingMetadata = {\n    workflowId: \"contact-tracking-enhanced-v2\",\n    workflowName: \"LinkedIn-GmailOutlook-sub-flow-Workshop-ContactTracking--Augment\",\n    version: \"2.2.0-production\",\n    executionId: $executionId,\n    processedAt: new Date().toISOString(),\n    operationType: recordData.operationType || recordData.routingDecision || \u0027UNKNOWN\u0027,\n    operationSuccess: operationSuccess,\n    finalStatus: contactRecord.status,\n    duplicateDetectionMethod: \u0027google-sheets-query\u0027,\n    duplicateCheckStatus: recordData.duplicateCheckStatus || \u0027UNKNOWN\u0027,\n    isDuplicate: contactRecord.isDuplicate,\n    duplicateCount: contactRecord.duplicateCount,\n    dataLossRisk: \"ZERO\",\n    joinMethod: \"semantic-field-based\",\n    fieldMappingMode: \"defineBelow-standardized\",\n    errorHandling: \"comprehensive-with-fallbacks\",\n    trackingFieldsCount: 21,\n    requiredFieldsPresent: !!(contactRecord.companyName \u0026\u0026 contactRecord.jobTitle \u0026\u0026 contactRecord.dedupeKey),\n    emailTemplateGenerated: !!contactRecord.emailSubject,\n    readyForOutreach: contactRecord.outreachReady,\n    contactNameFieldsExtracted: !!(contactRecord.contactFirstName || contactRecord.contactLastName),\n    contactNameExtractionSource: contactDataFromMerger ? \u0027CONTACT_DATA_MERGER_NODE\u0027 : \u0027FALLBACK\u0027,  // ✅ ADDED v2.2.0\n    auditTrail: {\n      ...(recordData.auditTrail || {}),\n      operationVerification: {\n        operationSuccess,\n        operationDetails,\n        errorMessage,\n        verificationTimestamp: new Date().toISOString()\n      },\n      outputFormattingTimestamp: new Date().toISOString(),\n      workflowStep: \u0027enhanced-output-formatting-with-verification-v2.2\u0027,\n      contactNameFieldsStatus: contactRecord.contactFirstName \u0026\u0026 contactRecord.contactLastName ? \u0027BOTH_EXTRACTED\u0027 : \n                                contactRecord.contactFirstName ? \u0027FIRSTNAME_ONLY\u0027 :\n                                contactRecord.contactLastName ? \u0027LASTNAME_ONLY\u0027 : \u0027NONE_EXTRACTED\u0027\n    }\n  };\n\n  // ========================================\n  // STEP 7: CONSTRUCT FINAL OUTPUT\n  // ========================================\n  const finalOutput = {\n    contactRecord,\n    outreachData,\n    processingMetadata,\n    troubleshooting: {\n      operationErrors: errorMessage ? [errorMessage] : [],\n      warnings: [],\n      recommendations: operationSuccess ? [] : [\n        \u0027Review Google Sheets API connectivity\u0027,\n        \u0027Check document permissions\u0027,\n        \u0027Verify sheet name and structure\u0027\n      ],\n      debugInfo: {\n        dedupeKey: contactRecord.dedupeKey,\n        routingDecision: recordData.routingDecision || \u0027UNKNOWN\u0027,\n        duplicateAnalysis: recordData.auditTrail || {},\n        operationDetails: operationDetails,\n        contactNameFieldsExtracted: processingMetadata.contactNameFieldsExtracted,\n        contactNameExtractionSource: processingMetadata.contactNameExtractionSource  // ✅ ADDED v2.2.0\n      }\n    }\n  };\n\n  // ========================================\n  // STEP 8: LOGGING AND VALIDATION\n  // ========================================\n  console.log(\u0027✅ ENHANCED OUTPUT FORMATTING COMPLETE v2.2.0\u0027);\n  console.log(`   Contact: ${contactRecord.companyName} - ${contactRecord.jobTitle}`);\n  console.log(`   Tracking ID: ${contactRecord.trackingId}`);\n  console.log(`   Operation: ${processingMetadata.operationType} (${operationSuccess ? \u0027SUCCESS\u0027 : \u0027FAILED\u0027})`);\n  console.log(`   Duplicate: ${contactRecord.isDuplicate} (Count: ${contactRecord.duplicateCount})`);\n  console.log(`   Ready for Outreach: ${contactRecord.outreachReady}`);\n  console.log(`   Contact First Name: \"${contactRecord.contactFirstName}\" ${contactRecord.contactFirstName ? \u0027✅ EXTRACTED\u0027 : \u0027❌ MISSING\u0027}`);\n  console.log(`   Contact Last Name: \"${contactRecord.contactLastName}\" ${contactRecord.contactLastName ? \u0027✅ EXTRACTED\u0027 : \u0027❌ MISSING\u0027}`);\n  console.log(`   Extraction Source: ${processingMetadata.contactNameExtractionSource}`);\n\n  // ========================================\n  // STEP 9: WARNINGS\n  // ========================================\n  if (!operationSuccess) {\n    console.warn(\u0027⚠️ WARNING: Google Sheets operation failed - record may not be saved\u0027);\n  }\n  if (contactRecord.isDuplicate) {\n    console.warn(`⚠️ WARNING: Duplicate application detected (attempt #${contactRecord.duplicateCount})`);\n  }\n  if (!contactRecord.recepientEmail || contactRecord.recepientEmail.includes(\u0027placeholder\u0027)) {\n    console.warn(\u0027⚠️ WARNING: No valid recipient email found\u0027);\n  }\n  if (!contactRecord.contactFirstName \u0026\u0026 !contactRecord.contactLastName) {\n    console.warn(\u0027⚠️ WARNING: Contact firstName/lastName not extracted - email personalization will use generic greeting \"Hi there\"\u0027);\n  }\n  if (!contactDataFromMerger) {\n    console.warn(\u0027⚠️ WARNING: Could not access Contact Data Merger \u0026 Processing node - contact name fields may be incomplete\u0027);\n  }\n\n  return [{ json: finalOutput }];\n\n} catch (error) {\n  console.error(\u0027❌ OUTPUT FORMATTING ERROR v2.2.0:\u0027, error.message);\n  \n  // ========================================\n  // FAIL-SAFE: FALLBACK OUTPUT\n  // ========================================\n  const fallbackOutput = {\n    contactRecord: {\n      status: \u0027OUTPUT_FORMATTING_FAILED\u0027,\n      errorMessage: error.message,\n      processedAt: new Date().toISOString(),\n      trackingId: `error-${Date.now()}`,\n      dedupeKey: \u0027error\u0027,\n      companyName: \u0027Error Processing\u0027,\n      jobTitle: \u0027Error Processing\u0027,\n      contactFirstName: \u0027\u0027,\n      contactLastName: \u0027\u0027,\n      contactName: \u0027\u0027,\n      outreachReady: false\n    },\n    processingMetadata: {\n      workflowId: \"contact-tracking-enhanced-v2\",\n      version: \"2.2.0-production\",\n      finalStatus: \u0027OUTPUT_FORMATTING_ERROR\u0027,\n      errorHandling: \u0027fail-safe-activated\u0027,\n      processingTimestamp: new Date().toISOString()\n    },\n    troubleshooting: {\n      operationErrors: [error.message],\n      recommendations: [\n        \u0027Review output formatting logic\u0027,\n        \u0027Check data structure from previous nodes\u0027,\n        \u0027Verify all required fields are present\u0027,\n        \u0027Ensure Contact Data Merger \u0026 Processing node is accessible\u0027,\n        \u0027Verify contactFirstName/contactLastName exist in Contact Data Merger output\u0027\n      ]\n    }\n  };\n  \n  return [{ json: fallbackOutput }];\n}"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       304,
+                                       -816
+                                   ],
+                      "id":  "c14bda9c-1935-4efc-8344-0f7cfae6f80b",
+                      "name":  "Contact Tracking Output Formatting"
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "/*\n  Data Flattener for Google Sheets - CORRECTED v3.3.0\n  Workflow: Contact Tracking (ID: wZyxRjWShhnSFbSV)\n  \n  CRITICAL FIX v3.3.0:\n  - ADDED contactFirstName and contactLastName extraction from Contact Data Merger \u0026 Processing node\n  - These fields now flow through to downstream nodes (Contact Tracking Output Formatting, Outreach Tracking)\n  - Fixes email personalization issue where AI Email Generation was using \"Hi there\" instead of \"Hi [FirstName]\"\n  \n  CRITICAL FIX v3.2.0:\n  - ADDED content field extraction from Contact Data Merger \u0026 Processing node\n  - Resume content now flows through to downstream nodes (Outreach Tracking, PDF generation)\n  \n  CRITICAL FIX v3.1.0:\n  - REMOVED placeholder email fallback (\"contact-missing@placeholder.com\")\n  - ADDED email validation that throws error if no email found\n  - Records without valid emails will NOT be created\n  \n  Version: 3.3.0\n  Purpose:\n    - Extract job application data from Contact Data Merger \u0026 Processing node\n    - Extract AI-generated email from AI Email Template Generator output\n    - Extract resume content for PDF generation\n    - Extract contact firstName/lastName for email personalization\n    - Merge both data sources into a single flattened record\n    - VALIDATE that email exists before proceeding\n    - Produce canonical record for Google Sheets with NO duplicate fields\n  \n  Node Mode: Run Once for Each Item\n  Return: Single item object: { json: \u003cflattenedRecord\u003e }\n*/\n\nfunction logInfo(msg) { try { console.log(String(msg)); } catch (e) {} }\nfunction logWarn(msg) { try { console.warn(String(msg)); } catch (e) {} }\nfunction logError(msg){ try { console.error(String(msg)); } catch (e) {} }\n\n// Robust JSON parser that handles code fences and extra text\nfunction safeJSONParse(str) {\n  if (typeof str !== \"string\") return null;\n  var s = str.trim();\n  \n  // Quick attempt\n  try { return JSON.parse(s); } catch (_) {}\n  \n  // Strip Markdown code fences\n  if (s.indexOf(\"```\") !== -1) {\n    s = s.replace(/```[a-zA-Z]*\\n?/g, \"\").replace(/```/g, \"\");\n    try { return JSON.parse(s.trim()); } catch (_) {}\n  }\n  \n  // Extract first {...} block\n  var first = s.indexOf(\"{\");\n  var last = s.lastIndexOf(\"}\");\n  if (first !== -1 \u0026\u0026 last !== -1 \u0026\u0026 last \u003e first) {\n    var candidate = s.slice(first, last + 1);\n    try { return JSON.parse(candidate); } catch (_) {}\n  }\n  \n  return null;\n}\n\n// Normalize key parts for dedupeKey computation\nfunction normalizeKeyPart(s) {\n  return String(s || \"\")\n    .toLowerCase()\n    .replace(/[^a-z0-9]/g, \"\")\n    .trim();\n}\n\n// ✅ ADDED v3.1.0: Email validator (no fallback, throws error)\nfunction validateEmail(email, fieldName) {\n  if (!email || typeof email !== \"string\" || email.trim() === \"\") {\n    throw new Error(\"CRITICAL: Missing \" + fieldName + \" - cannot create record without valid email. Terminating workflow for this record.\");\n  }\n  \n  // Check if email contains @ symbol (basic validation)\n  if (email.indexOf(\"@\") === -1) {\n    throw new Error(\"CRITICAL: Invalid \" + fieldName + \" format (\\\"\" + email + \"\\\") - must contain @ symbol. Terminating workflow for this record.\");\n  }\n  \n  // Check if email is a placeholder\n  if (email.includes(\"placeholder\") || email.includes(\"missing\")) {\n    throw new Error(\"CRITICAL: Placeholder \" + fieldName + \" detected (\\\"\" + email + \"\\\") - cannot create record with placeholder email. Terminating workflow for this record.\");\n  }\n  \n  return email.trim();\n}\n\n// Field validator with meaningful fallbacks (for non-email fields)\nfunction validateField(value, fieldName, fallback) {\n  if (typeof value !== \"string\") {\n    if (value === null || typeof value === \"undefined\") {\n      logWarn(\"Missing \" + fieldName + \", using fallback: \\\"\" + fallback + \"\\\"\");\n      return fallback;\n    }\n    try {\n      value = String(value);\n    } catch (e) {\n      logWarn(\"Non-string \" + fieldName + \", using fallback: \\\"\" + fallback + \"\\\"\");\n      return fallback;\n    }\n  }\n  if (value.trim() === \"\") {\n    logWarn(\"Empty \" + fieldName + \", using fallback: \\\"\" + fallback + \"\\\"\");\n    return fallback;\n  }\n  return value;\n}\n\ntry {\n  logInfo(\"=== DATA FLATTENER v3.3.0 - FIRSTNAME/LASTNAME EXTRACTION ADDED ===\");\n  \n  // 1) Get AI output from current item\n  var aiOutput = $json;\n  if (!aiOutput || typeof aiOutput !== \"object\") {\n    throw new Error(\"CRITICAL: No AI output received in Data Flattener\");\n  }\n  \n  logInfo(\"Step 1: AI output received\");\n  logInfo(\" - Has content: \" + (!!aiOutput.content));\n  logInfo(\" - Has finishReason: \" + (!!aiOutput.finishReason));\n  \n  // 2) Get job data from Contact Data Merger \u0026 Processing node\n  var originalJobData;\n  try {\n    originalJobData = $(\u0027Contact Data Merger \u0026 Processing\u0027).item.json;\n    logInfo(\"Step 2: Successfully accessed Contact Data Merger \u0026 Processing node\");\n    logInfo(\" - Has companyName: \" + (!!originalJobData.companyName));\n    logInfo(\" - Has jobTitle: \" + (!!originalJobData.jobTitle));\n    logInfo(\" - Has contactEmail: \" + (!!originalJobData.contactEmail));\n    logInfo(\" - Has contactFirstName: \" + (!!originalJobData.contactFirstName));\n    logInfo(\" - Has contactLastName: \" + (!!originalJobData.contactLastName));\n    logInfo(\" - Has content: \" + (!!originalJobData.content));\n  } catch (nodeError) {\n    logError(\"CRITICAL: Cannot access Contact Data Merger \u0026 Processing node\");\n    logError(\"Error: \" + nodeError.message);\n    throw new Error(\"Cannot access upstream job data - workflow structure may be incorrect\");\n  }\n  \n  // 3) Extract job information from Contact Data Merger \u0026 Processing output\n  var extractedJobData = {\n    companyName: originalJobData.companyName || \"\",\n    jobTitle: originalJobData.jobTitle || \"\",\n    jobUrl: originalJobData.jobUrl || \"\",\n    contactEmail: originalJobData.contactEmail || originalJobData.recipientEmail || \"\",\n    contactName: originalJobData.contactName || \"\",\n    contactFirstName: originalJobData.contactFirstName || \"\",  // ✅ ADDED v3.3.0\n    contactLastName: originalJobData.contactLastName || \"\",    // ✅ ADDED v3.3.0\n    dedupeKey: originalJobData.dedupeKey || \"\",\n    timeStamp: originalJobData.timeStamp || \"\",\n    status: originalJobData.status || \"pending\",\n    content: originalJobData.content || \"\"  // ✅ ADDED v3.2.0: Extract resume content\n  };\n  \n  logInfo(\"Step 3: Extracted job data from upstream node:\");\n  logInfo(\" - Company: \\\"\" + extractedJobData.companyName + \"\\\"\");\n  logInfo(\" - Job Title: \\\"\" + extractedJobData.jobTitle + \"\\\"\");\n  logInfo(\" - Contact Email: \\\"\" + extractedJobData.contactEmail + \"\\\"\");\n  logInfo(\" - Contact First Name: \\\"\" + extractedJobData.contactFirstName + \"\\\"\");  // ✅ ADDED v3.3.0\n  logInfo(\" - Contact Last Name: \\\"\" + extractedJobData.contactLastName + \"\\\"\");    // ✅ ADDED v3.3.0\n  logInfo(\" - DedupeKey: \\\"\" + extractedJobData.dedupeKey + \"\\\"\");\n  logInfo(\" - Content Length: \" + extractedJobData.content.length + \" characters\");\n  \n  // ✅ CRITICAL FIX v3.1.0: Validate email BEFORE proceeding\n  // This will throw an error if no email found, terminating the workflow for this record\n  logInfo(\"Step 3.5: Validating contact email...\");\n  var recipientEmailValue = validateEmail(extractedJobData.contactEmail, \"contactEmail\");\n  logInfo(\" ✅ Email validation passed: \\\"\" + recipientEmailValue + \"\\\"\");\n  \n  // 4) Normalize and finalize dedupeKey\n  var finalDedupeKey = extractedJobData.dedupeKey;\n  if (!finalDedupeKey || String(finalDedupeKey).trim() === \"\") {\n    var c = normalizeKeyPart(extractedJobData.companyName);\n    var j = normalizeKeyPart(extractedJobData.jobTitle);\n    if (c \u0026\u0026 j) {\n      finalDedupeKey = c + \"-\" + j;\n      logInfo(\"Computed dedupeKey from company and job: \" + finalDedupeKey);\n    }\n  }\n  if (!finalDedupeKey || String(finalDedupeKey).trim() === \"\") {\n    finalDedupeKey = \"missing-\" + Date.now();\n    logWarn(\"Using last-resort dedupeKey fallback: \" + finalDedupeKey);\n  }\n  \n  // 5) Extract AI-generated email from AI output\n  var flattenedContent = \"\";\n  var emailSubjectValue = \"\";\n  var emailBodyValue = \"\";\n  \n  if (aiOutput.content \u0026\u0026 typeof aiOutput.content === \"object\") {\n    if (aiOutput.content.parts \u0026\u0026 Array.isArray(aiOutput.content.parts) \u0026\u0026 aiOutput.content.parts.length \u003e 0) {\n      flattenedContent = aiOutput.content.parts[0] \u0026\u0026 aiOutput.content.parts[0].text ? String(aiOutput.content.parts[0].text) : \"\";\n    } else if (typeof aiOutput.content.text === \"string\") {\n      flattenedContent = aiOutput.content.text;\n    } else {\n      try {\n        flattenedContent = JSON.stringify(aiOutput.content);\n      } catch (e) {\n        flattenedContent = \"\";\n      }\n    }\n  } else if (typeof aiOutput.content === \"string\") {\n    flattenedContent = aiOutput.content;\n  }\n  \n  logInfo(\"Step 4: Extracted AI content (length: \" + flattenedContent.length + \" chars)\");\n  \n  // 6) Parse AI output to extract emailSubject and emailBody\n  if (flattenedContent) {\n    var parsedAI = safeJSONParse(flattenedContent);\n    if (parsedAI \u0026\u0026 typeof parsedAI === \"object\") {\n      // Check if it\u0027s an array with one object\n      if (Array.isArray(parsedAI) \u0026\u0026 parsedAI.length \u003e 0) {\n        emailSubjectValue = parsedAI[0].emailSubject || \"\";\n        emailBodyValue = parsedAI[0].emailBody || \"\";\n      } else {\n        emailSubjectValue = parsedAI.emailSubject || \"\";\n        emailBodyValue = parsedAI.emailBody || \"\";\n      }\n      logInfo(\"Step 5: Parsed AI output successfully\");\n      logInfo(\" - Email Subject: \\\"\" + emailSubjectValue.substring(0, 50) + \"...\\\"\");\n      logInfo(\" - Email Body length: \" + emailBodyValue.length + \" chars\");\n    } else {\n      logWarn(\"Could not parse AI output as JSON, using raw content\");\n      emailBodyValue = flattenedContent;\n    }\n  }\n  \n  // Fallback for subject if not found\n  if (!emailSubjectValue || emailSubjectValue.trim() === \"\") {\n    emailSubjectValue = \"Application for \" + (extractedJobData.jobTitle || \"Position\") + \" - Ivo Dachev\";\n    logWarn(\"Using fallback email subject: \" + emailSubjectValue);\n  }\n  \n  // Fallback for body if not found\n  if (!emailBodyValue || emailBodyValue.trim() === \"\") {\n    emailBodyValue = \"Email content not generated\";\n    logWarn(\"Using fallback email body\");\n  }\n  \n  // 7) Validate other critical fields (non-email)\n  var companyNameValue = validateField(extractedJobData.companyName, \"companyName\", \"Company Name Missing\");\n  var jobTitleValue = validateField(extractedJobData.jobTitle, \"jobTitle\", \"Job Title Missing\");\n  \n  // ✅ ADDED v3.3.0: Validate firstName/lastName (allow empty strings, don\u0027t use fallbacks)\n  var contactFirstNameValue = extractedJobData.contactFirstName || \"\";\n  var contactLastNameValue = extractedJobData.contactLastName || \"\";\n  var contactNameValue = extractedJobData.contactName || \n                         (contactFirstNameValue + \" \" + contactLastNameValue).trim() || \n                         \"\";\n  \n  // 8) Build flattened record for Google Sheets\n  var flattenedRecord = {\n    timeStamp: extractedJobData.timeStamp || new Date().toISOString(),\n    companyName: companyNameValue,\n    jobTitle: jobTitleValue,\n    jobUrl: extractedJobData.jobUrl || \"\",\n    recipientEmail: recipientEmailValue,\n    recepientEmail: recipientEmailValue, // legacy compatibility\n    status: extractedJobData.status || \"pending\",\n    dedupeKey: finalDedupeKey,\n    \n    finishReason: aiOutput.finishReason || \"\",\n    avgLogprobs: aiOutput.avgLogprobs || \"\",\n    \n    // Email fields from AI output\n    emailSubject: emailSubjectValue,\n    emailBody: emailBodyValue,\n    \n    // ✅ ADDED v3.2.0: Resume content for PDF generation\n    content: extractedJobData.content || \"Content not available\",\n    \n    // ✅ ADDED v3.3.0: Contact firstName/lastName for email personalization\n    contactFirstName: contactFirstNameValue,\n    contactLastName: contactLastNameValue,\n    contactName: contactNameValue,\n    \n    // Initialization for downstream duplicate handling\n    isDuplicate: false,\n    duplicateCount: 1,\n    duplicateDetectedAt: \"\",\n    originalApplicationDate: \"\",\n    duplicateReason: \"\",\n    \n    // Processing metadata\n    dataFlattenerTimestamp: new Date().toISOString(),\n    processingMode: \"FIRSTNAME_LASTNAME_EXTRACTION_V3.3\",\n    dataExtractionSource: \"CONTACT_DATA_MERGER_NODE\",\n    dataExtractionSuccess: !!(companyNameValue \u0026\u0026 jobTitleValue \u0026\u0026 recipientEmailValue \u0026\u0026 finalDedupeKey),\n    emailValidationPassed: true,\n    contactNameFieldsExtracted: !!(contactFirstNameValue || contactLastNameValue)  // ✅ ADDED v3.3.0\n  };\n  \n  // 9) Summary logs\n  logInfo(\"=== DATA FLATTENER RESULTS v3.3.0 ===\");\n  logInfo(\" - Company: \\\"\" + flattenedRecord.companyName + \"\\\"\");\n  logInfo(\" - Job Title: \\\"\" + flattenedRecord.jobTitle + \"\\\"\");\n  logInfo(\" - Recipient Email: \\\"\" + flattenedRecord.recipientEmail + \"\\\" ✅ VALIDATED\");\n  logInfo(\" - Contact First Name: \\\"\" + flattenedRecord.contactFirstName + \"\\\" ✅ EXTRACTED\");  // ✅ ADDED v3.3.0\n  logInfo(\" - Contact Last Name: \\\"\" + flattenedRecord.contactLastName + \"\\\" ✅ EXTRACTED\");    // ✅ ADDED v3.3.0\n  logInfo(\" - Contact Name: \\\"\" + flattenedRecord.contactName + \"\\\"\");\n  logInfo(\" - DedupeKey: \\\"\" + flattenedRecord.dedupeKey + \"\\\"\");\n  logInfo(\" - Email Subject: \\\"\" + flattenedRecord.emailSubject.substring(0, 50) + \"...\\\"\");\n  logInfo(\" - Email Body Length: \" + flattenedRecord.emailBody.length + \" chars\");\n  logInfo(\" - Resume Content Length: \" + flattenedRecord.content.length + \" chars ✅ EXTRACTED\");\n  logInfo(\" - Data Source: \" + flattenedRecord.dataExtractionSource);\n  logInfo(\" - Extraction Success: \" + flattenedRecord.dataExtractionSuccess);\n  logInfo(\" - Email Validation: PASSED ✅\");\n  logInfo(\" - Contact Name Fields: \" + (flattenedRecord.contactNameFieldsExtracted ? \"EXTRACTED ✅\" : \"MISSING ❌\"));\n  \n  // 10) Warnings\n  if (flattenedRecord.companyName === \"Company Name Missing\") {\n    logWarn(\"WARNING: Company name not found in upstream node\");\n  }\n  if (flattenedRecord.jobTitle === \"Job Title Missing\") {\n    logWarn(\"WARNING: Job title not found in upstream node\");\n  }\n  if (flattenedRecord.content === \"Content not available\") {\n    logWarn(\"WARNING: Resume content not found in upstream node - PDF generation may fail\");\n  }\n  if (!flattenedRecord.contactFirstName \u0026\u0026 !flattenedRecord.contactLastName) {\n    logWarn(\"WARNING: Contact firstName/lastName not found in upstream node - email personalization will use generic greeting\");\n  }\n  \n  // 11) Return single item\n  return { json: flattenedRecord };\n  \n} catch (err) {\n  var msg = (err \u0026\u0026 err.message) ? err.message : String(err);\n  logError(\"DATA FLATTENER ERROR v3.3.0: \" + msg);\n  \n  // ✅ CRITICAL v3.1.0: If email validation fails, throw error to terminate workflow\n  // Do NOT create a fallback record with placeholder email\n  if (msg.includes(\"Missing contactEmail\") || msg.includes(\"Invalid contactEmail\") || msg.includes(\"Placeholder contactEmail\")) {\n    logError(\"❌ EMAIL VALIDATION FAILED - Terminating workflow for this record\");\n    logError(\"   This record will NOT be created in Google Sheets\");\n    logError(\"   Reason: \" + msg);\n    throw err; // Re-throw to terminate workflow\n  }\n  \n  // For other errors, create fallback record\n  var fallback = {\n    timeStamp: new Date().toISOString(),\n    companyName: \"Company Name Missing\",\n    jobTitle: \"Job Title Missing\",\n    jobUrl: \"\",\n    recipientEmail: \"ERROR-NO-EMAIL-FOUND\",\n    recepientEmail: \"ERROR-NO-EMAIL-FOUND\",\n    status: \"error\",\n    dedupeKey: \"error-\" + Date.now(),\n    finishReason: \"\",\n    avgLogprobs: \"\",\n    emailSubject: \"Application for Position - Ivo Dachev\",\n    emailBody: \"Email content not generated\",\n    content: \"Content not available\",\n    contactFirstName: \"\",  // ✅ ADDED v3.3.0\n    contactLastName: \"\",   // ✅ ADDED v3.3.0\n    contactName: \"\",\n    isDuplicate: false,\n    duplicateCount: 1,\n    duplicateDetectedAt: \"\",\n    originalApplicationDate: \"\",\n    duplicateReason: \"\",\n    dataFlattenerTimestamp: new Date().toISOString(),\n    processingMode: \"ERROR_FALLBACK_V3.3\",\n    dataExtractionSource: \"FALLBACK_ON_ERROR\",\n    dataExtractionSuccess: false,\n    emailValidationPassed: false,\n    contactNameFieldsExtracted: false,  // ✅ ADDED v3.3.0\n    errorMessage: msg\n  };\n  \n  return { json: fallback };\n}"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -944,
+                                       -1120
+                                   ],
+                      "id":  "1abdb5ec-99c0-4f52-93b3-9d2ebc6c742b",
+                      "name":  "Data Flattener for Google Sheets",
+                      "executeOnce":  false,
+                      "alwaysOutputData":  true
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "version":  2,
+                                                                            "leftValue":  "",
+                                                                            "caseSensitive":  false,
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "26821145-ccf7-49a6-9e18-8eaac846db9e",
+                                                                                   "leftValue":  "={{ $json.isDuplicate }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "or"
+                                                        },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+                                                         "ignoreCase":  true
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -208,
+                                       -816
+                                   ],
+                      "id":  "f248bc41-24cb-4e2a-9c25-19978caef3ed",
+                      "name":  "Insert OR Update"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "append",
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "Tracking",
+                                                           "mode":  "name"
+                                                       },
+                                         "columns":  {
+                                                         "mappingMode":  "autoMapInputData",
+                                                         "value":  {
+
+                                                                   },
+                                                         "matchingColumns":  [
+
+                                                                             ],
+                                                         "schema":  [
+                                                                        {
+                                                                            "id":  "timeStamp",
+                                                                            "displayName":  "timeStamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "companyName",
+                                                                            "displayName":  "companyName",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "jobTitle",
+                                                                            "displayName":  "jobTitle",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "jobUrl",
+                                                                            "displayName":  "jobUrl",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "recepientEmail",
+                                                                            "displayName":  "recepientEmail",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "status",
+                                                                            "displayName":  "status",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "dedupeKey",
+                                                                            "displayName":  "dedupeKey",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "content",
+                                                                            "displayName":  "content",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "finishReason",
+                                                                            "displayName":  "finishReason",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "avgLogprobs",
+                                                                            "displayName":  "avgLogprobs",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailSubject",
+                                                                            "displayName":  "emailSubject",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailBody",
+                                                                            "displayName":  "emailBody",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailTemplate",
+                                                                            "displayName":  "emailTemplate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "estimatedResponseRate",
+                                                                            "displayName":  "estimatedResponseRate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "isDuplicate",
+                                                                            "displayName":  "isDuplicate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateCount",
+                                                                            "displayName":  "duplicateCount",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateDetectedAt",
+                                                                            "displayName":  "duplicateDetectedAt",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "originalApplicationDate",
+                                                                            "displayName":  "originalApplicationDate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateReason",
+                                                                            "displayName":  "duplicateReason",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        }
+                                                                    ],
+                                                         "attemptToConvertTypes":  false,
+                                                         "convertFieldsToString":  false
+                                                     },
+                                         "options":  {
+                                                         "handlingExtraData":  "ignoreIt"
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       16,
+                                       -672
+                                   ],
+                      "id":  "406cb3d8-2791-4e3b-b210-4ebf2ea8e492",
+                      "name":  "Google Sheets Tracking - Insert",
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "HnVkHdxofZiUvnda",
+                                                                        "name":  "Google Sheets account"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "update",
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "Tracking",
+                                                           "mode":  "name"
+                                                       },
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "timeStamp":  "={{ $json.timeStamp }}",
+                                                                       "duplicateCount":  "={{ $json.duplicateCount }}",
+                                                                       "duplicateDetectedAt":  "={{ $json.duplicateDetectedAt }}",
+                                                                       "dedupeKey":  "={{ $json.dedupeKey }}",
+                                                                       "isDuplicate":  "={{ $json.isDuplicate }}",
+                                                                       "duplicateReason":  "={{ $json.duplicateReason }}",
+                                                                       "lastDuplicateAttemptAt":  "={{ $json.lastDuplicateAttemptAt }}"
+                                                                   },
+                                                         "matchingColumns":  [
+                                                                                 "dedupeKey"
+                                                                             ],
+                                                         "schema":  [
+                                                                        {
+                                                                            "id":  "timeStamp",
+                                                                            "displayName":  "timeStamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "companyName",
+                                                                            "displayName":  "companyName",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "jobTitle",
+                                                                            "displayName":  "jobTitle",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "jobUrl",
+                                                                            "displayName":  "jobUrl",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "recepientEmail",
+                                                                            "displayName":  "recepientEmail",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "status",
+                                                                            "displayName":  "status",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "dedupeKey",
+                                                                            "displayName":  "dedupeKey",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "content",
+                                                                            "displayName":  "content",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "finishReason",
+                                                                            "displayName":  "finishReason",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "avgLogprobs",
+                                                                            "displayName":  "avgLogprobs",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailSubject",
+                                                                            "displayName":  "emailSubject",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailBody",
+                                                                            "displayName":  "emailBody",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailTemplate",
+                                                                            "displayName":  "emailTemplate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "estimatedResponseRate",
+                                                                            "displayName":  "estimatedResponseRate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "isDuplicate",
+                                                                            "displayName":  "isDuplicate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateCount",
+                                                                            "displayName":  "duplicateCount",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateDetectedAt",
+                                                                            "displayName":  "duplicateDetectedAt",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "originalApplicationDate",
+                                                                            "displayName":  "originalApplicationDate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateReason",
+                                                                            "displayName":  "duplicateReason",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "recipientEmail",
+                                                                            "displayName":  "recipientEmail",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "dataFlattenerTimestamp",
+                                                                            "displayName":  "dataFlattenerTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "processingMode",
+                                                                            "displayName":  "processingMode",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "dataExtractionSource",
+                                                                            "displayName":  "dataExtractionSource",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "dataExtractionSuccess",
+                                                                            "displayName":  "dataExtractionSuccess",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateDetectionTimestamp",
+                                                                            "displayName":  "duplicateDetectionTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "routingDecision",
+                                                                            "displayName":  "routingDecision",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailBodyContent",
+                                                                            "displayName":  "emailBodyContent",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "draftCreatedTimestamp",
+                                                                            "displayName":  "draftCreatedTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "draftStatus",
+                                                                            "displayName":  "draftStatus",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateCheckTimestamp",
+                                                                            "displayName":  "duplicateCheckTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateCheckMethod",
+                                                                            "displayName":  "duplicateCheckMethod",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "apiCallsAvoided",
+                                                                            "displayName":  "apiCallsAvoided",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "processingEfficiency",
+                                                                            "displayName":  "processingEfficiency",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "lastDuplicateAttemptAt",
+                                                                            "displayName":  "lastDuplicateAttemptAt",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "row_number",
+                                                                            "displayName":  "row_number",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "number",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "readOnly":  true,
+                                                                            "removed":  true
+                                                                        }
+                                                                    ],
+                                                         "attemptToConvertTypes":  false,
+                                                         "convertFieldsToString":  false
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       16,
+                                       -976
+                                   ],
+                      "id":  "6b2092f3-998c-4237-aad8-6640e5f98f2e",
+                      "name":  "Google Sheets Tracking - Duplicate Update",
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "HnVkHdxofZiUvnda",
+                                                                        "name":  "Google Sheets account"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "Tracking",
+                                                           "mode":  "name"
+                                                       },
+                                         "filtersUI":  {
+                                                           "values":  [
+                                                                          {
+                                                                              "lookupColumn":  "dedupeKey",
+                                                                              "lookupValue":  "={{ $json.dedupeKey }}"
+                                                                          }
+                                                                      ]
+                                                       },
+                                         "options":  {
+                                                         "dataLocationOnSheet":  {
+                                                                                     "values":  {
+                                                                                                    "rangeDefinition":  "specifyRangeA1",
+                                                                                                    "range":  "A:Z"
+                                                                                                }
+                                                                                 }
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       -784,
+                                       -928
+                                   ],
+                      "id":  "abd08013-4de6-4d4c-adf7-88427703d82c",
+                      "name":  "Rows lookup",
+                      "alwaysOutputData":  false,
+                      "retryOnFail":  true,
+                      "maxTries":  5,
+                      "waitBetweenTries":  2000,
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "HnVkHdxofZiUvnda",
+                                                                        "name":  "Google Sheets account"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "/*\n  Duplicate Detection Using Rows Lookup Results\n  Version: 3.6.0 - EXACT DEDUPEKEY MATCHING (Bug Fix)\n  \n  CRITICAL FIX v3.6.0:\n  - ADDED exact dedupeKey comparison filter\n  - FIXED false positive duplicates caused by partial matching\n  - Records are ONLY marked as duplicates if dedupeKeys are EXACTLY the same\n  - Example: \"emkconsultoria-virtualdataentryassistant100remote\" vs \"emkconsultoria-dataentryassistant100remote\" are now correctly identified as DIFFERENT\n*/\n\ntry {\n  console.log(\u0027=== DUPLICATE DETECTION v3.6.0 (EXACT DEDUPEKEY MATCHING) ===\u0027);\n  \n  // 1) Get all items from Merge node\n  const allItems = $input.all();\n  console.log(`📊 Total items from Merge: ${allItems.length}`);\n  \n  if (!allItems || allItems.length === 0) {\n    throw new Error(\"CRITICAL: No items received from Merge node\");\n  }\n  \n  // 2) First item is ALWAYS the new record from Data Flattener\n  const newRecord = allItems[0].json;\n  \n  if (!newRecord || !newRecord.dedupeKey) {\n    throw new Error(\"CRITICAL: Missing dedupeKey in new record from Data Flattener\");\n  }\n  \n  const dedupeKey = newRecord.dedupeKey;\n  console.log(`🔍 Processing record: ${dedupeKey}`);\n  console.log(`📊 Company: ${newRecord.companyName}`);\n  console.log(`💼 Job: ${newRecord.jobTitle}`);\n  console.log(`📧 Email: ${newRecord.recipientEmail || newRecord.recepientEmail}`);\n  \n  // 3) Remaining items (if any) are existing records from Rows lookup\n  const existingRecords = allItems.slice(1);\n  console.log(`📋 Existing records found by Rows lookup: ${existingRecords.length}`);\n  \n  // ✅ CRITICAL FIX v3.6.0: Filter to ONLY records with EXACTLY matching dedupeKey\n  // This prevents false positives from partial matching or similar dedupeKeys\n  const exactMatches = existingRecords.filter(record =\u003e {\n    const existingDedupeKey = record.json.dedupeKey || \"\";\n    const isExactMatch = existingDedupeKey === dedupeKey;\n    \n    if (!isExactMatch \u0026\u0026 existingDedupeKey) {\n      console.log(`  ⚠️ Filtered out non-matching record: \"${existingDedupeKey}\" (not equal to \"${dedupeKey}\")`);\n    }\n    \n    return isExactMatch;\n  });\n  \n  console.log(`✅ Exact dedupeKey matches after filtering: ${exactMatches.length}`);\n  \n  if (exactMatches.length \u003e 0) {\n    console.log(`  Exact matches found:`);\n    exactMatches.forEach((record, index) =\u003e {\n      const r = record.json;\n      console.log(`    ${index + 1}. DedupeKey: \"${r.dedupeKey}\" - ${r.companyName} - ${r.jobTitle} (${r.timeStamp || r.timestamp})`);\n    });\n  }\n  \n  // 4) Determine if this is a duplicate based on EXACT matches only\n  const isDuplicate = exactMatches.length \u003e 0;\n  \n  // 5) Calculate duplicate count\n  let duplicateCount;\n  if (isDuplicate) {\n    // Increment the EXISTING duplicateCount\n    const existingCount = exactMatches[0].json.duplicateCount || 1;\n    duplicateCount = existingCount + 1;\n    console.log(`🔢 Existing duplicateCount: ${existingCount} → New duplicateCount: ${duplicateCount}`);\n  } else {\n    // First application for this dedupeKey\n    duplicateCount = 1;\n  }\n  \n  // 6) Extract original application date from first exact match\n  let originalApplicationDate = \"\";\n  if (isDuplicate \u0026\u0026 exactMatches[0].json) {\n    originalApplicationDate = exactMatches[0].json.timeStamp ||\n                             exactMatches[0].json.timestamp ||\n                             \"\";\n  }\n  \n  // 7) Log duplicate analysis\n  if (isDuplicate) {\n    console.log(`🚨 DUPLICATE DETECTED!`);\n    console.log(`   DedupeKey: ${dedupeKey}`);\n    console.log(`   Duplicate Count: ${duplicateCount} (including this attempt)`);\n    console.log(`   Original Application: ${originalApplicationDate}`);\n    console.log(`   Exact Matching Records:`);\n    exactMatches.forEach((record, index) =\u003e {\n      const r = record.json;\n      console.log(`     ${index + 1}. ${r.companyName} - ${r.jobTitle} (${r.timeStamp || r.timestamp}) - Status: ${r.status} - Count: ${r.duplicateCount || 1}`);\n    });\n  } else {\n    console.log(`✅ NEW APPLICATION - No exact dedupeKey matches found`);\n    console.log(`   DedupeKey: ${dedupeKey}`);\n    console.log(`   This is the first application for this company/job combination`);\n    \n    if (existingRecords.length \u003e 0 \u0026\u0026 exactMatches.length === 0) {\n      console.log(`   ℹ️ Note: Rows lookup returned ${existingRecords.length} records, but NONE had exact dedupeKey match`);\n      console.log(`   This indicates the Rows lookup may be doing partial matching, but we correctly filtered them out`);\n    }\n  }\n  \n  // 8) Build output based on whether this is a duplicate or new record\n  let result;\n  \n  if (isDuplicate) {\n    // DUPLICATE: Use EXISTING record as base\n    const existingRecord = exactMatches[0].json;\n    \n    console.log(`  Using EXISTING record for update`);\n    console.log(`  Existing record timeStamp: ${existingRecord.timeStamp || existingRecord.timestamp}`);\n    console.log(`  Existing duplicateCount: ${existingRecord.duplicateCount || 1}`);\n    console.log(`  New duplicateCount will be: ${duplicateCount}`);\n    \n    result = {\n      ...existingRecord,\n      \n      // Update duplicate tracking fields\n      isDuplicate: true,\n      duplicateCount: duplicateCount,\n      duplicateDetectedAt: new Date().toISOString(),\n      originalApplicationDate: existingRecord.timeStamp || existingRecord.timestamp || \"\",\n      duplicateReason: \"EXACT_DEDUPEKEY_MATCH_VIA_ROWS_LOOKUP\",\n      routingDecision: \"UPDATE\",\n      \n      // Add metadata\n      duplicateCheckTimestamp: new Date().toISOString(),\n      duplicateCheckMethod: \"rows-lookup-exact-dedupekey-match-v3.6\",\n      lastDuplicateAttemptAt: new Date().toISOString(),\n      apiCallsAvoided: 1,\n      processingEfficiency: \"optimized\",\n      exactMatchesFound: exactMatches.length,\n      totalRecordsFromLookup: existingRecords.length,\n      \n      // Preserve the original timeStamp\n      timeStamp: existingRecord.timeStamp || existingRecord.timestamp || newRecord.timeStamp\n    };\n    \n    console.log(`  Result will preserve original timeStamp: ${result.timeStamp}`);\n    console.log(`  Result duplicateCount: ${result.duplicateCount}`);\n    console.log(`  Result isDuplicate: ${result.isDuplicate}`);\n    \n  } else {\n    // NEW RECORD: Use new record as base\n    console.log(`  Using NEW record for insert`);\n    \n    result = {\n      ...newRecord,\n      \n      // Initialize duplicate tracking fields\n      isDuplicate: false,\n      duplicateCount: 1,\n      duplicateDetectedAt: \"\",\n      originalApplicationDate: \"\",\n      duplicateReason: \"\",\n      routingDecision: \"INSERT\",\n      \n      // Add metadata\n      duplicateCheckTimestamp: new Date().toISOString(),\n      duplicateCheckMethod: \"rows-lookup-exact-dedupekey-match-v3.6\",\n      apiCallsAvoided: 1,\n      processingEfficiency: \"optimized\",\n      exactMatchesFound: 0,\n      totalRecordsFromLookup: existingRecords.length\n    };\n    \n    console.log(`  Result timeStamp: ${result.timeStamp}`);\n    console.log(`  Result duplicateCount: ${result.duplicateCount}`);\n  }\n  \n  // 9) Summary logging\n  console.log(\u0027=== DUPLICATE DETECTION RESULTS ===\u0027);\n  console.log(`DedupeKey: ${dedupeKey}`);\n  console.log(`Is Duplicate: ${isDuplicate}`);\n  console.log(`Duplicate Count: ${duplicateCount}`);\n  console.log(`Routing Decision: ${result.routingDecision}`);\n  console.log(`Method: Exact DedupeKey Match (v3.6.0)`);\n  console.log(`Exact Matches Found: ${exactMatches.length}`);\n  console.log(`Total Records from Lookup: ${existingRecords.length}`);\n  console.log(`API Calls Saved: 1 Google Sheets API call`);\n  \n  if (isDuplicate) {\n    console.log(`ACTION: Will UPDATE existing record in Google Sheets`);\n    console.log(`  Preserving original timeStamp: ${result.timeStamp}`);\n    console.log(`  Updating duplicateCount from ${exactMatches[0].json.duplicateCount || 1} to ${result.duplicateCount}`);\n  } else {\n    console.log(`ACTION: Will INSERT new record in Google Sheets`);\n    console.log(`  New record timeStamp: ${result.timeStamp}`);\n  }\n  \n  return { json: result };\n  \n} catch (error) {\n  console.error(\u0027❌ DUPLICATE DETECTION ERROR:\u0027, error.message);\n  console.error(\u0027Stack trace:\u0027, error.stack);\n  console.warn(\u0027🔄 FAIL-SAFE: Treating as new application to prevent data loss\u0027);\n  \n  // Fail-safe: If anything goes wrong, treat as new application\n  const fallbackData = $json || {};\n  \n  return {\n    json: {\n      ...fallbackData,\n      isDuplicate: false,\n      duplicateCount: 1,\n      duplicateDetectedAt: \"\",\n      originalApplicationDate: \"\",\n      duplicateReason: \"\",\n      routingDecision: \u0027INSERT\u0027,\n      duplicateCheckError: error.message,\n      duplicateCheckTimestamp: new Date().toISOString(),\n      duplicateCheckMethod: \"rows-lookup-exact-dedupekey-match-v3.6\",\n      failSafeMode: true,\n      errorDetails: {\n        message: error.message,\n        stack: error.stack,\n        timestamp: new Date().toISOString()\n      }\n    }\n  };\n}"
+                                     },
+                      "id":  "duplicate-detection-node",
+                      "name":  "Duplicate Detection \u0026 Logging",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -416,
+                                       -1136
+                                   ],
+                      "executeOnce":  true,
+                      "alwaysOutputData":  true
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "n8n-nodes-base.merge",
+                      "typeVersion":  3.2,
+                      "position":  [
+                                       -640,
+                                       -1136
+                                   ],
+                      "id":  "5e525854-eb03-41ad-86a5-a72eae661c21",
+                      "name":  "Merge"
+                  },
+                  {
+                      "parameters":  {
+                                         "amount":  3
+                                     },
+                      "type":  "n8n-nodes-base.wait",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -1104,
+                                       -960
+                                   ],
+                      "id":  "9bd9f987-a0ad-458b-9007-4a3ca7f5dd11",
+                      "name":  "Wait",
+                      "webhookId":  "e33a7b9e-2850-42ed-ae14-074fbc61f108"
+                  }
+              ],
+    "connections":  {
+                        "When Executed by Another Workflow":  {
+                                                                  "main":  [
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "Contact Data Merger \u0026 Processing",
+                                                                                       "type":  "main",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ]
+                                                                           ]
+                                                              },
+                        "Contact Data Merger \u0026 Processing":  {
+                                                                      "main":  [
+                                                                                   [
+                                                                                       {
+                                                                                           "node":  "AI Email Template Generator",
+                                                                                           "type":  "main",
+                                                                                           "index":  0
+                                                                                       }
+                                                                                   ]
+                                                                               ]
+                                                                  },
+                        "AI Email Template Generator":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Wait",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Data Flattener for Google Sheets":  {
+                                                                 "main":  [
+                                                                              [
+                                                                                  {
+                                                                                      "node":  "Rows lookup",
+                                                                                      "type":  "main",
+                                                                                      "index":  0
+                                                                                  },
+                                                                                  {
+                                                                                      "node":  "Merge",
+                                                                                      "type":  "main",
+                                                                                      "index":  0
+                                                                                  }
+                                                                              ]
+                                                                          ]
+                                                             },
+                        "Insert OR Update":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Google Sheets Tracking - Duplicate Update",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ],
+                                                              [
+                                                                  {
+                                                                      "node":  "Google Sheets Tracking - Insert",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Google Sheets Tracking - Insert":  {
+                                                                "main":  [
+                                                                             [
+                                                                                 {
+                                                                                     "node":  "Contact Tracking Output Formatting",
+                                                                                     "type":  "main",
+                                                                                     "index":  0
+                                                                                 }
+                                                                             ]
+                                                                         ]
+                                                            },
+                        "Google Sheets Tracking - Duplicate Update":  {
+                                                                          "main":  [
+                                                                                       [
+                                                                                           {
+                                                                                               "node":  "Contact Tracking Output Formatting",
+                                                                                               "type":  "main",
+                                                                                               "index":  0
+                                                                                           }
+                                                                                       ]
+                                                                                   ]
+                                                                      },
+                        "Rows lookup":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Merge",
+                                                                 "type":  "main",
+                                                                 "index":  1
+                                                             }
+                                                         ]
+                                                     ]
+                                        },
+                        "Duplicate Detection \u0026 Logging":  {
+                                                                   "main":  [
+                                                                                [
+                                                                                    {
+                                                                                        "node":  "Insert OR Update",
+                                                                                        "type":  "main",
+                                                                                        "index":  0
+                                                                                    }
+                                                                                ]
+                                                                            ]
+                                                               },
+                        "Merge":  {
+                                      "main":  [
+                                                   [
+                                                       {
+                                                           "node":  "Duplicate Detection \u0026 Logging",
+                                                           "type":  "main",
+                                                           "index":  0
+                                                       }
+                                                   ]
+                                               ]
+                                  },
+                        "Wait":  {
+                                     "main":  [
+                                                  [
+                                                      {
+                                                          "node":  "Data Flattener for Google Sheets",
+                                                          "type":  "main",
+                                                          "index":  0
+                                                      }
+                                                  ]
+                                              ]
+                                 }
+                    },
+    "settings":  {
+                     "saveExecutionProgress":  true,
+                     "saveManualExecutions":  true,
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "executionOrder":  "v1"
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "88fa4cbf-47d1-47ef-9064-353af5f64ffe",
+    "versionCounter":  4,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-09-18T15:55:14.365Z",
+                       "createdAt":  "2025-09-18T15:55:14.365Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "wZyxRjWShhnSFbSV",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-04T23:00:00.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-04",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-09-10T16:23:08.235Z",
+                     "createdAt":  "2025-09-10T16:23:08.235Z",
+                     "id":  "FrnybmIzoJd732QS",
+                     "name":  "Augment Code"
+                 },
+                 {
+                     "updatedAt":  "2025-09-13T21:08:18.122Z",
+                     "createdAt":  "2025-09-13T21:08:18.122Z",
+                     "id":  "H8bAHR6C77zCCEmw",
+                     "name":  "sub-flow"
+                 }
+             ]
+}

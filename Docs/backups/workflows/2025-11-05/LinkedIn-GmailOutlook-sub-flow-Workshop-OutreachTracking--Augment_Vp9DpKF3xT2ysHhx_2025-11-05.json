@@ -1,0 +1,1454 @@
+﻿{
+    "updatedAt":  "2025-11-05T03:00:25.000Z",
+    "createdAt":  "2025-09-15T20:36:28.733Z",
+    "id":  "Vp9DpKF3xT2ysHhx",
+    "name":  "LinkedIn-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "content":  ""
+                                     },
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "position":  [
+                                       -1728,
+                                       -928
+                                   ],
+                      "typeVersion":  1,
+                      "id":  "c107f489-87e7-48cd-8db0-0cb8d9bb615c",
+                      "name":  "Sticky Note"
+                  },
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -1984,
+                                       -560
+                                   ],
+                      "id":  "f662a488-a907-4e71-acde-95bed2697272",
+                      "name":  "Execute Workflow Trigger - From Orchestrator"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// OUTREACH TRACKING - INPUT PROCESSING (FIXED DATA STRUCTURE ACCESS)\n// Processes contact tracking data for outreach email creation\n// FIXED v2.0: Correctly accesses nested contactRecord structure from Contact Tracking Workshop output\n// Contact Tracking outputs: { contactRecord: {...}, outreachData: {...}, processingMetadata: {...} }\n\nconst inputData = $json;\nconsole.log(\u0027🔍 Outreach Input Debug:\u0027);\nconsole.log(\u0027   Input keys:\u0027, Object.keys(inputData));\nconsole.log(\u0027   ContactRecord keys:\u0027, inputData.contactRecord ? Object.keys(inputData.contactRecord) : \u0027No contactRecord\u0027);\nconsole.log(\u0027   OutreachData keys:\u0027, inputData.outreachData ? Object.keys(inputData.outreachData) : \u0027No outreachData\u0027);\n\n// ✅ FIXED v2.0: Extract data from Contact Tracking workflow output structure\n// Contact Tracking outputs a nested structure with contactRecord, outreachData, processingMetadata\nconst contactRecord = inputData.contactRecord || {};\nconst outreachData = inputData.outreachData || {};\nconst processingMetadata = inputData.processingMetadata || {};\n\nconsole.log(\u0027📋 Contact Record Structure:\u0027);\nconsole.log(\u0027   Has companyName:\u0027, !!contactRecord.companyName);\nconsole.log(\u0027   Has jobTitle:\u0027, !!contactRecord.jobTitle);\nconsole.log(\u0027   Has recepientEmail:\u0027, !!contactRecord.recepientEmail);\nconsole.log(\u0027   Has contactName:\u0027, !!contactRecord.contactName);\n\n// ✅ FIXED v2.0: Extract job information from contactRecord (not from inputData directly)\nconst jobTitle = contactRecord.jobTitle;\nconst companyName = contactRecord.companyName;\nconst jobLocation = contactRecord.jobLocation || \u0027Not specified\u0027;\nconst jobUrl = contactRecord.jobUrl || \u0027\u0027;\nconst jobDescription = contactRecord.jobDescription || \u0027\u0027;\n\n// Validate required inputs\nif (!jobTitle || !companyName) {\n  console.error(\u0027❌ Validation failed:\u0027);\n  console.error(\u0027   JobTitle:\u0027, jobTitle);\n  console.error(\u0027   CompanyName:\u0027, companyName);\n  console.error(\u0027   ContactRecord keys:\u0027, Object.keys(contactRecord));\n  console.error(\u0027   Full input structure:\u0027, JSON.stringify(inputData, null, 2).substring(0, 500));\n  throw new Error(\u0027Invalid job data: missing required fields (jobTitle: \u0027 + !!jobTitle + \u0027, companyName: \u0027 + !!companyName + \u0027)\u0027);\n}\n\n// ✅ FIXED v3.0: Extract contact information from contactRecord\nconst contactFirstName = contactRecord.contactFirstName || \u0027\u0027;\nconst contactLastName = contactRecord.contactLastName || \u0027\u0027;\nconst contactName = contactRecord.contactName || `${contactFirstName} ${contactLastName}`.trim() || \u0027Unknown Contact\u0027;\nconst recepientEmail = contactRecord.recepientEmail || contactRecord.recipientEmail || \u0027\u0027;\nconst contactTitle = contactRecord.contactJobTitle || contactRecord.contactTitle || \u0027\u0027;\n\n// ✅ FIXED v2.0: Extract email template information from outreachData\nconst emailSubject = outreachData.emailSubject || contactRecord.emailSubject || \u0027\u0027;\nconst emailBody = outreachData.emailBody || contactRecord.emailBody || \u0027\u0027;\n\n// ✅ FIXED v2.0: Extract duplicate detection fields from contactRecord\nconst isDuplicate = Boolean(contactRecord.isDuplicate || false);\nconst duplicateCount = contactRecord.duplicateCount || 0;\nconst duplicateReason = contactRecord.duplicateReason || \u0027\u0027;\nconst originalApplicationDate = contactRecord.originalApplicationDate || \u0027\u0027;\nconst duplicateDetectedAt = contactRecord.duplicateDetectedAt || \u0027\u0027;\n\n// Validate contact email\nif (!recepientEmail) {\n  throw new Error(\u0027Invalid contact data: missing recipient email\u0027);\n}\n\n// ✅ FIXED v2.0: Extract resume data (if available)\nconst resumeData = contactRecord.resume || {};\nconst resumeContentFinal = resumeData.customizedContent || contactRecord.content || \u0027\u0027;\nconst resumeMatchScoreFinal = resumeData.matchScore || contactRecord.resumeMatchScore || 0;\nconst qualificationScoreFinal = resumeData.qualificationScore || contactRecord.qualificationScore || 0;\n\n// ✅ FIXED v2.0: Create properly structured outreach data\nconst outreachComponents = {\n  job: {\n    title: jobTitle,\n    company: companyName,\n    location: jobLocation,\n    jobUrl: jobUrl,\n    description: jobDescription\n  },\n  contact: {\n    name: contactName,\n    firstName: contactFirstName,\n    lastName: contactLastName,\n    email: recepientEmail,\n    jobTitle: contactTitle,\n    company: companyName\n  },\n  resume: {\n    customizedContent: resumeContentFinal,\n    matchScore: resumeMatchScoreFinal,\n    qualificationScore: qualificationScoreFinal,\n    dataSource: resumeContentFinal ? \u0027CONTACT_RECORD\u0027 : \u0027NONE\u0027,\n    dataAvailable: !!resumeContentFinal\n  },\n  email: {\n    subject: emailSubject,\n    body: emailBody,\n    template: \u0027job-application-outreach\u0027,\n    estimatedResponseRate: outreachData.estimatedResponseRate || 0\n  },\n  tracking: {\n    dedupeKey: contactRecord.dedupeKey || \u0027\u0027,\n    trackingId: contactRecord.trackingId || \u0027\u0027,\n    status: contactRecord.status || \u0027PREPARED\u0027,\n    priorityLevel: contactRecord.priorityLevel || \u0027MEDIUM\u0027,\n    processedAt: contactRecord.processedAt || new Date().toISOString()\n  },\n  candidate: {\n    name: \"Ivo Dachev\",\n    firstName: \"Ivo\",\n    lastName: \"Dachev\",\n    email: \"dachevivo@gmail.com\",\n    phone: \"+1 (650)-222-7923\",\n    linkedin: \"https://www.linkedin.com/in/ivodachev/\"\n  },\n  isDuplicate: isDuplicate,\n  duplicateCount: duplicateCount,\n  duplicateReason: duplicateReason,\n  originalApplicationDate: originalApplicationDate,\n  duplicateDetectedAt: duplicateDetectedAt,\n  outreachType: \u0027job-application-email\u0027,\n  timestamp: new Date().toISOString(),\n  originalInput: inputData,\n  diagnostics: {\n    resumeDataAvailable: !!resumeContentFinal,\n    resumeDataSource: resumeContentFinal ? \u0027CONTACT_RECORD\u0027 : \u0027NONE\u0027,\n    resumeContentLength: resumeContentFinal.length,\n    inputDataKeys: Object.keys(inputData),\n    contactRecordKeys: Object.keys(contactRecord),\n    outreachDataKeys: Object.keys(outreachData),\n    fixVersion: \u0027v2.0-NESTED-STRUCTURE-FIX\u0027\n  }\n};\n\nconsole.log(\u0027✅ Outreach Input Processing Success (v2.0):\u0027);\nconsole.log(\u0027   Job: \u0027 + jobTitle + \u0027 at \u0027 + companyName);\nconsole.log(\u0027   Contact: \u0027 + contactName + \u0027 (\u0027 + recepientEmail + \u0027)\u0027);\nconsole.log(\u0027   Contact First Name: \u0027 + contactFirstName);\nconsole.log(\u0027   Candidate: \u0027 + outreachComponents.candidate.name);\nconsole.log(\u0027   Resume Data Source: \u0027 + outreachComponents.resume.dataSource);\nconsole.log(\u0027   Resume Content Length: \u0027 + resumeContentFinal.length + \u0027 characters\u0027);\nconsole.log(\u0027   Email Subject: \u0027 + emailSubject);\nconsole.log(\u0027   Tracking Status: \u0027 + contactRecord.status);\nconsole.log(\u0027   🔍 Duplicate Detection: isDuplicate=\u0027 + isDuplicate + \u0027, duplicateCount=\u0027 + duplicateCount);\nconsole.log(\u0027   📋 Processing Path: \u0027 + (isDuplicate ? \u0027DUPLICATE_DETECTED - Skip Email\u0027 : \u0027NEW_APPLICATION - Generate Email + Resume PDF\u0027));\nconsole.log(\u0027   ✅ Data Structure Fix Applied: v2.0\u0027);\n\nreturn [{ json: outreachComponents }];\n"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1728,
+                                       -560
+                                   ],
+                      "id":  "07d5b054-0fb8-4068-91e8-0384059fdf29",
+                      "name":  "Outreach Input Processing"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "models/gemini-2.5-flash",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "models/gemini-2.5-flash"
+                                                     },
+                                         "messages":  {
+                                                          "values":  [
+                                                                         {
+                                                                             "content":  "={{ `You are an expert Email Outreach AI that creates personalized job application emails.\n\n**CRITICAL INSTRUCTION - READ CAREFULLY:**\nYou MUST use the ACTUAL candidate information provided below. DO NOT generate placeholder names, example names, or fictional candidate data under ANY circumstances.\n\n**ACTUAL CANDIDATE INFORMATION (USE EXACTLY AS PROVIDED):**\n- Candidate Name: ${$json.candidate.name}\n- Candidate Email: ${$json.candidate.email}\n- Candidate Phone: ${$json.candidate.phone}\n\n**VERIFICATION REQUIREMENT:**\nBefore returning your response, verify that the email signature contains EXACTLY this name: \"${$json.candidate.name}\"\nIf you find yourself using names like \"Alice\", \"Bob\", \"Jane\", \"John\", \"Alex\", or any other name that is NOT \"${$json.candidate.name}\", you have made a critical error and must regenerate the email.\n\n**INPUT DATA:**\nJob Information: ${JSON.stringify($json.job)}\nContact Information: ${JSON.stringify($json.contact)}\nResume Data: ${JSON.stringify($json.resume)}\nCandidate Information: ${JSON.stringify($json.candidate)}\n\n**EMAIL REQUIREMENTS:**\n\n1. **Recipient Greeting**: \n   - MUST use the contact\u0027s first name from the input data\n   - Contact First Name: ${$json.contact.firstName}\n   - If first name is available, use: \"Hi ${$json.contact.firstName},\"\n   - If first name is empty, use: \"Hi there,\"\n   - DO NOT use \"Dear Hiring Manager,\" - this is too formal and impersonal\n   - DO NOT use generic placeholder names\n\n2. **Candidate Signature (MANDATORY FORMAT):**\n   - MUST use EXACTLY this format with NO substitutions:\n   \nSincerely,\n${$json.candidate.name}\n${$json.candidate.phone}\n${$json.candidate.email}\n\n   - The candidate\u0027s name is: ${$json.candidate.name}\n   - The candidate\u0027s phone is: ${$json.candidate.phone}\n   - The candidate\u0027s email is: ${$json.candidate.email}\n   - DO NOT change these values\n   - DO NOT use placeholder names like \"Alice Wonderland\", \"Jane Doe\", \"John Smith\", \"Alex Johnson\", etc.\n\n3. **Professional Tone**: Formal but engaging business communication\n4. **Value Proposition**: Clearly articulate candidate\u0027s value to the company\n5. **Specific Examples**: Include relevant achievements and skills from resume data\n6. **Call to Action**: Request for interview or further discussion\n\n**EMAIL STRUCTURE:**\n\n**Subject Line**: \n- Format: \"Application for [Job Title] - [Candidate Name]\"\n- Use actual job title: ${$json.job.title}\n- Use actual candidate name: ${$json.candidate.name}\n- Example: \"Application for ${$json.job.title} - ${$json.candidate.name}\"\n\n**Greeting**: \n- Use: \"Dear ${$json.contact.firstName},\" (if first name is available)\n- Fallback: \"Dear Hiring Manager,\" (if first name is empty)\n\n**Opening** (CRITICAL - READ CAREFULLY): \n- Use DIRECT, CONFIDENT, PROACTIVE language\n- NEVER use passive phrases like:\n  ❌ \"I am writing to express my interest...\"\n  ❌ \"I am writing to express my enthusiastic interest...\"\n  ❌ \"I am reaching out to apply for...\"\n  ❌ \"I would like to express my interest...\"\n  \n- ALWAYS use direct, engaging openings like:\n  ✅ \"I\u0027m excited to learn about the [Job Title] role at [Company].\"\n  ✅ \"I believe I\u0027m an excellent fit for the [Job Title] position.\"\n  ✅ \"I wanted to connect about the [Job Title] role - my [X years] of [skill] experience aligns perfectly with what you\u0027re building.\"\n  ✅ \"I\u0027m reaching out because [specific reason related to company/role].\"\n  \n- Reference the specific job title: ${$json.job.title}\n- Reference the company name: ${$json.job.company}\n- Sound like a confident professional, NOT a generic template\n- Be conversational but professional\n- Avoid sounding robotic or formulaic\n\n**Body**: \n- Qualifications and achievements from resume data\n- Value proposition specific to the role\n- 2-3 paragraphs maximum\n\n**Closing and Signature (CRITICAL - USE EXACT FORMAT)**: \nSincerely,\n${$json.candidate.name}\n${$json.candidate.phone}\n${$json.candidate.email}\n\n**OUTPUT FORMAT:**\nReturn a JSON array with ONE object containing:\n[\n  {\n    \"emailSubject\": \"Application for ${$json.job.title} - ${$json.candidate.name}\",\n    \"emailBody\": \"[Complete email body with greeting, body paragraphs, closing, and signature]\"\n  }\n]\n\n**FINAL VERIFICATION CHECKLIST:**\nBefore returning your response, verify:\n✓ The email signature contains the name: ${$json.candidate.name}\n✓ The email signature contains the phone: ${$json.candidate.phone}\n✓ The email signature contains the email: ${$json.candidate.email}\n✓ The subject line contains the name: ${$json.candidate.name}\n✓ You have NOT used any placeholder names like Alice, Bob, Jane, John, Alex, etc.\n\nIf ANY of these checks fail, regenerate the email with the correct information.` }}"
+                                                                         }
+                                                                     ]
+                                                      },
+                                         "jsonOutput":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.googleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -1104,
+                                       -544
+                                   ],
+                      "id":  "2474af28-806f-4168-9a25-20c2f6fed5a9",
+                      "name":  "AI Email Generation",
+                      "retryOnFail":  true,
+                      "credentials":  {
+                                          "googlePalmApi":  {
+                                                                "id":  "iSUthz6TcizkpxHs",
+                                                                "name":  "Google Gemini(PaLM) Api account 2"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "appendOrUpdate",
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "Tracking",
+                                                           "mode":  "name"
+                                                       },
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "status":  "={{ $if($(\u0027AI Email Generation\u0027).isExecuted, \u0027EMAIL_DRAFT_CREATED\u0027, \u0027DUPLICATE_SKIPPED\u0027) }}",
+                                                                       "dedupeKey":  "={{ $(\u0027Outreach Input Processing\u0027).item.json.tracking.dedupeKey }}",
+                                                                       "emailSubject":  "={{ $if($(\u0027AI Email Generation\u0027).isExecuted, JSON.parse($(\u0027AI Email Generation\u0027).item.json.content.parts[0].text)[0].emailSubject, \u0027\u0027) }}",
+                                                                       "emailBody":  "={{ $if($(\u0027AI Email Generation\u0027).isExecuted, JSON.parse($(\u0027AI Email Generation\u0027).item.json.content.parts[0].text)[0].emailBody, \u0027\u0027) }}",
+                                                                       "emailTemplate":  "={{ $if($(\u0027AI Email Generation\u0027).isExecuted, JSON.parse($(\u0027AI Email Generation\u0027).item.json.content.parts[0].text)[0].emailBody, \u0027\u0027) }}",
+                                                                       "estimatedResponseRate":  "={{ $(\u0027Outreach Input Processing\u0027).item.json.tracking.dedupeKey }}",
+                                                                       "draftStatus":  "={{ $if($(\u0027Draft Gmail\u0027).isExecuted, \u0027CREATED\u0027, \u0027SKIPPED\u0027) }}",
+                                                                       "draftCreatedTimestamp":  "={{ $if($(\u0027Draft Gmail\u0027).isExecuted, $now.toISO(), \u0027\u0027) }}"
+                                                                   },
+                                                         "matchingColumns":  [
+                                                                                 "dedupeKey"
+                                                                             ],
+                                                         "schema":  [
+                                                                        {
+                                                                            "id":  "timeStamp",
+                                                                            "displayName":  "timeStamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "companyName",
+                                                                            "displayName":  "companyName",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "jobTitle",
+                                                                            "displayName":  "jobTitle",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "jobUrl",
+                                                                            "displayName":  "jobUrl",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "recepientEmail",
+                                                                            "displayName":  "recepientEmail",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "status",
+                                                                            "displayName":  "status",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "dedupeKey",
+                                                                            "displayName":  "dedupeKey",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "content",
+                                                                            "displayName":  "content",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "finishReason",
+                                                                            "displayName":  "finishReason",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "avgLogprobs",
+                                                                            "displayName":  "avgLogprobs",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailSubject",
+                                                                            "displayName":  "emailSubject",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailBody",
+                                                                            "displayName":  "emailBody",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailTemplate",
+                                                                            "displayName":  "emailTemplate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "estimatedResponseRate",
+                                                                            "displayName":  "estimatedResponseRate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "isDuplicate",
+                                                                            "displayName":  "isDuplicate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateCount",
+                                                                            "displayName":  "duplicateCount",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateDetectedAt",
+                                                                            "displayName":  "duplicateDetectedAt",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "originalApplicationDate",
+                                                                            "displayName":  "originalApplicationDate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateReason",
+                                                                            "displayName":  "duplicateReason",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "recipientEmail",
+                                                                            "displayName":  "recipientEmail",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "dataFlattenerTimestamp",
+                                                                            "displayName":  "dataFlattenerTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "processingMode",
+                                                                            "displayName":  "processingMode",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "dataExtractionSource",
+                                                                            "displayName":  "dataExtractionSource",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "dataExtractionSuccess",
+                                                                            "displayName":  "dataExtractionSuccess",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateDetectionTimestamp",
+                                                                            "displayName":  "duplicateDetectionTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "routingDecision",
+                                                                            "displayName":  "routingDecision",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "emailBodyContent",
+                                                                            "displayName":  "emailBodyContent",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "draftCreatedTimestamp",
+                                                                            "displayName":  "draftCreatedTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "draftStatus",
+                                                                            "displayName":  "draftStatus",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateCheckTimestamp",
+                                                                            "displayName":  "duplicateCheckTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "duplicateCheckMethod",
+                                                                            "displayName":  "duplicateCheckMethod",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "apiCallsAvoided",
+                                                                            "displayName":  "apiCallsAvoided",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "processingEfficiency",
+                                                                            "displayName":  "processingEfficiency",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "lastDuplicateAttemptAt",
+                                                                            "displayName":  "lastDuplicateAttemptAt",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        }
+                                                                    ],
+                                                         "attemptToConvertTypes":  false,
+                                                         "convertFieldsToString":  false
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       -32,
+                                       0
+                                   ],
+                      "id":  "ab2bff18-f152-4160-ae3c-f5e2d546b94a",
+                      "name":  "Status Update",
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "HnVkHdxofZiUvnda",
+                                                                        "name":  "Google Sheets account"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "version":  2,
+                                                                            "leftValue":  "",
+                                                                            "caseSensitive":  true,
+                                                                            "typeValidation":  "strict"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "38159f4e-c431-4295-952d-ca66a5bb6dbb",
+                                                                                   "leftValue":  "={{ $json.isDuplicate }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -1408,
+                                       -560
+                                   ],
+                      "id":  "03417c6d-588d-4f0f-9288-98538174c26b",
+                      "name":  "If - Duplicate or not"
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "n8n-nodes-base.merge",
+                      "typeVersion":  3.2,
+                      "position":  [
+                                       -416,
+                                       0
+                                   ],
+                      "id":  "5e716476-be88-4e88-a2e2-cbfef11059ef",
+                      "name":  "Merge Duplicate and Email",
+                      "alwaysOutputData":  false,
+                      "executeOnce":  false,
+                      "retryOnFail":  false
+                  },
+                  {
+                      "parameters":  {
+                                         "folderId":  "=1JVopeMINzt3sZfZGs4HIDKzs5u_3gG_p",
+                                         "title":  "={{ \u0027TempResume_\u0027 + $(\u0027Outreach Input Processing\u0027).item.json.job.title.replace(/[^a-zA-Z0-9]/g, \u0027_\u0027) + \u0027_\u0027 + Date.now() }}"
+                                     },
+                      "type":  "n8n-nodes-base.googleDocs",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1984,
+                                       -272
+                                   ],
+                      "id":  "6a2210e8-2a86-4f2f-81ef-4bd1862f05f1",
+                      "name":  "Create Resume Document",
+                      "credentials":  {
+                                          "googleDocsOAuth2Api":  {
+                                                                      "id":  "nrRB0AHydhQRDsRy",
+                                                                      "name":  "Google Docs account"
+                                                                  }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "update",
+                                         "documentURL":  "={{ $json.id }}",
+                                         "actionsUi":  {
+                                                           "actionFields":  [
+                                                                                {
+                                                                                    "action":  "insert",
+                                                                                    "text":  "={{ $(\u0027Outreach Input Processing\u0027).item.json.resume.customizedContent }}"
+                                                                                }
+                                                                            ]
+                                                       }
+                                     },
+                      "type":  "n8n-nodes-base.googleDocs",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1744,
+                                       -272
+                                   ],
+                      "id":  "a8b6fee8-1ba2-41d5-bba0-8d23c8ed2d59",
+                      "name":  "Update a document",
+                      "credentials":  {
+                                          "googleDocsOAuth2Api":  {
+                                                                      "id":  "nrRB0AHydhQRDsRy",
+                                                                      "name":  "Google Docs account"
+                                                                  }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "download",
+                                         "fileId":  {
+                                                        "__rl":  true,
+                                                        "value":  "={{ $(\u0027Create Resume Document\u0027).item.json.id }}",
+                                                        "mode":  "id"
+                                                    },
+                                         "options":  {
+                                                         "googleFileConversion":  {
+                                                                                      "conversion":  {
+                                                                                                         "docsToFormat":  "application/pdf"
+                                                                                                     }
+                                                                                  }
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleDrive",
+                      "typeVersion":  3,
+                      "position":  [
+                                       -1472,
+                                       -272
+                                   ],
+                      "id":  "a7e2d192-4c28-4c73-99a1-1f04cf5e8d09",
+                      "name":  "Export Resume as PDF",
+                      "credentials":  {
+                                          "googleDriveOAuth2Api":  {
+                                                                       "id":  "LWh2S5mnOx3z4ThG",
+                                                                       "name":  "Google Drive account"
+                                                                   }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "// RESUME FILENAME CUSTOMIZER (ENHANCED WITH EMAIL DATA PARSING)\n// Renames binary data and parses AI Email data for Draft Gmail node\n// FIXED: Parses JSON from AI Email Generation and provides clean data structure\n\nconst jobTitle = $(\u0027Outreach Input Processing\u0027).item.json.job.title;\nconst companyName = $(\u0027Outreach Input Processing\u0027).item.json.job.company;\nconst candidateName = \"Ivo Dachev\";\n\n// Clean strings for filename\nconst cleanJobTitle = jobTitle.replace(/[^a-zA-Z0-9]/g, \u0027_\u0027);\nconst cleanCompanyName = companyName.replace(/[^a-zA-Z0-9]/g, \u0027_\u0027);\nconst cleanCandidateName = candidateName.replace(/[^a-zA-Z0-9]/g, \u0027_\u0027);\n\n// Generate dynamic filename\nconst filename = \u0027Resume_\u0027 + cleanCandidateName + \u0027_\u0027 + cleanJobTitle + \u0027_\u0027 + cleanCompanyName + \u0027.pdf\u0027;\n\nconsole.log(\u0027📄 Resume Filename:\u0027, filename);\n\n// Get binary data from Google Drive export\nconst binaryData = $input.item.binary.data;\n\nif (!binaryData) {\n  throw new Error(\u0027No binary data found from Google Drive export\u0027);\n}\n\n// ✅ FIXED: Parse AI Email data and extract email content\nconst aiEmailData = $(\u0027AI Email Generation\u0027).item.json;\n\nconsole.log(\u0027🔍 AI Email Data Structure:\u0027);\nconsole.log(\u0027   Has content:\u0027, !!aiEmailData.content);\nconsole.log(\u0027   Has parts:\u0027, !!(aiEmailData.content \u0026\u0026 aiEmailData.content.parts));\nconsole.log(\u0027   Parts length:\u0027, aiEmailData.content \u0026\u0026 aiEmailData.content.parts ? aiEmailData.content.parts.length : 0);\n\n// Parse the JSON string from Gemini response with error handling\nlet emailSubject = \u0027Application for \u0027 + jobTitle + \u0027 - \u0027 + candidateName;\nlet emailBody = \u0027Dear Hiring Manager,\\n\\nPlease see my attached resume for the \u0027 + jobTitle + \u0027 position at \u0027 + companyName + \u0027.\\n\\nSincerely,\\n\u0027 + candidateName;\n\ntry {\n  if (aiEmailData.content \u0026\u0026 aiEmailData.content.parts \u0026\u0026 aiEmailData.content.parts[0]) {\n    const textContent = aiEmailData.content.parts[0].text;\n    console.log(\u0027📄 Raw AI Response Text (first 200 chars):\u0027, textContent.substring(0, 200));\n    \n    const emailDataArray = JSON.parse(textContent);\n    console.log(\u0027✅ JSON Parse Success\u0027);\n    console.log(\u0027   Array length:\u0027, emailDataArray.length);\n    \n    if (emailDataArray \u0026\u0026 emailDataArray.length \u003e 0 \u0026\u0026 emailDataArray[0]) {\n      console.log(\u0027   Has emailSubject:\u0027, !!emailDataArray[0].emailSubject);\n      console.log(\u0027   Has emailBody:\u0027, !!emailDataArray[0].emailBody);\n      \n      emailSubject = emailDataArray[0].emailSubject || emailSubject;\n      emailBody = emailDataArray[0].emailBody || emailBody;\n      \n      console.log(\u0027✅ Email Data Extracted Successfully\u0027);\n    } else {\n      console.warn(\u0027⚠️ Parsed array is empty or missing element at index 0\u0027);\n    }\n  } else {\n    console.warn(\u0027⚠️ AI Email data structure is missing content.parts[0]\u0027);\n  }\n} catch (error) {\n  console.error(\u0027❌ Failed to parse AI Email data:\u0027, error.message);\n  console.error(\u0027   Using fallback email content\u0027);\n}\n\nconsole.log(\u0027📧 Final Email Subject:\u0027, emailSubject);\nconsole.log(\u0027📧 Final Email Body Length:\u0027, emailBody.length);\nconsole.log(\u0027📧 Email Body Preview (first 100 chars):\u0027, emailBody.substring(0, 100));\n\n// Validate that we have string values (not undefined)\nif (typeof emailSubject !== \u0027string\u0027 || emailSubject.length === 0) {\n  console.error(\u0027❌ emailSubject is not a valid string, using fallback\u0027);\n  emailSubject = \u0027Application for \u0027 + jobTitle + \u0027 - \u0027 + candidateName;\n}\n\nif (typeof emailBody !== \u0027string\u0027 || emailBody.length === 0) {\n  console.error(\u0027❌ emailBody is not a valid string, using fallback\u0027);\n  emailBody = \u0027Dear Hiring Manager,\\n\\nPlease see my attached resume for the \u0027 + jobTitle + \u0027 position at \u0027 + companyName + \u0027.\\n\\nSincerely,\\n\u0027 + candidateName;\n}\n\n// Return with renamed binary property and CLEAN email data\nreturn {\n  json: {\n    emailSubject: emailSubject,\n    emailBody: emailBody,\n    resumeFilename: filename,\n    resumeGenerated: true,\n    jobTitle: jobTitle,\n    companyName: companyName,\n    candidateName: candidateName,\n    originalAiResponse: aiEmailData  // Keep original for debugging\n  },\n  binary: {\n    resume: {\n      data: binaryData.data,\n      mimeType: \u0027application/pdf\u0027,\n      fileName: filename,\n      fileExtension: \u0027pdf\u0027\n    }\n  }\n};\n\n"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1248,
+                                       -272
+                                   ],
+                      "id":  "2470ef99-f83c-49e5-80f8-5f97c05f743f",
+                      "name":  "Resume Filename Customizer"
+                  },
+                  {
+                      "parameters":  {
+                                         "resource":  "draft",
+                                         "subject":  "={{ $json.emailSubject }}",
+                                         "bodyContent":  "={{ $json.emailBody }}",
+                                         "additionalFields":  {
+                                                                  "attachments":  {
+                                                                                      "attachments":  [
+                                                                                                          {
+                                                                                                              "binaryPropertyName":  "resume"
+                                                                                                          }
+                                                                                                      ]
+                                                                                  },
+                                                                  "toRecipients":  "dachevivo@outlook.com"
+                                                              }
+                                     },
+                      "type":  "n8n-nodes-base.microsoftOutlook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1440,
+                                       -48
+                                   ],
+                      "id":  "b8df9651-9d02-4373-8543-9c4717357406",
+                      "name":  "Draft Outlook",
+                      "webhookId":  "66960b90-36b7-44b2-81bc-074ba0d4a0ce",
+                      "credentials":  {
+                                          "microsoftOutlookOAuth2Api":  {
+                                                                            "id":  "nfaK9aEhGOnLLHC4",
+                                                                            "name":  "Microsoft Outlook account"
+                                                                        }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "resource":  "draft",
+                                         "subject":  "={{ $json.emailSubject }}",
+                                         "message":  "={{ $json.emailBody }}",
+                                         "options":  {
+                                                         "attachmentsUi":  {
+                                                                               "attachmentsBinary":  [
+                                                                                                         {
+                                                                                                             "property":  "resume"
+                                                                                                         }
+                                                                                                     ]
+                                                                           },
+                                                         "sendTo":  "={{ $(\u0027Outreach Input Processing\u0027).item.json.contact.email }}"
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.gmail",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       -1440,
+                                       160
+                                   ],
+                      "id":  "ce9f62db-a8f5-42ae-b169-27922f6b065c",
+                      "name":  "Draft Gmail",
+                      "webhookId":  "7a97ea05-8017-420d-b85c-fadc1dc6a8dc",
+                      "credentials":  {
+                                          "gmailOAuth2":  {
+                                                              "id":  "rEDqr1LkX2ZgxHLO",
+                                                              "name":  "Gmail account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// ============================================\n// WEIGHTED ROUND-ROBIN ACCOUNT SELECTOR (80/20)\n// ============================================\n// Purpose: Implements 80/20 Gmail/Outlook rotation with counter-based tracking\n// Input: Counter data from Google Sheets \"Read Counter\" node\n// Output: Selected email account + restored binary + restored email data\n// ============================================\n\nconst items = $input.all();\n\n// Read current counter from Google Sheets (with defensive type conversion)\nconst rawCounter = items[0].json.counter || 0;\nconst currentCounter = parseInt(rawCounter, 10) || 0;\nconst newCounter = (currentCounter + 1) % 5;\n\n// 80/20 allocation: Gmail gets 4 out of every 5 emails\nconst isGmailTurn = (newCounter % 5) !== 0; // Positions 1,2,3,4 = Gmail, Position 5 = Outlook\nconst selectedAccount = isGmailTurn ? \u0027gmail\u0027 : \u0027outlook\u0027;\n\n// Selection reason for audit trail\nconst selectionReason = isGmailTurn \n  ? \u0027GMAIL_80_PERCENT_ALLOCATION\u0027 \n  : \u0027OUTLOOK_20_PERCENT_ALLOCATION\u0027;\n\n// ============================================\n// CRITICAL FIX: Restore ALL required data from upstream nodes\n// ============================================\n// Google Sheets \"Read Counter\" node drops BOTH binary AND JSON data.\n// We must explicitly fetch:\n// 1. Binary data from \"Daily Email Volume Control\" (last node with resume PDF)\n// 2. Email data from \"Resume Filename Customizer\" (emailSubject, emailBody)\n// ============================================\n\nreturn items.map((item, index) =\u003e {\n  return {\n    json: {\n      // ✅ FIX: Restore email data from Resume Filename Customizer\n      emailSubject: $(\u0027Resume Filename Customizer\u0027).item.json.emailSubject,\n      emailBody: $(\u0027Resume Filename Customizer\u0027).item.json.emailBody,\n      \n      // Keep counter data from Read Counter\n      ...item.json,\n      \n      // Add account selection data\n      emailAccount: selectedAccount,\n      accountSelectionMetadata: {\n        itemIndex: index,\n        positionInCycle: newCounter % 5,\n        newCounter: newCounter,\n        lastCounter: currentCounter,\n        selectedAccount: selectedAccount,\n        selectionReason: selectionReason\n      }\n    },\n    // ✅ FIX: Restore binary from Daily Email Volume Control\n    binary: $(\u0027Daily Email Volume Control\u0027).item.binary,\n    pairedItem: {\n      item: index\n    }\n  };\n});"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -336,
+                                       -272
+                                   ],
+                      "id":  "4f3fb3ef-0343-41a4-b42e-27a93f3e260b",
+                      "name":  "Weighted Round-Robin Account Selector (80/20)"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// AGGREGATE EMAIL METRICS (FIXED - NEW ARCHITECTURE)\n// Receives input from Draft Gmail OR Draft Outlook (one at a time)\n// Calculates daily email statistics for dashboard logging\n// FIXED: Detects account using node execution status instead of emailAccount field\n// FIXED: Converts timestamps to Pacific Time (America/Los_Angeles)\n// FIXED v2: Includes counter value for Google Sheets tracking\n\nconst items = $input.all();\n\nconsole.log(\u0027📊 Aggregate Email Metrics (Fixed Version v2)\u0027);\nconsole.log(\u0027   Total items received:\u0027, items.length);\n\n// Initialize counters\nlet gmailCount = 0;\nlet outlookCount = 0;\nlet totalEmails = 0;\nlet emailAccount = \u0027unknown\u0027;\n\n// Get the first (and only) item from the draft node\nconst draftItem = items[0];\n\nif (!draftItem) {\n  throw new Error(\u0027No input received from draft node\u0027);\n}\n\n// ✅ FIX: Determine which account was used by checking which draft node executed\n// Use N8N\u0027s built-in isExecuted property to detect the source node\nconst draftGmailExecuted = $(\u0027Draft Gmail\u0027).isExecuted;\nconst draftOutlookExecuted = $(\u0027Draft Outlook\u0027).isExecuted;\n\nconsole.log(\u0027   Draft Gmail executed:\u0027, draftGmailExecuted);\nconsole.log(\u0027   Draft Outlook executed:\u0027, draftOutlookExecuted);\n\n// Count the email for the appropriate account\nif (draftGmailExecuted) {\n  gmailCount = 1;\n  outlookCount = 0;\n  emailAccount = \u0027gmail\u0027;\n  console.log(\u0027   ✅ Detected: Gmail draft created\u0027);\n} else if (draftOutlookExecuted) {\n  gmailCount = 0;\n  outlookCount = 1;\n  emailAccount = \u0027outlook\u0027;\n  console.log(\u0027   ✅ Detected: Outlook draft created\u0027);\n} else {\n  console.error(\u0027   ❌ ERROR: Neither Draft Gmail nor Draft Outlook executed!\u0027);\n  console.error(\u0027   This should never happen in the current architecture.\u0027);\n}\n\ntotalEmails = 1; // Always 1 email per execution in new architecture\n\n// Calculate percentages (will be 100% for whichever account was used)\nconst gmailPercentage = gmailCount \u003e 0 ? 100 : 0;\nconst outlookPercentage = outlookCount \u003e 0 ? 100 : 0;\n\n// ✅ FIX: Convert timestamps to Pacific Time (America/Los_Angeles)\nconst now = new Date();\n\n// Get Pacific Time string (automatically handles PST/PDT)\nconst pacificTimeString = now.toLocaleString(\u0027en-US\u0027, {\n  timeZone: \u0027America/Los_Angeles\u0027,\n  year: \u0027numeric\u0027,\n  month: \u00272-digit\u0027,\n  day: \u00272-digit\u0027,\n  hour: \u00272-digit\u0027,\n  minute: \u00272-digit\u0027,\n  second: \u00272-digit\u0027,\n  hour12: false\n});\n\n// Parse the Pacific Time string to get date and time components\nconst [datePart, timePart] = pacificTimeString.split(\u0027, \u0027);\nconst [month, day, year] = datePart.split(\u0027/\u0027);\nconst executionDate = `${year}-${month}-${day}`; // YYYY-MM-DD format\n\n// Create full timestamp in Pacific Time\nconst executionTime = `${year}-${month}-${day} ${timePart}`;\n\nconsole.log(\u0027   📅 Execution Date (Pacific):\u0027, executionDate);\nconsole.log(\u0027   🕐 Execution Time (Pacific):\u0027, executionTime);\nconsole.log(\u0027   🌐 Original UTC Time:\u0027, now.toISOString());\n\n// Get execution metadata\nconst workflowId = $workflow.id;\nconst executionId = $execution.id;\n\n// ✅ CRITICAL FIX v2: Get counter value from account selector node\nconst counterValue = $(\u0027Weighted Round-Robin Account Selector (80/20)\u0027).item.json.accountSelectionMetadata.newCounter;\nconsole.log(\u0027   🔢 Counter Value:\u0027, counterValue);\n\n// Calculate bounce rates (placeholder - will be updated with actual data later)\nconst gmailBounceRate = 0; // TODO: Integrate with actual bounce tracking\nconst outlookBounceRate = 0; // TODO: Integrate with actual bounce tracking\n\n// Determine account health status\nconst gmailHealth = gmailCount \u003e 0 ? \u0027HEALTHY\u0027 : \u0027INACTIVE\u0027;\nconst outlookHealth = outlookCount \u003e 0 ? \u0027HEALTHY\u0027 : \u0027INACTIVE\u0027;\n\n// Create aggregated metrics object\nconst aggregatedMetrics = {\n  // Date and execution info (Pacific Time)\n  executionDate: executionDate,\n  executionTime: executionTime,\n  workflowId: workflowId,\n  executionId: executionId,\n  \n  // ✅ CRITICAL FIX v2: Include counter for Google Sheets tracking\n  counter: counterValue,\n  \n  // Email counts\n  totalEmails: totalEmails,\n  gmailCount: gmailCount,\n  outlookCount: outlookCount,\n  \n  // Distribution percentages\n  gmailPercentage: gmailPercentage,\n  outlookPercentage: outlookPercentage,\n  \n  // Bounce rates\n  gmailBounceRate: gmailBounceRate,\n  outlookBounceRate: outlookBounceRate,\n  \n  // Account health\n  gmailHealth: gmailHealth,\n  outlookHealth: outlookHealth,\n  \n  // Metadata\n  aggregationTimestamp: executionTime,\n  dataSource: \u0027OUTREACH_TRACKING_WORKFLOW\u0027,\n  metricsVersion: \u0027v2.2-FIXED-ACCOUNT-DETECTION-TIMEZONE-AND-COUNTER\u0027,\n  \n  // Draft creation info\n  draftCreatedBy: emailAccount,\n  draftCreatedAt: executionTime,\n  \n  // Timezone info\n  timezone: \u0027America/Los_Angeles (Pacific Time)\u0027,\n  timezoneOffset: \u0027UTC-8 (PST) or UTC-7 (PDT)\u0027,\n  \n  // Debug info\n  debugInfo: {\n    draftGmailExecuted: draftGmailExecuted,\n    draftOutlookExecuted: draftOutlookExecuted,\n    detectedAccount: emailAccount,\n    utcTimestamp: now.toISOString(),\n    counterValue: counterValue\n  }\n};\n\nconsole.log(\u0027📊 Aggregated Metrics (Fixed Version v2):\u0027);\nconsole.log(\u0027   Total Emails:\u0027, totalEmails);\nconsole.log(\u0027   Gmail:\u0027, gmailCount, `(${gmailPercentage}%)`, `[${gmailHealth}]`);\nconsole.log(\u0027   Outlook:\u0027, outlookCount, `(${outlookPercentage}%)`, `[${outlookHealth}]`);\nconsole.log(\u0027   Draft created by:\u0027, emailAccount);\nconsole.log(\u0027   Counter:\u0027, counterValue);\nconsole.log(\u0027   Timezone:\u0027, \u0027Pacific Time (America/Los_Angeles)\u0027);\nconsole.log(\u0027✅ Metrics aggregation complete (v2.2-FIXED)\u0027);\n\n// Return single item with aggregated metrics\nreturn [{\n  json: aggregatedMetrics\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1136,
+                                       16
+                                   ],
+                      "id":  "62d4f380-397b-4c33-9adb-7b6c2805b44f",
+                      "name":  "Aggregate Email Metrics"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "version":  2,
+                                                                            "leftValue":  "",
+                                                                            "caseSensitive":  true,
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "be959eb9-fdb2-4279-a7c9-47d52570ab5b",
+                                                                                   "leftValue":  "={{ $json.emailAccount }}",
+                                                                                   "rightValue":  "outlook",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -1760,
+                                       48
+                                   ],
+                      "id":  "bc9aaca7-7834-492c-9e69-d6a51230fac2",
+                      "name":  "If"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "appendOrUpdate",
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1NgFM2ujALlcApbyAuYNWJ5Hyf0UkO0efQlGAzoifC8c",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "Email Daily Tracking",
+                                                           "mode":  "name"
+                                                       },
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "executionDate":  "={{ $json.executionDate }}",
+                                                                       "executionTime":  "={{ $json.executionTime }}",
+                                                                       "totalEmails":  "={{ $json.totalEmails }}",
+                                                                       "gmailCount":  "={{ $json.gmailCount }}",
+                                                                       "outlookCount":  "={{ $json.outlookCount }}",
+                                                                       "gmailPercentage":  "={{ $json.gmailPercentage }}",
+                                                                       "outlookPercentage":  "={{ $json.outlookPercentage }}",
+                                                                       "gmailBounceRate":  "={{ $json.gmailBounceRate }}",
+                                                                       "outlookBounceRate":  "={{ $json.outlookBounceRate }}",
+                                                                       "gmailHealth":  "={{ $json.gmailHealth }}",
+                                                                       "outlookHealth":  "={{ $json.outlookHealth }}",
+                                                                       "workflowId":  "={{ $json.workflowId }}",
+                                                                       "executionId":  "={{ $json.executionId }}",
+                                                                       "counter":  "={{ $json.counter }}",
+                                                                       "aggregationTimestamp":  "={{ $json.aggregationTimestamp }}",
+                                                                       "dataSource":  "={{ $json.dataSource }}",
+                                                                       "metricsVersion":  "={{ $json.metricsVersion }}",
+                                                                       "draftCreatedAt":  "={{ $json.draftCreatedAt }}",
+                                                                       "timezone":  "={{ $json.timezone }}",
+                                                                       "timezoneOffset":  "={{ $json.timezoneOffset }}",
+                                                                       "debugInfo":  "={{ $json.debugInfo }}"
+                                                                   },
+                                                         "matchingColumns":  [
+                                                                                 "executionId"
+                                                                             ],
+                                                         "schema":  [
+                                                                        {
+                                                                            "id":  "id",
+                                                                            "displayName":  "id",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  true,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "counter",
+                                                                            "displayName":  "counter",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "executionDate",
+                                                                            "displayName":  "executionDate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "executionTime",
+                                                                            "displayName":  "executionTime",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "totalEmails",
+                                                                            "displayName":  "totalEmails",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "gmailCount",
+                                                                            "displayName":  "gmailCount",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "outlookCount",
+                                                                            "displayName":  "outlookCount",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "gmailPercentage",
+                                                                            "displayName":  "gmailPercentage",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "outlookPercentage",
+                                                                            "displayName":  "outlookPercentage",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "gmailBounceRate",
+                                                                            "displayName":  "gmailBounceRate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "outlookBounceRate",
+                                                                            "displayName":  "outlookBounceRate",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "gmailHealth",
+                                                                            "displayName":  "gmailHealth",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "outlookHealth",
+                                                                            "displayName":  "outlookHealth",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "workflowId",
+                                                                            "displayName":  "workflowId",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "executionId",
+                                                                            "displayName":  "executionId",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "aggregationTimestamp",
+                                                                            "displayName":  "aggregationTimestamp",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "dataSource",
+                                                                            "displayName":  "dataSource",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "metricsVersion",
+                                                                            "displayName":  "metricsVersion",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "draftCreatedBy",
+                                                                            "displayName":  "draftCreatedBy",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  true
+                                                                        },
+                                                                        {
+                                                                            "id":  "draftCreatedAt",
+                                                                            "displayName":  "draftCreatedAt",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "timezone",
+                                                                            "displayName":  "timezone",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "timezoneOffset",
+                                                                            "displayName":  "timezoneOffset",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "debugInfo",
+                                                                            "displayName":  "debugInfo",
+                                                                            "required":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "display":  true,
+                                                                            "type":  "string",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "removed":  false
+                                                                        }
+                                                                    ]
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       -864,
+                                       16
+                                   ],
+                      "id":  "2e816740-f2a4-4da7-8100-22389ae455fb",
+                      "name":  "Email Tracking Dashboard",
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "HnVkHdxofZiUvnda",
+                                                                        "name":  "Google Sheets account"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "maxItems":  10
+                                     },
+                      "type":  "n8n-nodes-base.limit",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -992,
+                                       -272
+                                   ],
+                      "id":  "2ad15cbd-d581-49d5-b9c6-037582b0a1d2",
+                      "name":  "Daily Email Volume Control"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "appendOrUpdate",
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "1NgFM2ujALlcApbyAuYNWJ5Hyf0UkO0efQlGAzoifC8c",
+                                                            "mode":  "id"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "Email Daily Tracking",
+                                                           "mode":  "name"
+                                                       },
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "id":  1,
+                                                                       "counter":  "={{ $json.accountSelectionMetadata.newCounter }}"
+                                                                   },
+                                                         "matchingColumns":  [
+                                                                                 "id"
+                                                                             ],
+                                                         "schema":  [
+                                                                        {
+                                                                            "id":  "id",
+                                                                            "displayName":  "id",
+                                                                            "type":  "number",
+                                                                            "canBeUsedToMatch":  true,
+                                                                            "defaultMatch":  false,
+                                                                            "removed":  false
+                                                                        },
+                                                                        {
+                                                                            "id":  "counter",
+                                                                            "displayName":  "counter",
+                                                                            "type":  "number",
+                                                                            "canBeUsedToMatch":  false,
+                                                                            "defaultMatch":  false,
+                                                                            "removed":  false
+                                                                        }
+                                                                    ]
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.5,
+                      "position":  [
+                                       -64,
+                                       -272
+                                   ],
+                      "id":  "695391a4-5f2a-4939-8ce0-f0c40ee7002a",
+                      "name":  "Update Counter",
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "HnVkHdxofZiUvnda",
+                                                                        "name":  "Google Sheets account"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "mode":  "list",
+                                                            "value":  "1NgFM2ujALlcApbyAuYNWJ5Hyf0UkO0efQlGAzoifC8c"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "mode":  "list",
+                                                           "value":  "gid=0",
+                                                           "cachedResultName":  "Email Daily Tracking"
+                                                       },
+                                         "filtersUI":  {
+                                                           "values":  [
+                                                                          {
+                                                                              "lookupColumn":  "id",
+                                                                              "lookupValue":  "1"
+                                                                          }
+                                                                      ]
+                                                       },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.5,
+                      "position":  [
+                                       -640,
+                                       -272
+                                   ],
+                      "id":  "db0b2df3-5e43-46aa-aae1-16c7b4954b64",
+                      "name":  "Read Counter",
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "HnVkHdxofZiUvnda",
+                                                                        "name":  "Google Sheets account"
+                                                                    }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow Trigger - From Orchestrator":  {
+                                                                             "main":  [
+                                                                                          [
+                                                                                              {
+                                                                                                  "node":  "Outreach Input Processing",
+                                                                                                  "type":  "main",
+                                                                                                  "index":  0
+                                                                                              }
+                                                                                          ]
+                                                                                      ]
+                                                                         },
+                        "Outreach Input Processing":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "If - Duplicate or not",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "AI Email Generation":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Create Resume Document",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "If - Duplicate or not":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Merge Duplicate and Email",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ],
+                                                                   [
+                                                                       {
+                                                                           "node":  "AI Email Generation",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Merge Duplicate and Email":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Status Update",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Create Resume Document":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Update a document",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Update a document":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Export Resume as PDF",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Export Resume as PDF":  {
+                                                     "main":  [
+                                                                  [
+                                                                      {
+                                                                          "node":  "Resume Filename Customizer",
+                                                                          "type":  "main",
+                                                                          "index":  0
+                                                                      }
+                                                                  ]
+                                                              ]
+                                                 },
+                        "Resume Filename Customizer":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Daily Email Volume Control",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Draft Outlook":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "Aggregate Email Metrics",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Draft Gmail":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Aggregate Email Metrics",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ]
+                                                     ]
+                                        },
+                        "Weighted Round-Robin Account Selector (80/20)":  {
+                                                                              "main":  [
+                                                                                           [
+                                                                                               {
+                                                                                                   "node":  "If",
+                                                                                                   "type":  "main",
+                                                                                                   "index":  0
+                                                                                               },
+                                                                                               {
+                                                                                                   "node":  "Update Counter",
+                                                                                                   "type":  "main",
+                                                                                                   "index":  0
+                                                                                               }
+                                                                                           ]
+                                                                                       ]
+                                                                          },
+                        "Aggregate Email Metrics":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Email Tracking Dashboard",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "If":  {
+                                   "main":  [
+                                                [
+                                                    {
+                                                        "node":  "Draft Outlook",
+                                                        "type":  "main",
+                                                        "index":  0
+                                                    }
+                                                ],
+                                                [
+                                                    {
+                                                        "node":  "Draft Gmail",
+                                                        "type":  "main",
+                                                        "index":  0
+                                                    }
+                                                ]
+                                            ]
+                               },
+                        "Email Tracking Dashboard":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Merge Duplicate and Email",
+                                                                              "type":  "main",
+                                                                              "index":  1
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Daily Email Volume Control":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Read Counter",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Read Counter":  {
+                                             "main":  [
+                                                          [
+                                                              {
+                                                                  "node":  "Weighted Round-Robin Account Selector (80/20)",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ]
+                                                      ]
+                                         }
+                    },
+    "settings":  {
+
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "e7c78e93-1337-41c4-92ba-89a41cbe7a68",
+    "versionCounter":  38,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-09-15T20:36:28.738Z",
+                       "createdAt":  "2025-09-15T20:36:28.738Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "Vp9DpKF3xT2ysHhx",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-04T23:00:00.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-04",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-09-10T16:23:08.235Z",
+                     "createdAt":  "2025-09-10T16:23:08.235Z",
+                     "id":  "FrnybmIzoJd732QS",
+                     "name":  "Augment Code"
+                 },
+                 {
+                     "updatedAt":  "2025-09-13T21:08:18.122Z",
+                     "createdAt":  "2025-09-13T21:08:18.122Z",
+                     "id":  "H8bAHR6C77zCCEmw",
+                     "name":  "sub-flow"
+                 }
+             ]
+}

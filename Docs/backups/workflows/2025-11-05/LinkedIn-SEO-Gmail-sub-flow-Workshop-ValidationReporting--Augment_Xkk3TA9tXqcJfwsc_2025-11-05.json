@@ -1,0 +1,278 @@
+﻿{
+    "updatedAt":  "2025-09-16T15:56:07.000Z",
+    "createdAt":  "2025-09-15T20:37:12.480Z",
+    "id":  "Xkk3TA9tXqcJfwsc",
+    "name":  "LinkedIn-SEO-Gmail-sub-flow-Workshop-ValidationReporting--Augment",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "content":  ""
+                                     },
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "position":  [
+                                       -592,
+                                       -448
+                                   ],
+                      "typeVersion":  1,
+                      "id":  "35d32e0c-68ea-468d-9007-fd004dd579ae",
+                      "name":  "Sticky Note"
+                  },
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -976,
+                                       -112
+                                   ],
+                      "id":  "6fea5abb-93a9-4274-9023-512e15b35a54",
+                      "name":  "Execute Workflow Trigger - From Orchestrator"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// VALIDATION REPORTING - INPUT PROCESSING\n// Processes complete automation pipeline results for validation and reporting\n\nconst inputData = $json;\nconst jobData = inputData.jobData || {};\nconst jobMatching = inputData.jobMatching || {};\nconst resumeGeneration = inputData.resumeGeneration || {};\nconst contactEnrichment = inputData.contactEnrichment || {};\nconst outreachTracking = inputData.outreachTracking || {};\n\n// Validate pipeline completeness\nconst validationChecks = {\n  jobDataValid: !!(jobData.title \u0026\u0026 jobData.companyName),\n  jobMatchingValid: !!(jobMatching.compatibilityScore \u0026\u0026 jobMatching.recommendation),\n  resumeGenerationValid: !!(resumeGeneration.customizedResume \u0026\u0026 resumeGeneration.atsScore),\n  contactEnrichmentValid: !!(contactEnrichment.primaryContact \u0026\u0026 contactEnrichment.primaryContact.email),\n  outreachTrackingValid: !!(outreachTracking.emailSent \u0026\u0026 outreachTracking.emailId)\n};\n\n// Calculate overall pipeline success rate\nconst totalChecks = Object.keys(validationChecks).length;\nconst passedChecks = Object.values(validationChecks).filter(check =\u003e check).length;\nconst successRate = Math.round((passedChecks / totalChecks) * 100);\n\n// Prepare validation data\nconst validationData = {\n  pipelineResults: {\n    jobData,\n    jobMatching,\n    resumeGeneration,\n    contactEnrichment,\n    outreachTracking\n  },\n  validationChecks,\n  metrics: {\n    successRate,\n    totalChecks,\n    passedChecks,\n    failedChecks: totalChecks - passedChecks\n  },\n  validationType: \u0027complete-pipeline-validation\u0027,\n  timestamp: new Date().toISOString()\n};\n\nconsole.log(`Validation Reporting: ${jobData.title} at ${jobData.companyName}`);\nconsole.log(`Pipeline Success Rate: ${successRate}% (${passedChecks}/${totalChecks} checks passed)`);\n\nreturn [{ json: validationData }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -784,
+                                       -112
+                                   ],
+                      "id":  "ee6dda5d-6cd0-40b4-99ad-0d7a8d2406b5",
+                      "name":  "Validation Input Processing"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "models/gemini-2.0-flash",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "models/gemini-2.0-flash"
+                                                     },
+                                         "messages":  {
+                                                          "values":  [
+                                                                         {
+                                                                             "content":  "=You are an expert Validation Reporting AI that analyzes LinkedIn automation pipeline results. Your task is to create comprehensive validation reports with quality assessments and recommendations.\n\n**INPUT DATA:**\nPipeline Results: {{ $json.pipelineResults }}\nValidation Checks: {{ $json.validationChecks }}\nMetrics: {{ $json.metrics }}\n\n**VALIDATION REQUIREMENTS:**\n\n1. **Quality Assessment**: Evaluate each pipeline component\u0027s performance\n2. **Success Metrics**: Calculate success rates and identify bottlenecks\n3. **Error Analysis**: Identify failures and their root causes\n4. **Performance Benchmarks**: Compare against expected standards\n5. **Improvement Recommendations**: Suggest optimizations and fixes\n6. **Compliance Check**: Ensure all components meet quality standards\n\n**VALIDATION CRITERIA:**\n- **Job Matching**: Compatibility score ≥70%, valid recommendation\n- **Resume Generation**: ATS score ≥80%, customization quality\n- **Contact Enrichment**: Valid email, verification status\n- **Outreach Tracking**: Email sent successfully, tracking active\n- **Overall Pipeline**: End-to-end completion without critical failures\n\n**OUTPUT FORMAT (JSON):**\n```json\n{\n  \"validationSummary\": {\n    \"overallStatus\": \"PASS|FAIL|WARNING\",\n    \"successRate\": 85,\n    \"qualityScore\": 88,\n    \"pipelineHealth\": \"HEALTHY|DEGRADED|CRITICAL\"\n  },\n  \"componentAnalysis\": {\n    \"jobMatching\": {\n      \"status\": \"PASS\",\n      \"score\": 85,\n      \"issues\": [],\n      \"recommendations\": []\n    },\n    \"resumeGeneration\": {\n      \"status\": \"PASS\",\n      \"score\": 90,\n      \"issues\": [],\n      \"recommendations\": []\n    }\n  },\n  \"performanceMetrics\": {\n    \"processingTime\": \"2.5 minutes\",\n    \"apiCallsUsed\": 15,\n    \"creditsConsumed\": 8\n  },\n  \"recommendations\": [\n    \"Improve job matching threshold\",\n    \"Optimize resume customization\"\n  ],\n  \"nextActions\": [\n    \"Monitor email response rate\",\n    \"Schedule follow-up in 7 days\"\n  ]\n}\n```\n\nProvide comprehensive validation analysis with actionable insights for pipeline optimization."
+                                                                         }
+                                                                     ]
+                                                      },
+                                         "jsonOutput":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.googleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -576,
+                                       -112
+                                   ],
+                      "id":  "30705b9f-e4eb-4bc6-8a65-59b076005e45",
+                      "name":  "AI Validation Analysis",
+                      "retryOnFail":  true,
+                      "credentials":  {
+                                          "googlePalmApi":  {
+                                                                "id":  "J1a6B3PrYjoBMN32",
+                                                                "name":  "Google Gemini(PaLM) Api account"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "validation-success-filter",
+                                                                                   "leftValue":  "={{ $json.content.parts[0].text.validationSummary.successRate }}",
+                                                                                   "rightValue":  70,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gte",
+                                                                                                    "name":  "filter.operator.gte"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.filter",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -256,
+                                       -112
+                                   ],
+                      "id":  "26fe3e2f-7908-4a48-bd5d-75b8fe684b50",
+                      "name":  "Validation Success Filter (≥70%)"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// VALIDATION REPORTING - OUTPUT FORMATTING\n// Formats validation results and generates comprehensive reports\n\nconst validationResults = $json.content.parts[0].text;\nconst originalValidationData = $(\u0027Validation Input Processing\u0027).item.json;\n\n// Parse AI validation analysis results\nlet analysisData;\ntry {\n  analysisData = typeof validationResults === \u0027string\u0027 ? JSON.parse(validationResults) : validationResults;\n} catch (error) {\n  console.error(\u0027Failed to parse AI validation results:\u0027, error);\n  analysisData = {\n    validationSummary: {\n      overallStatus: \u0027ERROR\u0027,\n      successRate: 0,\n      qualityScore: 0,\n      pipelineHealth: \u0027CRITICAL\u0027\n    },\n    componentAnalysis: {},\n    recommendations: [\u0027Fix validation analysis parsing error\u0027]\n  };\n}\n\n// Generate comprehensive validation report\nconst validationReport = {\n  reportId: `validation-${Date.now()}`,\n  generatedAt: new Date().toISOString(),\n  jobReference: {\n    title: originalValidationData.pipelineResults.jobData.title,\n    company: originalValidationData.pipelineResults.jobData.companyName,\n    jobUrl: originalValidationData.pipelineResults.jobData.jobUrl\n  },\n  validationSummary: analysisData.validationSummary || {},\n  componentAnalysis: analysisData.componentAnalysis || {},\n  performanceMetrics: analysisData.performanceMetrics || {},\n  qualityAssessment: {\n    pipelineCompleteness: originalValidationData.metrics.successRate,\n    componentHealth: analysisData.validationSummary?.pipelineHealth || \u0027UNKNOWN\u0027,\n    overallQuality: analysisData.validationSummary?.qualityScore || 0,\n    criticalIssues: (analysisData.componentAnalysis \u0026\u0026 Object.values(analysisData.componentAnalysis).filter(comp =\u003e comp.status === \u0027FAIL\u0027).length) || 0\n  },\n  recommendations: analysisData.recommendations || [],\n  nextActions: analysisData.nextActions || []\n};\n\n// Format final output for orchestrator\nconst finalOutput = {\n  jobData: originalValidationData.pipelineResults.jobData,\n  validationReporting: validationReport,\n  processingMetadata: {\n    workflowId: \"validation-reporting-augment\",\n    workflowName: \"LinkedIn-SEO-Gmail-sub-flow-Workshop-ValidationReporting--Augment\",\n    processedAt: new Date().toISOString(),\n    status: \"validation_reporting_complete\",\n    version: \"1.0.0\",\n    executionId: $executionId,\n    validationType: \"complete-pipeline-validation\"\n  }\n};\n\nconsole.log(`Validation Reporting completed: ${validationReport.validationSummary.overallStatus}`);\nconsole.log(`Success Rate: ${validationReport.qualityAssessment.pipelineCompleteness}%`);\nconsole.log(`Quality Score: ${validationReport.qualityAssessment.overallQuality}%`);\nconsole.log(`Critical Issues: ${validationReport.qualityAssessment.criticalIssues}`);\n\nreturn [{ json: finalOutput }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -32,
+                                       -112
+                                   ],
+                      "id":  "9a379dc7-6bb4-47f2-9f96-595c0a1eb85b",
+                      "name":  "Validation Reporting Output Formatting"
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow Trigger - From Orchestrator":  {
+                                                                             "main":  [
+                                                                                          [
+                                                                                              {
+                                                                                                  "node":  "Validation Input Processing",
+                                                                                                  "type":  "main",
+                                                                                                  "index":  0
+                                                                                              }
+                                                                                          ]
+                                                                                      ]
+                                                                         },
+                        "Validation Input Processing":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "AI Validation Analysis",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "AI Validation Analysis":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Validation Success Filter (≥70%)",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Validation Success Filter (≥70%)":  {
+                                                                 "main":  [
+                                                                              [
+                                                                                  {
+                                                                                      "node":  "Validation Reporting Output Formatting",
+                                                                                      "type":  "main",
+                                                                                      "index":  0
+                                                                                  }
+                                                                              ]
+                                                                          ]
+                                                             }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "saveManualExecutions":  true,
+                     "saveExecutionProgress":  true
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "c94c796a-e703-4223-a0d5-118049dee758",
+    "versionCounter":  1,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-09-15T20:37:12.485Z",
+                       "createdAt":  "2025-09-15T20:37:12.485Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "Xkk3TA9tXqcJfwsc",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-04T23:00:00.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-04",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-09-10T16:23:08.235Z",
+                     "createdAt":  "2025-09-10T16:23:08.235Z",
+                     "id":  "FrnybmIzoJd732QS",
+                     "name":  "Augment Code"
+                 },
+                 {
+                     "updatedAt":  "2025-09-13T21:08:18.122Z",
+                     "createdAt":  "2025-09-13T21:08:18.122Z",
+                     "id":  "H8bAHR6C77zCCEmw",
+                     "name":  "sub-flow"
+                 }
+             ]
+}

@@ -1,0 +1,338 @@
+﻿{
+    "updatedAt":  "2025-10-29T16:04:11.000Z",
+    "createdAt":  "2025-09-15T20:34:12.024Z",
+    "id":  "bpfuL3HjZuD27Ca3",
+    "name":  "LinkedIn-GmailOutlook-sub-flow-Workshop-JobMatchingScoring--Augment",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -656,
+                                       -160
+                                   ],
+                      "id":  "8abae2f4-a59f-4ac3-ba79-382cb0f12343",
+                      "name":  "Execute Workflow Trigger - From Orchestrator"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "models/gemini-2.0-flash",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "models/gemini-2.0-flash"
+                                                     },
+                                         "messages":  {
+                                                          "values":  [
+                                                                         {
+                                                                             "content":  "=You are a job posting quality validator. Your task is to assess if this job posting is legitimate and contains sufficient information for application processing.\n\nJOB POSTING:\nTitle: {{ $json.title ? $json.title : \u0027Not specified\u0027 }}\nCompany: {{ $json.companyName ? $json.companyName : \u0027Not specified\u0027 }}\nLocation: {{ $json.location ? $json.location : \u0027Not specified\u0027 }}\nDescription: {{ $json.descriptionText ? $json.descriptionText : \u0027Not specified\u0027 }}\n\nVALIDATION CRITERIA:\n1. Is this a legitimate job posting (not spam, not a scam, not completely irrelevant)?\n2. Does the job description contain BASIC information about the role (even if brief)?\n3. Is the job title clear and professional?\n4. Is the company information present?\n\nQUALITY SCORE GUIDELINES:\n- 90-100: Excellent posting with comprehensive, detailed information\n- 70-89: Good posting with solid information about the role\n- 50-69: Acceptable - has basic job information (title, company, brief description of duties or requirements)\n- 30-49: Minimal information but appears legitimate (not spam)\n- 0-29: Spam, scam, completely empty, or no useful information\n\nIMPORTANT SCORING RULES:\n- If the job has a clear title, company name, and ANY description of responsibilities OR requirements (even just 2-3 sentences), score it 50 or higher\n- A brief description is SUFFICIENT - the job does NOT need paragraphs of text to be considered \"good quality\"\n- Only score below 50 if the posting is obvious spam, a scam, or has NO description at all\n- Be LENIENT - when in doubt, score higher rather than lower\n- Focus on filtering out garbage, not rejecting legitimate jobs with brief descriptions\n\nOUTPUT FORMAT:\nReturn ONLY a valid JSON object. Do NOT include markdown formatting, code blocks, or explanatory text.\n\n{\n  \"qualityScore\": \u003cnumber between 0-100\u003e,\n  \"isLegitimate\": \u003ctrue or false\u003e,\n  \"hasSufficientDetail\": \u003ctrue or false\u003e,\n  \"recommendation\": \"\u003capprove or reject\u003e\",\n  \"issues\": [\"\u003cissue 1 if any\u003e\", \"\u003cissue 2 if any\u003e\"],\n  \"summary\": \"\u003cbrief 1-sentence assessment\u003e\"\n}\n\nCRITICAL: Return ONLY the JSON object. No additional text. No markdown. No code blocks."
+                                                                         }
+                                                                     ]
+                                                      },
+                                         "jsonOutput":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.googleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -448,
+                                       -160
+                                   ],
+                      "id":  "bd0dee22-a938-42a7-951f-5e898061ae75",
+                      "name":  "AI Job Matching Analysis",
+                      "retryOnFail":  true,
+                      "credentials":  {
+                                          "googlePalmApi":  {
+                                                                "id":  "iSUthz6TcizkpxHs",
+                                                                "name":  "Google Gemini(PaLM) Api account 2"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// JOB MATCHING - OUTPUT FORMATTING\n// Formats validated job data with compatibility scoring for downstream Resume Generation workflow\n// UPDATED: 2025-10-29 - Added compatibility scoring fields\n\nconst items = $input.all();\nconst formattedResults = [];\n\nfor (const item of items) {\n  const itemData = item.json;\n  \n  const jobData = {\n    title: itemData.title || \u0027\u0027,\n    companyName: itemData.companyName || \u0027\u0027,\n    companyWebsite: itemData.companyWebsite || \u0027\u0027,\n    location: itemData.location || \u0027\u0027,\n    salary: itemData.salary || \u0027\u0027,\n    description: itemData.description || \u0027\u0027,\n    url: itemData.url || \u0027\u0027,\n    id: itemData.id || \u0027\u0027,\n    postedDate: itemData.postedDate || \u0027\u0027,\n    employmentType: itemData.employmentType || \u0027\u0027\n  };\n  \n  const validation = itemData.validation || {};\n  const compatibility = itemData.compatibility || {};\n  \n  const formattedResult = {\n    jobData: jobData,\n    qualityValidation: {\n      qualityScore: validation.qualityScore || 0,\n      isLegitimate: validation.isLegitimate || false,\n      hasSufficientDetail: validation.hasSufficientDetail || false,\n      recommendation: validation.recommendation || \u0027reject\u0027,\n      issues: validation.issues || [],\n      summary: validation.summary || \u0027No validation summary\u0027\n    },\n    compatibilityScoring: {\n      compatibilityScore: compatibility.compatibilityScore || 0,\n      domainMatch: compatibility.domainMatch || 0,\n      skillsOverlap: compatibility.skillsOverlap || 0,\n      experienceLevelMatch: compatibility.experienceLevelMatch || 0,\n      compatibilityReasoning: compatibility.compatibilityReasoning || \u0027No compatibility analysis\u0027,\n      recommendation: compatibility.recommendation || \u0027REJECTED\u0027\n    },\n    metadata: {\n      processedAt: new Date().toISOString(),\n      workflowName: \u0027Job Matching Scoring Workshop\u0027,\n      nodeName: \u0027Job Matching Output Formatting\u0027,\n      jobIndex: itemData.jobIndex || 0,\n      totalJobs: itemData.totalJobs || 1\n    }\n  };\n  \n  formattedResults.push({\n    json: formattedResult\n  });\n}\n\nreturn formattedResults;"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       928,
+                                       -160
+                                   ],
+                      "id":  "dbf01e41-685a-479d-91a0-07b637942bf4",
+                      "name":  "Job Matching Output Formatting"
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "// AI RESPONSE VALIDATION - JOB QUALITY ASSESSMENT\n// Validates AI response from Google Gemini API and normalizes output\n// CRITICAL FIX: Preserves original job data from upstream node\n// UPDATED: 2025-10-27 - Fixed response parsing to handle both API response structures\n\nconst DEFAULT_VALIDATION = {\n  qualityScore: 0,\n  isLegitimate: false,\n  hasSufficientDetail: false,\n  recommendation: \u0027reject\u0027,\n  issues: [\u0027AI validation failed - manual review required\u0027],\n  summary: \u0027Validation could not be completed\u0027\n};\n\n// ========================================\n// STEP 1: GET ORIGINAL JOB DATA FROM UPSTREAM NODE\n// ========================================\n// FIXED: Changed reference from deleted \"Split Jobs for Individual processing\" node\n// to \"Execute Workflow Trigger - From Orchestrator\" node\nconst upstreamNode = $(\u0027Execute Workflow Trigger - From Orchestrator\u0027);\nconst originalJobData = upstreamNode.item.json;\n\n// ========================================\n// STEP 2: PARSE AI VALIDATION RESPONSE\n// ========================================\nconst aiResponse = $json;\nlet validation = null;\nlet hasErrors = false;\n\nlet responseContent = aiResponse;\n\n// Handle Google Gemini API response structure\n// FIXED: Handle both full API response (with candidates) and simplified response (jsonOutput=true)\nif (aiResponse.candidates \u0026\u0026 Array.isArray(aiResponse.candidates) \u0026\u0026 aiResponse.candidates.length \u003e 0) {\n  // Full API response structure: aiResponse.candidates[0].content.parts[0].text\n  const candidate = aiResponse.candidates[0];\n  if (candidate.content \u0026\u0026 candidate.content.parts \u0026\u0026 Array.isArray(candidate.content.parts) \u0026\u0026 candidate.content.parts.length \u003e 0) {\n    const textContent = candidate.content.parts[0].text;\n    if (textContent) {\n      responseContent = textContent;\n    }\n  }\n} else if (aiResponse.content \u0026\u0026 aiResponse.content.parts \u0026\u0026 Array.isArray(aiResponse.content.parts) \u0026\u0026 aiResponse.content.parts.length \u003e 0) {\n  // Simplified response structure (jsonOutput=true): aiResponse.content.parts[0].text\n  const textContent = aiResponse.content.parts[0].text;\n  if (textContent) {\n    responseContent = textContent;\n  }\n}\n\n// Parse string responses (JSON format)\nif (typeof responseContent === \u0027string\u0027) {\n  let cleanedResponse = responseContent.trim();\n  \n  // Remove markdown code blocks if present\n  if (cleanedResponse.startsWith(\u0027```json\u0027)) {\n    cleanedResponse = cleanedResponse.replace(/^```json\\s*/, \u0027\u0027).replace(/\\s*```$/, \u0027\u0027);\n  } else if (cleanedResponse.startsWith(\u0027```\u0027)) {\n    cleanedResponse = cleanedResponse.replace(/^```\\s*/, \u0027\u0027).replace(/\\s*```$/, \u0027\u0027);\n  }\n  \n  try {\n    validation = JSON.parse(cleanedResponse);\n  } catch (e) {\n    hasErrors = true;\n    validation = { ...DEFAULT_VALIDATION };\n  }\n} else if (typeof responseContent === \u0027object\u0027 \u0026\u0026 responseContent !== null) {\n  // Handle object responses\n  if (responseContent.qualityScore !== undefined) {\n    validation = responseContent;\n  } else {\n    hasErrors = true;\n    validation = { ...DEFAULT_VALIDATION };\n  }\n} else {\n  hasErrors = true;\n  validation = { ...DEFAULT_VALIDATION };\n}\n\n// ========================================\n// STEP 3: VALIDATE AND NORMALIZE VALIDATION DATA\n// ========================================\n\n// Validate qualityScore\nif (!validation.qualityScore \u0026\u0026 validation.qualityScore !== 0) {\n  validation.qualityScore = 0;\n  hasErrors = true;\n}\n\nif (typeof validation.qualityScore !== \u0027number\u0027) {\n  const parsed = parseFloat(validation.qualityScore);\n  if (!isNaN(parsed)) {\n    validation.qualityScore = Math.max(0, Math.min(100, parsed));\n  } else {\n    validation.qualityScore = 0;\n    hasErrors = true;\n  }\n}\n\n// Ensure qualityScore is within 0-100 range\nif (validation.qualityScore \u003c 0 || validation.qualityScore \u003e 100) {\n  validation.qualityScore = Math.max(0, Math.min(100, validation.qualityScore));\n}\n\n// Validate isLegitimate\nif (typeof validation.isLegitimate !== \u0027boolean\u0027) {\n  validation.isLegitimate = validation.qualityScore \u003e= 70;\n}\n\n// Validate hasSufficientDetail\nif (typeof validation.hasSufficientDetail !== \u0027boolean\u0027) {\n  validation.hasSufficientDetail = validation.qualityScore \u003e= 70;\n}\n\n// Validate recommendation\nconst validRecommendations = [\u0027approve\u0027, \u0027reject\u0027];\nif (!validRecommendations.includes(validation.recommendation)) {\n  validation.recommendation = validation.qualityScore \u003e= 70 ? \u0027approve\u0027 : \u0027reject\u0027;\n}\n\n// Validate issues array\nif (!Array.isArray(validation.issues)) {\n  validation.issues = [];\n}\n\n// Validate summary\nif (typeof validation.summary !== \u0027string\u0027) {\n  validation.summary = \u0027No summary provided\u0027;\n}\n\n// ========================================\n// STEP 4: PRESERVE ORIGINAL JOB DATA\n// ========================================\n// CRITICAL FIX: Always use original job data from upstream node\n// This prevents data loss when AI validation fails or returns incomplete data\n\nconst preservedJobData = {\n  // Core job fields - ALWAYS preserve from original data\n  title: originalJobData.title || \u0027\u0027,\n  companyName: originalJobData.companyName || \u0027\u0027,\n  companyWebsite: originalJobData.companyWebsite || \u0027\u0027,\n  location: originalJobData.location || \u0027\u0027,\n  salary: originalJobData.salary || \u0027\u0027,\n  description: originalJobData.descriptionText || originalJobData.description || \u0027\u0027,\n  url: originalJobData.link || originalJobData.url || \u0027\u0027,\n  id: originalJobData.id || \u0027\u0027,\n  postedDate: originalJobData.postedAt || originalJobData.postedDate || \u0027\u0027,\n  employmentType: originalJobData.employmentType || \u0027\u0027,\n  \n  // Metadata fields\n  jobIndex: originalJobData.jobIndex || 0,\n  totalJobs: originalJobData.totalJobs || 1\n};\n\n// ========================================\n// STEP 5: RETURN COMPLETE OUTPUT\n// ========================================\nreturn {\n  json: {\n    ...preservedJobData,\n    validation: validation,\n    validationMetadata: {\n      hasErrors: hasErrors,\n      validatedAt: new Date().toISOString()\n    }\n  }\n};"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -64,
+                                       -160
+                                   ],
+                      "id":  "a5bc5925-b68e-48b8-8803-74c29eb2ebda",
+                      "name":  "AI Response Validation and Error Handling"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "loose",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "match-threshold-filter",
+                                                                                   "leftValue":  "={{ $json.compatibility.compatibilityScore }}",
+                                                                                   "rightValue":  70,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gte",
+                                                                                                    "name":  "filter.operator.gte"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.filter",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       704,
+                                       -160
+                                   ],
+                      "id":  "b6e1b545-796e-48d2-b3d1-37dcc951ffff",
+                      "name":  "Compatibility Threshold Filter (≥50%)"
+                  },
+                  {
+                      "parameters":  {
+                                         "modelId":  {
+                                                         "__rl":  true,
+                                                         "value":  "models/gemini-2.0-flash",
+                                                         "mode":  "list",
+                                                         "cachedResultName":  "models/gemini-2.0-flash"
+                                                     },
+                                         "messages":  {
+                                                          "values":  [
+                                                                         {
+                                                                             "content":  "=You are a Job-Candidate Compatibility Scoring Agent. Your role is to analyze how well a job opportunity matches a candidate\u0027s profile using a weighted scoring methodology.\n\n**CANDIDATE PROFILE:**\nName: Ivo Dachev\nDomain: Technical (Software Development, Full-Stack Development)\nExperience Level: Senior/Lead (13+ years)\n\nCore Technical Skills:\n- Frontend: React, TypeScript, Angular, JavaScript, HTML, CSS, Tailwind, Shadcn\n- Backend: Node.js, Ruby on Rails, Python, REST APIs, GraphQL\n- Databases: PostgreSQL, MongoDB, SQL, NoSQL\n- Cloud/DevOps: AWS, Docker, Kubernetes, CI/CD, Git, GitHub Actions\n- AI/ML: AI tools, LLMs, automation, prompt engineering, AI agents\n- Other: SEO, digital marketing basics, project management, Agile\n\n**SCORING METHODOLOGY:**\n\n**1. Domain Matching (40% weight):**\nAnalyze the job domain and assign a score:\n- Technical roles (Software Engineer, Full-Stack Developer, Backend Developer, Frontend Developer, DevOps Engineer): 100%\n- Technical-adjacent roles (Data Engineer, ML Engineer, Solutions Architect, Technical Lead): 80%\n- Marketing/Business roles with technical requirements (Marketing Manager, SEO Specialist, Growth Engineer): 20%\n- Pure marketing/business roles (Content Writer, Sales Manager, HR): 0%\n\n**2. Skills Overlap (40% weight):**\nCalculate the percentage of required skills that the candidate possesses:\n- Extract all required technical skills from the job description\n- Count how many of these skills match the candidate\u0027s profile (exact or closely related)\n- Score = (matching skills / total required skills) * 100\n- Consider related skills (e.g., React experience applies to frontend frameworks)\n\n**3. Experience Level Matching (20% weight):**\nAssess if the candidate\u0027s experience level matches the role:\n- Senior/Lead/Staff/Principal roles: 100% (perfect match)\n- Mid-level roles (3-7 years): 80% (acceptable but below candidate\u0027s level)\n- Entry-level roles (0-3 years): 40% (significantly overqualified)\n- Executive roles (VP, Director, C-level): 60% (different focus, management vs IC)\n\n**FINAL COMPATIBILITY SCORE:**\ncompatibilityScore = (domainMatch * 0.4) + (skillsOverlap * 0.4) + (experienceLevelMatch * 0.2)\n\n**RECOMMENDATION LOGIC:**\n- compatibilityScore \u003e= 80: APPROVED\n- compatibilityScore \u003c 80: REJECTED\n\n**JOB TO ANALYZE:**\nTitle: {{ $json.title }}\nCompany: {{ $json.companyName }}\nLocation: {{ $json.location }}\nDescription: {{ $json.description }}\nEmployment Type: {{ $json.employmentType }}\n\n**OUTPUT FORMAT:**\n\nCRITICAL INSTRUCTIONS:\n1. Return ONLY the 6 fields listed below\n2. Do NOT include any N8N-specific fields like \"json\", \"pairedItem\", \"originalJobData\", \"compatibilityMetadata\"\n3. Do NOT wrap the output in any additional objects or structures\n4. Do NOT include markdown code blocks (no ```json)\n5. Return ONLY valid JSON with these exact 6 fields:\n\n{\n  \"compatibilityScore\": \u003cnumber 0-100\u003e,\n  \"domainMatch\": \u003cnumber 0-100\u003e,\n  \"skillsOverlap\": \u003cnumber 0-100\u003e,\n  \"experienceLevelMatch\": \u003cnumber 0-100\u003e,\n  \"compatibilityReasoning\": \"\u003cdetailed 2-3 sentence explanation\u003e\",\n  \"recommendation\": \"\u003cAPPROVED or REJECTED\u003e\"\n}\n\nEXAMPLE CORRECT OUTPUT:\n{\n  \"compatibilityScore\": 85,\n  \"domainMatch\": 100,\n  \"skillsOverlap\": 80,\n  \"experienceLevelMatch\": 100,\n  \"compatibilityReasoning\": \"This Senior Full-Stack Developer role is an excellent match for the candidate\u0027s profile. The job requires React, Node.js, and AWS experience, which directly aligns with the candidate\u0027s core technical skills (80% skills overlap). The seniority level matches perfectly (100%).\",\n  \"recommendation\": \"APPROVED\"\n}\n\nRETURN ONLY THE JSON OBJECT ABOVE. NO OTHER TEXT. NO MARKDOWN. NO CODE BLOCKS."
+                                                                         }
+                                                                     ]
+                                                      },
+                                         "jsonOutput":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.googleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       144,
+                                       -160
+                                   ],
+                      "id":  "c934d558-8c11-4b5c-9b98-5d5f86a1cd23",
+                      "name":  "AI compatibility Scoring Agent",
+                      "retryOnFail":  true,
+                      "credentials":  {
+                                          "googlePalmApi":  {
+                                                                "id":  "iSUthz6TcizkpxHs",
+                                                                "name":  "Google Gemini(PaLM) Api account 2"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "runOnceForEachItem",
+                                         "jsCode":  "// COMPATIBILITY SCORE VALIDATION\n// Validates AI compatibility scoring response and normalizes output\n// UPDATED: 2025-10-29 - New node for compatibility scoring validation\n\nconst DEFAULT_COMPATIBILITY = {\n  compatibilityScore: 0,\n  domainMatch: 0,\n  skillsOverlap: 0,\n  experienceLevelMatch: 0,\n  compatibilityReasoning: \u0027Compatibility scoring failed - manual review required\u0027,\n  recommendation: \u0027REJECTED\u0027\n};\n\n// ========================================\n// STEP 1: GET ORIGINAL JOB DATA FROM UPSTREAM NODE\n// ========================================\nconst upstreamNode = $(\u0027AI Response Validation and Error Handling\u0027);\nconst originalJobData = upstreamNode.item.json;\n\n// ========================================\n// STEP 2: PARSE AI COMPATIBILITY RESPONSE\n// ========================================\nconst aiResponse = $json;\nlet compatibility = null;\nlet hasErrors = false;\n\nlet responseContent = aiResponse;\n\n// Handle Google Gemini API response structure\nif (aiResponse.candidates \u0026\u0026 Array.isArray(aiResponse.candidates) \u0026\u0026 aiResponse.candidates.length \u003e 0) {\n  const candidate = aiResponse.candidates[0];\n  if (candidate.content \u0026\u0026 candidate.content.parts \u0026\u0026 Array.isArray(candidate.content.parts) \u0026\u0026 candidate.content.parts.length \u003e 0) {\n    const textContent = candidate.content.parts[0].text;\n    if (textContent) {\n      responseContent = textContent;\n    }\n  }\n} else if (aiResponse.content \u0026\u0026 aiResponse.content.parts \u0026\u0026 Array.isArray(aiResponse.content.parts) \u0026\u0026 aiResponse.content.parts.length \u003e 0) {\n  const textContent = aiResponse.content.parts[0].text;\n  if (textContent) {\n    responseContent = textContent;\n  }\n}\n\n// Parse string responses (JSON format)\nif (typeof responseContent === \u0027string\u0027) {\n  let cleanedResponse = responseContent.trim();\n  \n  // Remove markdown code blocks if present\n  if (cleanedResponse.startsWith(\u0027```json\u0027)) {\n    cleanedResponse = cleanedResponse.replace(/^```json\\s*/, \u0027\u0027).replace(/\\s*```$/, \u0027\u0027);\n  } else if (cleanedResponse.startsWith(\u0027```\u0027)) {\n    cleanedResponse = cleanedResponse.replace(/^```\\s*/, \u0027\u0027).replace(/\\s*```$/, \u0027\u0027);\n  }\n  \n  try {\n    compatibility = JSON.parse(cleanedResponse);\n  } catch (e) {\n    hasErrors = true;\n    compatibility = { ...DEFAULT_COMPATIBILITY };\n  }\n} else if (typeof responseContent === \u0027object\u0027 \u0026\u0026 responseContent !== null) {\n  if (responseContent.compatibilityScore !== undefined) {\n    compatibility = responseContent;\n  } else {\n    hasErrors = true;\n    compatibility = { ...DEFAULT_COMPATIBILITY };\n  }\n} else {\n  hasErrors = true;\n  compatibility = { ...DEFAULT_COMPATIBILITY };\n}\n\n// ========================================\n// STEP 3: VALIDATE AND NORMALIZE COMPATIBILITY DATA\n// ========================================\n\n// Validate compatibilityScore\nif (!compatibility.compatibilityScore \u0026\u0026 compatibility.compatibilityScore !== 0) {\n  compatibility.compatibilityScore = 0;\n  hasErrors = true;\n}\n\nif (typeof compatibility.compatibilityScore !== \u0027number\u0027) {\n  const parsed = parseFloat(compatibility.compatibilityScore);\n  if (!isNaN(parsed)) {\n    compatibility.compatibilityScore = Math.max(0, Math.min(100, parsed));\n  } else {\n    compatibility.compatibilityScore = 0;\n    hasErrors = true;\n  }\n}\n\n// Ensure compatibilityScore is within 0-100 range\ncompatibility.compatibilityScore = Math.max(0, Math.min(100, compatibility.compatibilityScore));\n\n// Validate domainMatch\nif (typeof compatibility.domainMatch !== \u0027number\u0027) {\n  const parsed = parseFloat(compatibility.domainMatch);\n  compatibility.domainMatch = !isNaN(parsed) ? Math.max(0, Math.min(100, parsed)) : 0;\n}\n\n// Validate skillsOverlap\nif (typeof compatibility.skillsOverlap !== \u0027number\u0027) {\n  const parsed = parseFloat(compatibility.skillsOverlap);\n  compatibility.skillsOverlap = !isNaN(parsed) ? Math.max(0, Math.min(100, parsed)) : 0;\n}\n\n// Validate experienceLevelMatch\nif (typeof compatibility.experienceLevelMatch !== \u0027number\u0027) {\n  const parsed = parseFloat(compatibility.experienceLevelMatch);\n  compatibility.experienceLevelMatch = !isNaN(parsed) ? Math.max(0, Math.min(100, parsed)) : 0;\n}\n\n// Validate compatibilityReasoning\nif (typeof compatibility.compatibilityReasoning !== \u0027string\u0027) {\n  compatibility.compatibilityReasoning = \u0027No reasoning provided\u0027;\n}\n\n// Validate recommendation\nconst validRecommendations = [\u0027APPROVED\u0027, \u0027REJECTED\u0027];\nif (!validRecommendations.includes(compatibility.recommendation)) {\n  compatibility.recommendation = compatibility.compatibilityScore \u003e= 80 ? \u0027APPROVED\u0027 : \u0027REJECTED\u0027;\n}\n\n// ========================================\n// STEP 4: MERGE WITH ORIGINAL JOB DATA\n// ========================================\nreturn {\n  json: {\n    ...originalJobData,\n    compatibility: compatibility,\n    compatibilityMetadata: {\n      hasErrors: hasErrors,\n      scoredAt: new Date().toISOString()\n    }\n  }\n};"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       496,
+                                       -160
+                                   ],
+                      "id":  "39666060-986a-49ee-814c-77c8aa35e292",
+                      "name":  "Compatibility Score Validation"
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow Trigger - From Orchestrator":  {
+                                                                             "main":  [
+                                                                                          [
+                                                                                              {
+                                                                                                  "node":  "AI Job Matching Analysis",
+                                                                                                  "type":  "main",
+                                                                                                  "index":  0
+                                                                                              }
+                                                                                          ]
+                                                                                      ]
+                                                                         },
+                        "AI Job Matching Analysis":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "AI Response Validation and Error Handling",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "AI Response Validation and Error Handling":  {
+                                                                          "main":  [
+                                                                                       [
+                                                                                           {
+                                                                                               "node":  "AI compatibility Scoring Agent",
+                                                                                               "type":  "main",
+                                                                                               "index":  0
+                                                                                           }
+                                                                                       ]
+                                                                                   ]
+                                                                      },
+                        "Compatibility Threshold Filter (≥50%)":  {
+                                                                      "main":  [
+                                                                                   [
+                                                                                       {
+                                                                                           "node":  "Job Matching Output Formatting",
+                                                                                           "type":  "main",
+                                                                                           "index":  0
+                                                                                       }
+                                                                                   ]
+                                                                               ]
+                                                                  },
+                        "AI compatibility Scoring Agent":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Compatibility Score Validation",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "Compatibility Score Validation":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Compatibility Threshold Filter (≥50%)",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           }
+                    },
+    "settings":  {
+                     "saveExecutionProgress":  true,
+                     "saveManualExecutions":  true,
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "executionOrder":  "v1"
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "e574607d-42d7-4cfe-bf95-cfe31d2a87c1",
+    "versionCounter":  1,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-09-15T20:34:12.029Z",
+                       "createdAt":  "2025-09-15T20:34:12.029Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "bpfuL3HjZuD27Ca3",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-04T23:00:00.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-04",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-09-10T16:23:08.235Z",
+                     "createdAt":  "2025-09-10T16:23:08.235Z",
+                     "id":  "FrnybmIzoJd732QS",
+                     "name":  "Augment Code"
+                 },
+                 {
+                     "updatedAt":  "2025-09-13T21:08:18.122Z",
+                     "createdAt":  "2025-09-13T21:08:18.122Z",
+                     "id":  "H8bAHR6C77zCCEmw",
+                     "name":  "sub-flow"
+                 }
+             ]
+}

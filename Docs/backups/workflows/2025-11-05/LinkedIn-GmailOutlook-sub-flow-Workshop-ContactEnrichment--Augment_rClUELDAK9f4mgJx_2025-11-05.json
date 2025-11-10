@@ -1,0 +1,497 @@
+﻿{
+    "updatedAt":  "2025-10-31T21:46:43.000Z",
+    "createdAt":  "2025-09-15T17:24:05.973Z",
+    "id":  "rClUELDAK9f4mgJx",
+    "name":  "LinkedIn-GmailOutlook-sub-flow-Workshop-ContactEnrichment--Augment",
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// ============================================================================\n// OUTPUT FORMATTING SPLIT BY JOB - SIMPLIFIED (NO CHUNKING)\n// ============================================================================\n// Purpose: Split verified contacts back to individual jobs\n// Input: Verified contacts from NeverBounce OR jobs without domains\n// Output: Individual items (1 per job) with enriched contact data\n// ============================================================================\n\n// GET ALL INPUT ITEMS (VERIFIED CONTACTS FROM NEVERBOUNCE OR JOBS WITHOUT DOMAINS)\nconst inputItems = $input.all();\n\n// CHECK IF INPUT IS FROM \"HANDLE NO DOMAINS\" NODE (NO CONTACT ENRICHMENT PATH)\nconst firstItem = inputItems[0]?.json;\nif (firstItem \u0026\u0026 firstItem.contactEnrichment \u0026\u0026 firstItem.contactEnrichment.enrichmentStatus === \u0027no_domain\u0027) {\n  return inputItems;\n}\n\n// INPUT IS FROM NEVERBOUNCE - PROCESS VERIFIED CONTACTS\nconst verificationResults = inputItems;\n\n// GET ORIGINAL CONTACT DATA FROM PREVIOUS NODE\nconst originalContactItems = $(\u0027Filter Verified Emails\u0027).all();\n\n// GET ORIGINAL JOBS FROM EXECUTE WORKFLOW NODE\nconst originalJobs = $(\u0027Execute Workflow\u0027).all();\n\nconsole.log(`📊 Retrieved ${originalJobs.length} original jobs from Execute Workflow node`);\n\n// BUILD JOB-DOMAIN MAPPING FROM ORIGINAL JOBS\nconst jobDomainMapping = [];\n\nfor (let i = 0; i \u003c originalJobs.length; i++) {\n  const jobItem = originalJobs[i];\n  const jobData = jobItem.json.jobData || {};\n  \n  // Extract domain from job\u0027s company website\n  const companyWebsite = jobData.companyWebsite || jobData.company_website || \u0027\u0027;\n  const domain = extractDomain(companyWebsite);\n  \n  if (domain) {\n    jobDomainMapping.push({\n      jobId: jobData.id || `job-${i}`,\n      jobIndex: i,\n      jobTitle: jobData.title || \u0027Unknown\u0027,\n      companyName: jobData.companyName || \u0027Unknown\u0027,\n      domain: domain,\n      originalJobData: jobData\n    });\n    console.log(`✅ Mapped job ${i}: ${jobData.title} at ${jobData.companyName} → ${domain}`);\n  } else {\n    console.log(`⚠️ Job ${i}: No domain found for ${jobData.companyName || \u0027Unknown\u0027}`);\n  }\n}\n\nconsole.log(`📊 Created job-domain mapping for ${jobDomainMapping.length} jobs`);\n\n// CREATE CONTACT-TO-JOB MAPPING\n// Map each verified contact to its corresponding job(s)\nconst contactsByJob = {};\n\nfor (let i = 0; i \u003c verificationResults.length; i++) {\n  const verificationResult = verificationResults[i].json;\n  const originalContact = originalContactItems[i]?.json;\n  \n  if (!originalContact) {\n    console.log(`⚠️ Warning: No original contact data for verification result ${i}`);\n    continue;\n  }\n  \n  // Extract domain from contact\u0027s company website\n  const contactDomain = extractDomain(originalContact.companyWebsite);\n  \n  if (!contactDomain) {\n    console.log(`⚠️ Warning: No domain found for contact ${originalContact.fullName}`);\n    continue;\n  }\n  \n  // Find all jobs that match this domain\n  const matchingJobs = jobDomainMapping.filter(mapping =\u003e mapping.domain === contactDomain);\n  \n  if (matchingJobs.length === 0) {\n    console.log(`⚠️ Warning: No jobs found for domain ${contactDomain}`);\n    continue;\n  }\n  \n  // Create enriched contact object\n  const enrichedContact = {\n    email: originalContact.email,\n    fullName: originalContact.fullName,\n    firstName: originalContact.firstName,\n    lastName: originalContact.lastName,\n    jobTitle: originalContact.jobTitle,\n    company: originalContact.company,\n    companyWebsite: originalContact.companyWebsite,\n    linkedInUrl: originalContact.linkedInUrl,\n    city: originalContact.city,\n    state: originalContact.state,\n    country: originalContact.country,\n    seniorityLevel: originalContact.seniorityLevel,\n    functionalLevel: originalContact.functionalLevel,\n    emailVerification: {\n      result: verificationResult.result,\n      flags: verificationResult.flags || {},\n      suggested_correction: verificationResult.suggested_correction || null,\n      execution_time: verificationResult.execution_time || 0\n    }\n  };\n  \n  // Add this contact to all matching jobs\n  for (const jobMapping of matchingJobs) {\n    const jobId = jobMapping.jobId;\n    \n    if (!contactsByJob[jobId]) {\n      contactsByJob[jobId] = {\n        jobData: jobMapping.originalJobData,\n        contacts: [],\n        domain: contactDomain\n      };\n    }\n    \n    contactsByJob[jobId].contacts.push(enrichedContact);\n  }\n}\n\nconsole.log(`📊 Mapped contacts to ${Object.keys(contactsByJob).length} jobs`);\n\n// CREATE OUTPUT ITEMS - ONE PER JOB\nconst outputItems = [];\n\nfor (const jobId in contactsByJob) {\n  const jobInfo = contactsByJob[jobId];\n  const contacts = jobInfo.contacts;\n  \n  // Count verified vs unverified contacts\n  // UPDATED: Include both \"valid\" and \"catchall\" as verified\n  const verifiedContacts = contacts.filter(c =\u003e \n    [\u0027valid\u0027, \u0027catchall\u0027].includes(c.emailVerification.result)\n  );\n  const unverifiedContacts = contacts.filter(c =\u003e \n    ![\u0027valid\u0027, \u0027catchall\u0027].includes(c.emailVerification.result)\n  );\n  \n  const outputItem = {\n    jobData: jobInfo.jobData,\n    qualityValidation: {\n      hasSufficientDetail: true,\n      qualityScore: 75,\n      issues: []\n    },\n    contactEnrichment: {\n      verifiedContacts: verifiedContacts,\n      totalContacts: contacts.length,\n      verifiedCount: verifiedContacts.length,\n      unverifiedCount: unverifiedContacts.length,\n      domain: jobInfo.domain,\n      enrichmentStatus: verifiedContacts.length \u003e 0 ? \u0027enriched\u0027 : \u0027no_verified_contacts\u0027\n    },\n    metadata: {\n      processedAt: new Date().toISOString(),\n      workflowVersion: \u00273.0-simplified\u0027,\n      jobId: jobId\n    }\n  };\n  \n  outputItems.push({\n    json: outputItem,\n    pairedItem: { item: 0 }\n  });\n}\n\nconsole.log(`✅ Created ${outputItems.length} output items (one per job)`);\n\nreturn outputItems;\n\n// HELPER FUNCTION: Extract domain from URL\nfunction extractDomain(urlString) {\n  if (!urlString || typeof urlString !== \u0027string\u0027) {\n    return null;\n  }\n  \n  try {\n    let domain = urlString.replace(/^https?:\\/\\//i, \u0027\u0027);\n    domain = domain.replace(/^www\\./i, \u0027\u0027);\n    domain = domain.split(\u0027/\u0027)[0];\n    domain = domain.split(\u0027?\u0027)[0];\n    domain = domain.split(\u0027#\u0027)[0];\n    domain = domain.split(\u0027:\u0027)[0];\n    domain = domain.trim().toLowerCase();\n    \n    if (domain.includes(\u0027.\u0027) \u0026\u0026 !domain.includes(\u0027 \u0027) \u0026\u0026 domain.length \u003e 3) {\n      return domain;\n    }\n    \n    return null;\n  } catch (e) {\n    return null;\n  }\n}"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -160,
+                                       -448
+                                   ],
+                      "id":  "0f875660-4494-4be8-a243-4e78866f73f2",
+                      "name":  "Output Formatting Split By Job"
+                  },
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -1648,
+                                       -960
+                                   ],
+                      "id":  "c599ccff-f055-4063-85c3-1add35aee384",
+                      "name":  "Execute Workflow"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// ============================================================================\n// HANDLE NO DOMAINS - EMPTY CONTACTS (BATCH MODE)\n// ============================================================================\n// Purpose: Handle jobs without company domains - format as \"no_contacts_found\"\n// Input: Trigger from \"If - Has a Domain\" FALSE path (no domains found)\n// Output: Individual items (1 per job) that bypass contact enrichment\n// ============================================================================\n\n// GET METADATA FROM DOMAIN EXTRACTION NODE\nconst domainExtractionData = $(\u0027Domain extraction and Apify input builder - 100 recs\u0027).first().json;\n\n// ACCESS JOBS WITHOUT DOMAIN FROM BATCH MODE STRUCTURE\nconst jobsWithoutDomain = domainExtractionData._metadata?.jobsWithoutDomainList || [];\n\n// IMPROVED ERROR HANDLING: Check if array exists and has items\nif (!jobsWithoutDomain || jobsWithoutDomain.length === 0) {\n  // This should only happen if the \"If - Has a Domain\" condition is misconfigured\n  // or if all jobs have domains (which means this node shouldn\u0027t be executed)\n  console.log(\u0027⚠️ WARNING: \"Handle No Domains\" node was executed but no jobs without domains were found.\u0027);\n  console.log(\u0027   This suggests the \"If - Has a Domain\" condition may be misconfigured.\u0027);\n  console.log(\u0027   Expected: {{ $json.company_domain.length }} \u003e 0\u0027);\n  \n  throw new Error(\u0027No jobs without domain found in Domain extraction node _metadata.jobsWithoutDomainList. This node should only execute when the \"If - Has a Domain\" condition evaluates to FALSE (no domains found). Please verify the \"If - Has a Domain\" node is checking {{ $json.company_domain.length }} instead of {{ $json.organizationDomains.length }}.\u0027);\n}\n\nconsole.log(`⚠️ No organization domains found. Formatting ${jobsWithoutDomain.length} jobs as \"no_contacts_found\"`);\n\n// CREATE OUTPUT ITEMS - ONE PER JOB\nconst outputItems = [];\n\nfor (const jobMapping of jobsWithoutDomain) {\n  const jobData = jobMapping.originalJobData || {};\n  \n  const outputItem = {\n    jobData: jobData,\n    qualityValidation: {\n      hasSufficientDetail: true,\n      qualityScore: 75,  // Inherited from Job Matching Workshop\n      issues: []\n    },\n    contactEnrichment: {\n      verifiedContacts: [],\n      totalContacts: 0,\n      verifiedCount: 0,\n      unverifiedCount: 0,\n      domain: null,\n      enrichmentStatus: \u0027no_domain\u0027\n    },\n    metadata: {\n      processedAt: new Date().toISOString(),\n      workflowVersion: \u00272.0-batch\u0027,\n      jobId: jobMapping.jobId,\n      jobTitle: jobMapping.jobTitle,\n      companyName: jobMapping.companyName,\n      reason: \u0027No company domain available for contact discovery\u0027\n    }\n  };\n  \n  outputItems.push({\n    json: outputItem,\n    pairedItem: { item: jobMapping.jobIndex }\n  });\n}\n\nconsole.log(`✅ Created ${outputItems.length} items for jobs without domains`);\nreturn outputItems;"
+                                     },
+                      "id":  "empty-contact-handler",
+                      "name":  "Handle No Domains - Empty Contacts",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -416,
+                                       -944
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "version":  2,
+                                                                            "leftValue":  "",
+                                                                            "caseSensitive":  true,
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "443342f5-bcd3-451d-a11d-1ddce4c0dfd2",
+                                                                                   "leftValue":  "={{ $json.company_domain.length }}",
+                                                                                   "rightValue":  0,
+                                                                                   "operator":  {
+                                                                                                    "type":  "number",
+                                                                                                    "operation":  "gt"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -1040,
+                                       -960
+                                   ],
+                      "id":  "614c2af5-2781-45ef-a1a5-4f4fda4f978f",
+                      "name":  "If - Has a Domain"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// =============================================================================\n// FILTER VERIFIED EMAILS - INDIVIDUAL ITEMS OUTPUT (CORRECTED)\n// =============================================================================\n// Version: 3.0.0 (2025-10-25)\n// \n// Purpose: Separates contacts WITH emails from contacts WITHOUT emails,\n//          and outputs individual items (one per contact with email) for \n//          NeverBounce batch processing\n//\n// CRITICAL FIX: Lead Finder Actor does NOT return emailStatus field!\n//               Check for email field existence instead.\n//\n// Input: Array of contacts from Lead Finder Actor\n// Output: Individual items for each contact with email, with contacts \n//         without emails stored in each item for downstream access\n// =============================================================================\n\nconst contacts = $input.all();\n\nconsole.log(`📧 Filtering contacts with emails from ${contacts.length} contacts`);\n\n// Separate contacts WITH emails from contacts WITHOUT emails\nconst contactsWithEmail = [];\nconst contactsWithoutEmail = [];\n\nfor (const contact of contacts) {\n  const contactData = contact.json;\n  \n  // Check if contact has an email (not null, not undefined, not empty string)\n  if (contactData.email \u0026\u0026 contactData.email.trim() !== \u0027\u0027) {\n    contactsWithEmail.push(contactData);\n    console.log(`✅ Contact has email: ${contactData.email} - ${contactData.full_name || \u0027Unknown\u0027}`);\n  } else {\n    contactsWithoutEmail.push(contactData);\n    console.log(`⚠️ Contact missing email: ${contactData.full_name || \u0027Unknown\u0027}`);\n  }\n}\n\nconsole.log(`\\n📊 Email filtering summary:`);\nconsole.log(`   Contacts with email: ${contactsWithEmail.length}`);\nconsole.log(`   Contacts without email: ${contactsWithoutEmail.length}`);\n\n// Handle case where no contacts have emails\nif (contactsWithEmail.length === 0) {\n  console.log(\u0027⚠️ No contacts with emails to process - returning empty result\u0027);\n  \n  return [{\n    json: {\n      noContactsWithEmail: true,\n      contactsWithoutEmail: contactsWithoutEmail,\n      totalContacts: contacts.length,\n      contactsWithEmailCount: 0,\n      contactsWithoutEmailCount: contactsWithoutEmail.length,\n      reason: \u0027No contacts with email addresses from Lead Finder\u0027\n    },\n    pairedItem: { item: 0 }\n  }];\n}\n\n// Output individual items for each contact with email\n// Store contactsWithoutEmail in each item for downstream access\nconst outputItems = contactsWithEmail.map((contact, index) =\u003e {\n  return {\n    json: {\n      // Individual contact data (for NeverBounce processing)\n      email: contact.email,\n      personal_email: contact.personal_email,\n      fullName: contact.full_name || `${contact.first_name || \u0027\u0027} ${contact.last_name || \u0027\u0027}`.trim(),\n      firstName: contact.first_name,\n      lastName: contact.last_name,\n      jobTitle: contact.job_title,\n      company: contact.company_name,\n      companyWebsite: contact.company_website,\n      linkedInUrl: contact.linkedin,\n      city: contact.city,\n      state: contact.state,\n      country: contact.country,\n      seniorityLevel: contact.seniority_level,\n      functionalLevel: contact.functional_level,\n      \n      // Metadata for tracking\n      contactIndex: index,\n      totalContactsWithEmail: contactsWithEmail.length,\n      \n      // Store contacts without emails for downstream access\n      // (Same data in each item - accessible via $json.contactsWithoutEmail)\n      contactsWithoutEmail: contactsWithoutEmail,\n      totalContactsWithoutEmail: contactsWithoutEmail.length\n    },\n    pairedItem: { item: index }\n  };\n});\n\nconsole.log(`✅ Output ${outputItems.length} individual items for NeverBounce processing`);\nconsole.log(`   Each item has email at root level: $json.email`);\n\nreturn outputItems;"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -432,
+                                       -704
+                                   ],
+                      "id":  "7ffa4329-1993-4e62-8476-13c3344d3e9b",
+                      "name":  "Filter Verified Emails"
+                  },
+                  {
+                      "parameters":  {
+                                         "url":  "https://api.neverbounce.com/v4.2/single/check",
+                                         "sendQuery":  true,
+                                         "queryParameters":  {
+                                                                 "parameters":  [
+                                                                                    {
+                                                                                        "name":  "key",
+                                                                                        "value":  "private_6635897607b6fbcab58db75cffad6cb4"
+                                                                                    },
+                                                                                    {
+                                                                                        "name":  "email",
+                                                                                        "value":  "={{ $json.email }}"
+                                                                                    }
+                                                                                ]
+                                                             },
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+                                                         "batching":  {
+                                                                          "batch":  {
+
+                                                                                    }
+                                                                      }
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       -656,
+                                       -448
+                                   ],
+                      "id":  "cccead68-541d-40b2-8754-eddbaa54ae81",
+                      "name":  "HTTP Request - Neverbounce Single Verification"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "version":  2,
+                                                                            "leftValue":  "",
+                                                                            "caseSensitive":  true,
+                                                                            "typeValidation":  "loose"
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "d22e3a5c-f066-4b7b-8de1-f2dfc31b9bad",
+                                                                                   "leftValue":  "={{ $json.email }}",
+                                                                                   "rightValue":  "true",
+                                                                                   "operator":  {
+                                                                                                    "type":  "string",
+                                                                                                    "operation":  "notEmpty"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -1184,
+                                       -432
+                                   ],
+                      "id":  "a655a63b-2f69-46b2-8264-7ddccf1bb329",
+                      "name":  "If - Has a Domain1"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// ============================================\n// PHASE CONFIGURATION CONSTANTS\n// ============================================\n\n// PHASE 1: Testing (30 domains, 8 job titles, fetch_count=150)\nconst PHASE_1_DOMAIN_LIMIT = 30;\nconst PHASE_1_JOB_TITLES = [\n  \u0027Hiring Manager\u0027,\n  \u0027Talent Acquisition Manager\u0027,\n  \u0027HR Manager\u0027,\n  \u0027Recruiter\u0027,\n  \u0027Recruiting Manager\u0027,\n  \u0027Director of Talent Acquisition\u0027,\n  \u0027VP of Human Resources\u0027,\n  \u0027People Operations Manager\u0027\n];\nconst PHASE_1_FETCH_COUNT = 150;\n\n// PHASE 1.5: Scale Validation (30 domains, 4 job titles, fetch_count=200)\nconst PHASE_1_5_DOMAIN_LIMIT = 30;\nconst PHASE_1_5_JOB_TITLES = [\n  \u0027Hiring Manager\u0027,\n  \u0027Talent Acquisition Manager\u0027,\n  \u0027HR Manager\u0027,\n  \u0027Recruiting Manager\u0027\n];\nconst PHASE_1_5_FETCH_COUNT = 200;\n\n// PHASE 2A: Initial Production (50 domains, 5 job titles, fetch_count=300)\nconst PHASE_2A_DOMAIN_LIMIT = 50;\nconst PHASE_2A_JOB_TITLES = [\n  \u0027Hiring Manager\u0027,\n  \u0027Talent Acquisition Manager\u0027,\n  \u0027HR Manager\u0027,\n  \u0027Recruiting Manager\u0027,\n  \u0027Director of Talent Acquisition\u0027\n];\nconst PHASE_2A_FETCH_COUNT = 300;\n\n// PHASE 2B: Full Production (50 domains, 6 job titles, fetch_count=500)\nconst PHASE_2B_DOMAIN_LIMIT = 50;\nconst PHASE_2B_JOB_TITLES = [\n  \u0027Hiring Manager\u0027,\n  \u0027Talent Acquisition Manager\u0027,\n  \u0027HR Manager\u0027,\n  \u0027Recruiting Manager\u0027,\n  \u0027Director of Talent Acquisition\u0027,\n  \u0027VP of Human Resources\u0027\n];\nconst PHASE_2B_FETCH_COUNT = 500;\n\n// ============================================\n// ACTIVE PHASE SELECTION\n// ============================================\nconst ACTIVE_DOMAIN_LIMIT = PHASE_1_DOMAIN_LIMIT;\nconst ACTIVE_JOB_TITLES = PHASE_1_JOB_TITLES;\nconst ACTIVE_FETCH_COUNT = PHASE_1_FETCH_COUNT;\nconst ACTIVE_PHASE_NAME = \u0027PHASE_1_TESTING\u0027;\n\n// ============================================\n// HELPER FUNCTION: Extract and clean domain from URL\n// ============================================\nfunction extractDomain(urlString) {\n  if (!urlString || typeof urlString !== \u0027string\u0027) {\n    return null;\n  }\n  \n  try {\n    let domain = urlString.replace(/^https?:\\/\\//i, \u0027\u0027);\n    domain = domain.replace(/^www\\./i, \u0027\u0027);\n    domain = domain.split(\u0027/\u0027)[0];\n    domain = domain.split(\u0027?\u0027)[0];\n    domain = domain.split(\u0027#\u0027)[0];\n    domain = domain.split(\u0027:\u0027)[0];\n    domain = domain.trim().toLowerCase();\n    \n    if (domain.includes(\u0027.\u0027) \u0026\u0026 !domain.includes(\u0027 \u0027) \u0026\u0026 domain.length \u003e 3) {\n      return domain;\n    }\n    \n    return null;\n  } catch (e) {\n    return null;\n  }\n}\n\n// ============================================\n// MAIN LOGIC\n// ============================================\n\nconst items = $input.all();\n\nconst extractedDomains = items\n  .map((item) =\u003e {\n    const jobData = item.json.jobData || {};\n    const companyWebsite = jobData.companyWebsite || \n                          jobData.company_website || \n                          jobData.companyDomain || \n                          jobData.company_domain || \n                          \u0027\u0027;\n    return extractDomain(companyWebsite);\n  })\n  .filter(domain =\u003e domain !== null);\n\nconst uniqueDomains = [...new Set(extractedDomains)];\nconst limitedDomains = uniqueDomains.slice(0, ACTIVE_DOMAIN_LIMIT);\n\nif (limitedDomains.length === 0) {\n  throw new Error(\n    \u0027No valid company domains found in job data! \u0027 +\n    \u0027Please verify that jobs have jobData.companyWebsite field with valid URLs. \u0027 +\n    `Received ${items.length} jobs, but none had valid domains.`\n  );\n}\n\nconst expectedContacts = ACTIVE_FETCH_COUNT;\n\nif (ACTIVE_FETCH_COUNT \u003e 1500) {\n  throw new Error(\n    `Circuit breaker triggered: fetch_count (${ACTIVE_FETCH_COUNT}) exceeds safety limit of 1,500. ` +\n    `Aborting to prevent cost overrun. Cost at 1,500 contacts: $2.25 per run.`\n  );\n}\n\nconst outputItem = {\n  company_domain: limitedDomains,\n  contact_job_title: ACTIVE_JOB_TITLES,\n  fetch_count: ACTIVE_FETCH_COUNT,\n  email_status: [\u0027validated\u0027, \u0027not_validated\u0027, \u0027unknown\u0027],\n  seniority_level: [\u0027c_suite\u0027, \u0027vp\u0027, \u0027director\u0027, \u0027manager\u0027, \u0027senior\u0027, \u0027entry\u0027],\n  functional_level: [\u0027marketing\u0027, \u0027human_resources\u0027],\n  _metadata: {\n    phase: ACTIVE_PHASE_NAME,\n    expected_contacts: expectedContacts,\n    expected_contacts_formula: \u0027fetch_count (absolute total limit)\u0027,\n    expected_contacts_note: \u0027Actor returns UP TO fetch_count contacts total, not per-domain or per-title\u0027,\n    domain_count: limitedDomains.length,\n    job_title_count: ACTIVE_JOB_TITLES.length,\n    fetch_count: ACTIVE_FETCH_COUNT,\n    timestamp: new Date().toISOString(),\n    total_jobs_received: items.length,\n    total_domains_extracted: extractedDomains.length,\n    unique_domains_found: uniqueDomains.length,\n    domains_after_limit: limitedDomains.length,\n    circuit_breaker_limit: 1500,\n    estimated_cost_per_run: `$${(ACTIVE_FETCH_COUNT * 1.5 / 1000).toFixed(2)}`\n  }\n};\n\nreturn [{ json: outputItem }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1312,
+                                       -960
+                                   ],
+                      "id":  "65d4f583-d2ee-4fb3-b5f0-5539842ca824",
+                      "name":  "Domain extraction and Apify input builder - 100 recs"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// =============================================================================\n// QUALITY FILTER - TOP 5 CONTACTS PER DOMAIN\n// =============================================================================\n// Version: 1.0.0 (2025-10-29)\n// \n// Purpose: Filter contacts to keep only the TOP 5 highest-quality contacts\n//          per job/domain to reduce costs and improve targeting\n//\n// Quality Scoring Criteria:\n// - Email validation status (validated = 100 pts, other = 50 pts)\n// - Seniority level (c_suite = 50, vp = 40, director = 30, head = 25, manager = 20)\n// - Data completeness (+5 pts per filled field: linkedin, city, state, country, personal_email)\n// - Job title relevance (+10 pts for key terms: manager, director, vp, cmo, ceo, head, chief)\n//\n// Input: Array of contacts from Lead Finder Actor\n// Output: Individual items (one per contact) - top 5 per domain\n// =============================================================================\n\nconst contacts = $input.all();\n\nconsole.log(`🎯 Quality Filtering: Processing ${contacts.length} contacts`);\n\n// =============================================================================\n// HELPER FUNCTION: Extract domain from URL\n// =============================================================================\nfunction extractDomain(urlString) {\n  if (!urlString || typeof urlString !== \u0027string\u0027) {\n    return null;\n  }\n  \n  try {\n    let domain = urlString.replace(/^https?:\\/\\//i, \u0027\u0027);\n    domain = domain.replace(/^www\\./i, \u0027\u0027);\n    domain = domain.split(\u0027/\u0027)[0];\n    domain = domain.split(\u0027?\u0027)[0];\n    domain = domain.split(\u0027#\u0027)[0];\n    domain = domain.split(\u0027:\u0027)[0];\n    domain = domain.trim().toLowerCase();\n    \n    if (domain.includes(\u0027.\u0027) \u0026\u0026 !domain.includes(\u0027 \u0027) \u0026\u0026 domain.length \u003e 3) {\n      return domain;\n    }\n    \n    return null;\n  } catch (e) {\n    return null;\n  }\n}\n\n// =============================================================================\n// HELPER FUNCTION: Calculate quality score for a contact\n// =============================================================================\nfunction calculateQualityScore(contact) {\n  let score = 0;\n  \n  // 1. EMAIL VALIDATION STATUS (100 or 50 points)\n  const emailStatus = (contact.email_status || \u0027\u0027).toLowerCase();\n  if (emailStatus === \u0027validated\u0027 || emailStatus === \u0027valid\u0027) {\n    score += 100;\n  } else if (contact.email \u0026\u0026 contact.email.trim() !== \u0027\u0027) {\n    score += 50; // Has email but not validated\n  }\n  \n  // 2. SENIORITY LEVEL (10-50 points)\n  const seniorityLevel = (contact.seniority_level || \u0027\u0027).toLowerCase();\n  const seniorityScores = {\n    \u0027c_suite\u0027: 50,\n    \u0027c-suite\u0027: 50,\n    \u0027vp\u0027: 40,\n    \u0027director\u0027: 30,\n    \u0027head\u0027: 25,\n    \u0027manager\u0027: 20,\n    \u0027senior\u0027: 15,\n    \u0027entry\u0027: 10\n  };\n  score += seniorityScores[seniorityLevel] || 10;\n  \n  // 3. DATA COMPLETENESS (5 points per field, max 25 points)\n  const completenessFields = [\n    contact.linkedin,\n    contact.city,\n    contact.state,\n    contact.country,\n    contact.personal_email\n  ];\n  const filledFields = completenessFields.filter(field =\u003e field \u0026\u0026 field.toString().trim() !== \u0027\u0027).length;\n  score += filledFields * 5;\n  \n  // 4. JOB TITLE RELEVANCE (10 points if contains key terms)\n  const jobTitle = (contact.job_title || \u0027\u0027).toLowerCase();\n  const keyTerms = [\u0027manager\u0027, \u0027director\u0027, \u0027vp\u0027, \u0027vice president\u0027, \u0027cmo\u0027, \u0027ceo\u0027, \u0027cfo\u0027, \u0027cto\u0027, \u0027head\u0027, \u0027chief\u0027, \u0027lead\u0027];\n  const hasKeyTerm = keyTerms.some(term =\u003e jobTitle.includes(term));\n  if (hasKeyTerm) {\n    score += 10;\n  }\n  \n  // 5. FUNCTIONAL LEVEL BONUS (5 points for marketing/hr/c_suite)\n  const functionalLevel = (contact.functional_level || \u0027\u0027).toLowerCase();\n  if ([\u0027marketing\u0027, \u0027human_resources\u0027, \u0027hr\u0027, \u0027c_suite\u0027].includes(functionalLevel)) {\n    score += 5;\n  }\n  \n  return score;\n}\n\n// =============================================================================\n// STEP 1: Calculate quality scores and group by domain\n// =============================================================================\nconst contactsByDomain = {};\n\nfor (let i = 0; i \u003c contacts.length; i++) {\n  const contactItem = contacts[i];\n  const contact = contactItem.json;\n  \n  // Extract domain from company website\n  const domain = extractDomain(contact.company_website);\n  \n  if (!domain) {\n    console.log(`⚠️ Contact ${i}: No domain found for ${contact.company_name || \u0027Unknown\u0027} - SKIPPING`);\n    continue;\n  }\n  \n  // Calculate quality score\n  const qualityScore = calculateQualityScore(contact);\n  \n  // Initialize domain group if it doesn\u0027t exist\n  if (!contactsByDomain[domain]) {\n    contactsByDomain[domain] = [];\n  }\n  \n  // Add contact with quality score to domain group\n  contactsByDomain[domain].push({\n    contact: contact,\n    qualityScore: qualityScore,\n    originalIndex: i\n  });\n  \n  console.log(`✅ Contact ${i}: ${contact.full_name || \u0027Unknown\u0027} (${contact.company_name}) - Domain: ${domain} - Score: ${qualityScore}`);\n}\n\nconsole.log(`\\n📊 Grouped ${contacts.length} contacts into ${Object.keys(contactsByDomain).length} domains`);\n\n// =============================================================================\n// STEP 2: Sort and filter - keep top 5 per domain\n// =============================================================================\nconst filteredContacts = [];\n\nfor (const domain in contactsByDomain) {\n  const domainContacts = contactsByDomain[domain];\n  \n  // Sort by quality score (descending)\n  domainContacts.sort((a, b) =\u003e b.qualityScore - a.qualityScore);\n  \n  // Keep top 5\n  const topContacts = domainContacts.slice(0, 5);\n  \n  console.log(`\\n🏆 Domain: ${domain}`);\n  console.log(`   Total contacts: ${domainContacts.length}`);\n  console.log(`   Keeping top ${topContacts.length} contacts:`);\n  \n  for (let i = 0; i \u003c topContacts.length; i++) {\n    const contactData = topContacts[i];\n    console.log(`   ${i + 1}. ${contactData.contact.full_name || \u0027Unknown\u0027} - Score: ${contactData.qualityScore} - ${contactData.contact.job_title || \u0027No title\u0027}`);\n    filteredContacts.push(contactData);\n  }\n}\n\n// =============================================================================\n// STEP 3: Create output items (one per contact)\n// =============================================================================\nconst outputItems = filteredContacts.map((contactData, index) =\u003e {\n  return {\n    json: {\n      ...contactData.contact,\n      // Add quality score to the contact data for downstream reference\n      _qualityScore: contactData.qualityScore\n    },\n    pairedItem: { item: contactData.originalIndex }\n  };\n});\n\nconsole.log(`\\n✅ Quality Filtering Complete:`);\nconsole.log(`   Input contacts: ${contacts.length}`);\nconsole.log(`   Output contacts: ${outputItems.length}`);\nconsole.log(`   Reduction: ${contacts.length - outputItems.length} contacts filtered out`);\nconsole.log(`   Domains processed: ${Object.keys(contactsByDomain).length}`);\n\nreturn outputItems;"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -976,
+                                       -704
+                                   ],
+                      "id":  "1bccf178-eb61-4241-8b83-c4ce2365985c",
+                      "name":  "Contacts Quality Filter"
+                  },
+                  {
+                      "parameters":  {
+                                         "resource":  "Datasets",
+                                         "datasetId":  "={{ $json.defaultDatasetId }}",
+                                         "offset":  0,
+                                         "limit":  200
+                                     },
+                      "type":  "@apify/n8n-nodes-apify.apify",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -1232,
+                                       -704
+                                   ],
+                      "id":  "52de3a10-0b45-41e2-82b7-5aaf13145b0b",
+                      "name":  "Apify Get Dataset Items",
+                      "credentials":  {
+                                          "apifyApi":  {
+                                                           "id":  "wI68UXmrV57w78X2",
+                                                           "name":  "Apify account"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "maxItems":  50
+                                     },
+                      "type":  "n8n-nodes-base.limit",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -736,
+                                       -704
+                                   ],
+                      "id":  "c84b954b-7068-428c-ab08-c6fb58a5e5ce",
+                      "name":  "Limit Contacts - 40"
+                  },
+                  {
+                      "parameters":  {
+                                         "actorId":  {
+                                                         "__rl":  true,
+                                                         "value":  "IoSHqwTR9YGhzccez",
+                                                         "mode":  "id"
+                                                     },
+                                         "customBody":  "={{ JSON.stringify({\n  company_domain: $json.company_domain,\n  contact_job_title: $json.contact_job_title,\n  fetch_count: $json.fetch_count,\n  email_status: $json.email_status,\n  seniority_level: $json.seniority_level,\n  functional_level: $json.functional_level,\n  file_name: \u0027Prospects\u0027\n}) }}",
+                                         "timeout":  500,
+                                         "memory":  4096
+                                     },
+                      "type":  "@apify/n8n-nodes-apify.apify",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -1472,
+                                       -704
+                                   ],
+                      "id":  "900ee9f0-8962-4e20-aefd-b30ef5dde090",
+                      "name":  "Run an Actor",
+                      "credentials":  {
+                                          "apifyApi":  {
+                                                           "id":  "wI68UXmrV57w78X2",
+                                                           "name":  "Apify account"
+                                                       }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Domain extraction and Apify input builder - 100 recs",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Handle No Domains - Empty Contacts":  {
+                                                                   "main":  [
+                                                                                [
+                                                                                    {
+                                                                                        "node":  "Output Formatting Split By Job",
+                                                                                        "type":  "main",
+                                                                                        "index":  0
+                                                                                    }
+                                                                                ]
+                                                                            ]
+                                                               },
+                        "If - Has a Domain":  {
+                                                  "main":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "Run an Actor",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ],
+                                                               [
+                                                                   {
+                                                                       "node":  "Handle No Domains - Empty Contacts",
+                                                                       "type":  "main",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                              },
+                        "Filter Verified Emails":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "If - Has a Domain1",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "HTTP Request - Neverbounce Single Verification":  {
+                                                                               "main":  [
+                                                                                            [
+                                                                                                {
+                                                                                                    "node":  "Output Formatting Split By Job",
+                                                                                                    "type":  "main",
+                                                                                                    "index":  0
+                                                                                                }
+                                                                                            ]
+                                                                                        ]
+                                                                           },
+                        "If - Has a Domain1":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "HTTP Request - Neverbounce Single Verification",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Domain extraction and Apify input builder - 100 recs":  {
+                                                                                     "main":  [
+                                                                                                  [
+                                                                                                      {
+                                                                                                          "node":  "If - Has a Domain",
+                                                                                                          "type":  "main",
+                                                                                                          "index":  0
+                                                                                                      }
+                                                                                                  ]
+                                                                                              ]
+                                                                                 },
+                        "Contacts Quality Filter":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Limit Contacts - 40",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Apify Get Dataset Items":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Contacts Quality Filter",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Output Formatting Split By Job":  {
+                                                               "main":  [
+                                                                            [
+
+                                                                            ]
+                                                                        ]
+                                                           },
+                        "Limit Contacts - 40":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Filter Verified Emails",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Run an Actor":  {
+                                             "main":  [
+                                                          [
+                                                              {
+                                                                  "node":  "Apify Get Dataset Items",
+                                                                  "type":  "main",
+                                                                  "index":  0
+                                                              }
+                                                          ]
+                                                      ]
+                                         }
+                    },
+    "settings":  {
+                     "saveExecutionProgress":  true,
+                     "saveManualExecutions":  true,
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "executionOrder":  "v1"
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "229d4853-6fdb-4c6c-960d-df95734eaa4a",
+    "versionCounter":  1,
+    "triggerCount":  1,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-09-15T17:24:05.979Z",
+                       "createdAt":  "2025-09-15T17:24:05.979Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "rClUELDAK9f4mgJx",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-04T23:00:00.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-04",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-09-10T16:23:08.235Z",
+                     "createdAt":  "2025-09-10T16:23:08.235Z",
+                     "id":  "FrnybmIzoJd732QS",
+                     "name":  "Augment Code"
+                 },
+                 {
+                     "updatedAt":  "2025-09-13T21:08:18.122Z",
+                     "createdAt":  "2025-09-13T21:08:18.122Z",
+                     "id":  "H8bAHR6C77zCCEmw",
+                     "name":  "sub-flow"
+                 }
+             ]
+}

@@ -222,3 +222,22 @@ Contact-Enrichment-Workflow-UPDATED-STATE.json
 
 # N8N to Python conversion tool
 n8n2python/
+
+# Test data and output files (execution results, generated resumes, emails)
+# These are temporary outputs from workflow executions and should not be committed
+Input-Output Data/*.eml
+Input-Output Data/*.pdf
+Input-Output Data/*.docx
+Input-Output Data/*.csv
+Input-Output Data/Resume_*.pdf
+Input-Output Data/Application*.eml
+Input-Output Data/Tracking*.csv
+Input-Output Data/tracking*.csv
+
+# System crash dumps and temporary files
+*.stackdump
+bash.exe.stackdump
+
+# Temporary code snippets and test files
+Binary Data Converter Function Node
+Gemini CLI/
