@@ -1,19 +1,20 @@
 # Project Operations Manual
 **LinkedIn Automation Project - Standard Operating Procedures & Troubleshooting**
 
-**Last Updated**: 2025-10-30  
-**Version**: 1.0
+**Last Updated**: 2025-11-12
+**Version**: 1.2
 
 ---
 
 ## 📋 **TABLE OF CONTENTS**
 
 1. [Overview](#overview)
-2. [Standard Operating Procedures](#standard-operating-procedures)
-3. [Troubleshooting Guide](#troubleshooting-guide)
-4. [Common Issues & Solutions](#common-issues--solutions)
-5. [Best Practices](#best-practices)
-6. [Emergency Procedures](#emergency-procedures)
+2. [Email Infrastructure](#email-infrastructure)
+3. [Standard Operating Procedures](#standard-operating-procedures)
+4. [Troubleshooting Guide](#troubleshooting-guide)
+5. [Common Issues & Solutions](#common-issues--solutions)
+6. [Best Practices](#best-practices)
+7. [Emergency Procedures](#emergency-procedures)
 
 ---
 
@@ -30,8 +31,67 @@ This manual provides standard operating procedures, troubleshooting guides, and 
 - **N8N**: Workflow automation platform
 - **Apify**: Web scraping and data extraction actors
 - **Google Sheets**: Data storage and tracking
-- **Gmail**: Email draft creation
+- **Gmail/Outlook**: Email draft creation
 - **AI Services**: Google Gemini, Claude (resume customization, email generation)
+
+---
+
+## 📧 **EMAIL INFRASTRUCTURE**
+
+### **4-Account Email System (Current - 2025-11-12)**
+
+**Email Accounts**:
+- **Gmail**: dachevivo@gmail.com (65.4% of emails, 17/26 positions)
+- **Outlook #1**: dachevivo@outlook.com (11.5% of emails, 3/26 positions)
+- **Outlook #2**: dachevivo2@outlook.com (11.5% of emails, 3/26 positions)
+- **Outlook #3**: dachevivo3@outlook.com (11.5% of emails, 3/26 positions)
+
+**Daily Capacity**: 20 emails/day (up from 15 emails/day in legacy 2-account system)
+
+**Account Rotation Strategy**:
+- **Algorithm**: Weighted Round-Robin with modulo 26 counter
+- **Counter Storage**: Google Sheets "Email Daily Tracking--4-Account" tab, row ID=1
+- **Counter Increment**: `(currentCounter + 1) % 26`
+- **Distribution Logic**:
+  - Positions 0-16 (17 positions) → Gmail (65.4%)
+  - Positions 17-19 (3 positions) → Outlook #1 (11.5%)
+  - Positions 20-22 (3 positions) → Outlook #2 (11.5%)
+  - Positions 23-25 (3 positions) → Outlook #3 (11.5%)
+
+**N8N Credentials**:
+- **Gmail**: "Gmail account" (existing)
+- **Outlook #1**: "Microsoft Outlook account" (ID: nfaK9aEhGOnLLHC4) - dachevivo@outlook.com
+- **Outlook #2**: "Microsoft Outlook account 2" - dachevivo2@outlook.com
+- **Outlook #3**: "Microsoft Outlook account 3" - dachevivo3@outlook.com
+
+**Google Sheets Tracking**:
+- **Document ID**: 1NgFM2ujALlcApbyAuYNWJ5Hyf0UkO0efQlGAzoifC8c
+- **Document Name**: LinkedIn Outreach Tracking Dashboard
+- **Sheet Tab**: "Email Daily Tracking--4-Account"
+- **Columns**: 30 columns (id, counter, executionDate, executionTime, totalEmails, gmailCount, outlook1Count, outlook2Count, outlook3Count, gmailPercentage, outlook1Percentage, outlook2Percentage, outlook3Percentage, gmailBounceRate, outlook1BounceRate, outlook2BounceRate, outlook3BounceRate, gmailHealth, outlook1Health, outlook2Health, outlook3Health, workflowId, executionId, aggregationTimestamp, dataSource, metricsVersion, draftCreatedAt, timezone, timezoneOffset, debugInfo)
+
+**Workflows**:
+- **NEW Orchestrator**: LinkedIn-SEO-4-GmailOutlook-Orchestrator--Augment (ID: gB6UEwFTeOdnAHPI)
+- **NEW Outreach Tracking Workshop**: LinkedIn-4-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment (ID: WUe4y8iYEXNAB6dq)
+- **LEGACY Orchestrator**: LinkedIn-SEO-GmailOutlook-Orchestrator--Augment (ID: fGpR7xvrOO7PBa0c)
+- **LEGACY Outreach Tracking Workshop**: LinkedIn-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment (ID: Vp9DpKF3xT2ysHhx)
+
+### **Legacy 2-Account Email System (Deprecated)**
+
+**Email Accounts**:
+- **Gmail**: dachevivo@gmail.com (80% of emails, 4/5 positions)
+- **Outlook #1**: dachevivo@outlook.com (20% of emails, 1/5 positions)
+
+**Daily Capacity**: 15 emails/day
+
+**Account Rotation Strategy**:
+- **Algorithm**: Weighted Round-Robin with modulo 5 counter
+- **Counter Storage**: Google Sheets "Email Daily Tracking" tab, row ID=1
+- **Distribution Logic**:
+  - Position 0 → Outlook (20%)
+  - Positions 1-4 → Gmail (80%)
+
+**Status**: DEPRECATED - Maintained for rollback purposes only
 
 ---
 
