@@ -1,51 +1,111 @@
 # Multi-Keyword Campaign Strategy
-**LinkedIn Automation - Parallel Job Search Campaigns**
+**LinkedIn Automation - Sequential Job Search Campaigns**
 
-**Document Version**: 1.0.0  
-**Created**: 2025-10-28  
-**Last Updated**: 2025-10-28  
-**Status**: APPROVED - Ready for Implementation
+**Document Version**: 2.0.0
+**Created**: 2025-10-28
+**Last Updated**: 2025-11-11
+**Status**: ✅ APPROVED - Phase 1 (Manual Execution) In Progress
+
+---
+
+## ⚠️ **CRITICAL UPDATE (2025-11-11)**
+
+**ARCHITECTURE CHANGE**: This document has been updated to reflect the **SEQUENTIAL EXECUTION** model (NOT parallel execution). See `Docs/architecture/multi-keyword-campaign-implementation-strategy.md` for complete implementation details.
+
+**Key Changes**:
+- ❌ **Parallel execution is NOT SAFE** - Creates race conditions on Google Sheets counter
+- ✅ **Sequential execution is REQUIRED** - Prevents counter race conditions and duplicate applications
+- ✅ **Daily limit is 13-15 emails TOTAL** (not per campaign) - Shared across ALL keyword campaigns
+- ✅ **Phased implementation** - Manual execution first (Week 1), automation later (Week 2+)
 
 ---
 
 ## Executive Summary
 
-This document outlines the strategic approach for scaling the LinkedIn automation system to support multiple parallel job search campaigns targeting different keywords simultaneously. The architecture leverages a **2-tier shared sub-workflow approach** that minimizes code duplication while enabling independent keyword-specific campaigns.
+This document outlines the strategic approach for scaling the LinkedIn automation system to support multiple **sequential** job search campaigns targeting different keywords. The architecture leverages a **2-tier shared sub-workflow approach** that minimizes code duplication while enabling independent keyword-specific campaigns.
 
-**Key Architectural Decision**: Use shared sub-workflows across all keyword campaigns, duplicating ONLY the orchestrator and Job Discovery workflows per keyword. This approach provides a **single point of fix** - when an issue is identified in one keyword campaign, fixing the shared sub-workflow automatically resolves it for ALL keywords.
+**Key Architectural Decisions**:
+1. **Sequential Execution Model**: Campaigns run one at a time (NOT parallel) to prevent counter race conditions
+2. **Shared Sub-Workflows**: All campaigns share Job Matching, Contact Enrichment, Resume Generation, and Outreach Tracking workflows
+3. **Shared Counter System**: All campaigns read/write to the same Google Sheets counter to enforce daily limit
+4. **Phased Implementation**: Manual execution first (Phase 1), Master Orchestrator automation later (Phase 2)
+
+**Critical Constraint**: **13-15 emails/day TOTAL** across ALL campaigns combined (not per campaign)
 
 ---
 
 ## Campaign Overview
 
-### Target Keywords (Initial Phase)
+### Target Keywords (Updated 2025-11-11)
 
 | Keyword | Priority | Target Volume | Status |
 |---------|----------|---------------|--------|
-| **SEO Specialist** | HIGH | 100 emails/day | ✅ ACTIVE (existing) |
-| **Automation Specialist** | HIGH | 100 emails/day | 🔄 PLANNED |
-| **GenAI Engineer** | HIGH | 100 emails/day | 🔄 PLANNED |
-| **Marketing Manager** | MEDIUM | 50 emails/day | ⏳ FUTURE |
-| **Data Analyst** | MEDIUM | 50 emails/day | ⏳ FUTURE |
+| **SEO** | HIGH | 3-5 emails/day | ✅ ACTIVE (existing) |
+| **Automation** | HIGH | 3-5 emails/day | 🔄 PHASE 1 (manual testing) |
+| **Gen AI** | HIGH | 3-5 emails/day | ⏳ PHASE 1 (planned) |
+| **Full-Stack Developer** | MEDIUM | 2-3 emails/day | ⏳ PHASE 3 (future) |
+| **Frontend Developer** | MEDIUM | 2-3 emails/day | ⏳ PHASE 3 (future) |
+| **React Developer** | LOW | 1-2 emails/day | ⏳ PHASE 3 (optional) |
 
-### Campaign Goals
+### Campaign Goals (Updated)
 
-**Phase 1 (Weeks 1-4)**: Establish 3 parallel keyword campaigns
-- SEO Specialist: 100 emails/day
-- Automation Specialist: 100 emails/day
-- GenAI Engineer: 100 emails/day
-- **Total**: 300 emails/day across 3 keywords
+**Phase 1 (Week 1 - CURRENT)**: Manual sequential execution with 2-3 keyword campaigns
+- SEO: 3-5 emails/day
+- Automation: 3-5 emails/day
+- Gen AI: 3-5 emails/day (optional)
+- **Total**: 13-15 emails/day across ALL campaigns
+- **Execution**: Manual triggering (user triggers each campaign sequentially)
 
-**Phase 2 (Weeks 5-8)**: Expand to 5 keyword campaigns
-- Add Marketing Manager: 50 emails/day
-- Add Data Analyst: 50 emails/day
-- **Total**: 400 emails/day across 5 keywords
+**Phase 2 (Week 2)**: Build Master Orchestrator for automated sequential execution
+- Master Orchestrator coordinates campaign execution
+- Capacity checking between campaigns
+- Error handling and conditional execution
+- **Total**: 13-15 emails/day across ALL campaigns
+
+**Phase 3 (Week 3+)**: Scale to 5-6 keyword campaigns
+- Add Full-Stack Developer, Frontend Developer, React Developer
+- Optimize keyword targeting based on performance data
+- **Total**: 13-15 emails/day across ALL campaigns
+
+**Phase 4 (Week 4+)**: Monitoring & optimization
+- Enable automated daily execution (5:00 AM PST)
+- Implement monitoring dashboard
+- Add alerting for critical issues
+- **Total**: 13-15 emails/day across ALL campaigns
 
 ---
 
-## Architecture Decision: Shared Sub-Workflows Approach
+## Architecture Decision: Sequential Execution with Shared Sub-Workflows
 
-### 2-Tier Architecture Overview
+### **CRITICAL**: Sequential Execution Model (Updated 2025-11-11)
+
+**Why Sequential (NOT Parallel)?**
+
+1. **Counter Race Condition Prevention (HIGH RISK)**:
+   - Parallel execution causes all campaigns to read counter = 0 simultaneously
+   - Each campaign thinks it has full 15-email capacity
+   - Result: 45 emails sent instead of 15 (3x over limit) → Account suspension risk
+
+2. **Duplicate Application Prevention (MEDIUM RISK)**:
+   - Multiple campaigns might discover the same job simultaneously
+   - Both check Google Sheets before either writes
+   - Result: Duplicate applications to same company → Unprofessional
+
+3. **Accurate Capacity Tracking**:
+   - Sequential execution ensures each campaign sees TRUE remaining capacity
+   - Campaign 1: Reads counter = 0, sends 5 emails, updates counter to 5
+   - Campaign 2: Reads counter = 5, has 10 emails remaining, sends 4 emails, updates counter to 9
+   - Campaign 3: Reads counter = 9, has 6 emails remaining, sends 6 emails, updates counter to 15
+
+**Sequential Execution Flow**:
+```
+Campaign 1 (SEO) → Counter: 0→5 → Completes
+Campaign 2 (Automation) → Counter: 5→9 → Completes
+Campaign 3 (Gen AI) → Counter: 9→15 → Completes
+Total: 15 emails (within limit) ✅
+```
+
+### 2-Tier Architecture Overview (Updated)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
