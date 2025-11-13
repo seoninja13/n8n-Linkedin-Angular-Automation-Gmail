@@ -1,8 +1,8 @@
 # Project Operations Manual
 **LinkedIn Automation Project - Standard Operating Procedures & Troubleshooting**
 
-**Last Updated**: 2025-11-12
-**Version**: 1.2
+**Last Updated**: 2025-11-13
+**Version**: 1.3
 
 ---
 
@@ -182,7 +182,82 @@ Apify account has a **free tier limit** that restricts the Lead Finder Actor to 
 
 ---
 
-### **ISSUE-002: Apify Actor Memory Parameters Not Working**
+### **ISSUE-002: Data Validation v1.2.0 - Orchestrator Routing Logic Fix**
+
+**Symptom**: Orchestrator routing DUPLICATE applications to Outreach Tracking Workshop instead of filtering them out
+**Affected Component**: LinkedIn-SEO-4-GmailOutlook-Orchestrator--Augment, Data Validation node
+**Severity**: CRITICAL - BLOCKER (100% email delivery failure)
+**Date Identified**: 2025-11-13
+**Date Resolved**: 2025-11-13
+
+**Root Cause**:
+The **Data Validation** node (ID: 7a81cda8-7136-4be7-a6f3-c5157e15caf8, v1.1.0) was checking for required fields (firstName, lastName, email, jobTitle, companyName) but was **NOT checking for `outreachReady: true`**. This caused DUPLICATE applications with `outreachReady: false` to pass validation and get routed to Outreach Tracking Workshop, while NON-DUPLICATE applications with `outreachReady: true` were also routed to Outreach Tracking. The Switch node couldn't distinguish between them because both had `validationStatus: "PASSED"`.
+
+**Evidence**:
+- **Execution 7604**: Outreach Tracking Workshop received DUPLICATE application (Plaid with `outreachReady: false`)
+- **Execution 7604**: NON-DUPLICATE application (Bask Health with `outreachReady: true`) did NOT reach Outreach Tracking
+- **Result**: ZERO emails sent (100% delivery failure)
+
+**Solution Applied**:
+Updated Data Validation node to v1.2.0 which adds `outreachReady === true` check BEFORE field validation:
+
+```javascript
+// STEP 1: CHECK OUTREACH READY STATUS (NEW IN v1.2.0)
+const outreachReady = contactRecord.outreachReady;
+
+if (outreachReady === false) {
+  // DUPLICATE APPLICATION - Skip expensive operations
+  return {
+    json: {
+      validationStatus: 'FAILED',
+      reason: 'Duplicate application - outreach not ready',
+      validationMetadata: {
+        validationVersion: '1.2.0',
+        failureReason: 'outreachReady: false (duplicate)',
+        costSavings: { estimatedSavingsUSD: 0.10 }
+      }
+    }
+  };
+}
+
+// STEP 2: VALIDATE REQUIRED FIELDS (EXISTING LOGIC)
+```
+
+**Deployment Details**:
+- **Workflow**: LinkedIn-SEO-4-GmailOutlook-Orchestrator--Augment (gB6UEwFTeOdnAHPI)
+- **Node Updated**: Data Validation (7a81cda8-7136-4be7-a6f3-c5157e15caf8)
+- **Version**: 1.2.0-OUTREACH-READY-CHECK
+- **Deployment Timestamp**: 2025-11-13 03:34:50 UTC
+- **Deployment Method**: N8N MCP tool `n8n_update_partial_workflow`
+
+**Validation Results (Execution 7609)**:
+- ✅ 2 DUPLICATE applications correctly marked as `validationStatus: "FAILED"`
+- ✅ 0 DUPLICATE applications reached Outreach Tracking Workshop
+- ✅ Both DUPLICATE applications logged to "Logs-Failures-Validation" sheet
+- ✅ Cost savings: $0.20 (2 duplicates × $0.10 per duplicate)
+- ✅ 100% filtering accuracy
+
+**Key Improvements**:
+1. **Early Termination**: Duplicates filtered out BEFORE expensive AI email generation and draft creation
+2. **Cost Savings**: $0.10 saved per duplicate (estimated $73/year for 2 duplicates/day)
+3. **Clear Audit Trail**: Failure reason explicitly states "Duplicate application - outreach not ready"
+4. **Architectural Soundness**: Leverages existing Switch node routing without workflow restructuring
+
+**Troubleshooting Similar Issues**:
+1. **Retrieve orchestrator workflow structure** using `n8n_get_workflow`
+2. **Analyze data flow path** from Contact Tracking Workshop to Outreach Tracking Workshop
+3. **Identify filtering/routing nodes** (Data Validation, Switch, If nodes)
+4. **Check validation logic** for missing checks (e.g., `outreachReady`, `isDuplicate`)
+5. **Retrieve execution data** using `n8n_get_execution` with `mode: "filtered"` for specific nodes
+6. **Verify routing decisions** by checking Switch node outputs and downstream node inputs
+
+**Reference**:
+- Daily Log: `Docs/daily-logs/2025-11-13-data-validation-fix-deployment.md`
+- Execution 7609: https://n8n.srv972609.hstgr.cloud/workflow/gB6UEwFTeOdnAHPI/executions/7609
+
+---
+
+### **ISSUE-003: Apify Actor Memory Parameters Not Working**
 
 **Symptom**: Actor uses default memory (512 MB) despite passing `memory=4096` parameter
 **Affected Component**: Contact Enrichment Workshop, HTTP Request node
