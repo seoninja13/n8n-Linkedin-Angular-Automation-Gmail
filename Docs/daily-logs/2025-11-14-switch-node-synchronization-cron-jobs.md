@@ -195,9 +195,86 @@ On 2025-11-13, we fixed a bug in the "4-Account Email Router" Switch node by rem
 
 ---
 
+## 🔍 **ORCHESTRATOR WORKFLOW VERIFICATION** (2025-11-14)
+
+### **Objective**
+Verify the total number of orchestrator workflows in the system and confirm which Outreach Tracking Workshop each orchestrator uses.
+
+### **Complete Orchestrator Inventory**
+
+**Active Orchestrators** (2 total):
+
+1. **LinkedIn-SEO-4-GmailOutlook-Orchestrator--Augment**
+   - Workflow ID: gB6UEwFTeOdnAHPI
+   - Status: ✅ ACTIVE
+   - Node Count: 23 nodes
+   - Last Updated: 2025-11-14T02:51:49.000Z
+   - Outreach Tracking Workshop: WUe4y8iYEXNAB6dq (4-account architecture)
+   - Cron Schedule: Daily at 04:30 AM PST (12:30 PM UTC)
+   - Cron Expression: `30 12 * * *`
+
+2. **LinkedIn-GenAI-4-GmailOutlook-Orchestrator--Augment**
+   - Workflow ID: B2tNNaSkbLD8gDxw
+   - Status: ✅ ACTIVE
+   - Node Count: 22 nodes ⚠️ (1 node less than SEO Orchestrator)
+   - Last Updated: 2025-11-13T21:56:48.057Z
+   - Outreach Tracking Workshop: WUe4y8iYEXNAB6dq (4-account architecture)
+   - Cron Schedule: Daily at 05:00 AM PST (01:00 PM UTC)
+   - Cron Expression: `0 13 * * *`
+
+**Inactive/Deprecated Orchestrators** (3 total):
+
+1. **LinkedIn-SEO-GmailOutlook-Orchestrator--Augment** (fGpR7xvrOO7PBa0c)
+   - Status: ❌ INACTIVE (old 2-account architecture)
+   - Last Updated: 2025-11-12T16:10:18.000Z
+   - Note: Replaced by LinkedIn-SEO-4-GmailOutlook-Orchestrator--Augment
+
+2. **LinkedIn-GenAI-GmailOutlook-Orchestrator--Augment** (aBKYtbE898SbtOOm)
+   - Status: ❌ INACTIVE (old 2-account architecture)
+   - Last Updated: 2025-11-12T16:53:58.000Z
+   - Note: Replaced by LinkedIn-GenAI-4-GmailOutlook-Orchestrator--Augment
+
+3. **LinkedIn-AutomationApecialist-GmailOutlook-Orchestrator--Augment** (Ck4SDHmpN5obKOBM)
+   - Status: ❌ INACTIVE (test/experimental workflow)
+   - Last Updated: 2025-10-29T15:56:33.000Z
+   - Note: Appears to be a test workflow (typo: "Apecialist" instead of "Specialist")
+
+### **Key Findings**
+
+**Shared Sub-workflow Architecture Confirmed**:
+- ✅ Both active orchestrators share the SAME Outreach Tracking Workshop (WUe4y8iYEXNAB6dq)
+- ✅ Any fix or update to WUe4y8iYEXNAB6dq automatically applies to both orchestrators
+- ✅ Switch node trailing newline bug fix (2025-11-13) automatically synchronized
+
+**Node Count Discrepancy Detected**:
+- ⚠️ SEO Orchestrator: 23 nodes
+- ⚠️ GenAI Orchestrator: 22 nodes
+- ⚠️ Difference: 1 node
+
+**Hypothesis**:
+The 1-node difference may be the "Filter - stop spawning new generations" node that was restored in the SEO Orchestrator on 2025-11-13T18:00:19.765Z. This filter node prevents Resume Generation Workshop from processing jobs without verified contacts.
+
+**Potential Impact**:
+- If the GenAI Orchestrator is missing the filter node, it may waste AI API costs on jobs without verified contacts
+- However, the Contact Enrichment Workshop already filters out items with verifiedCount = 0, so the orchestrator-level filter may be redundant
+- The filter node serves as a safety net in case upstream filtering fails
+
+**Testing Strategy**:
+1. ⏳ Test both orchestrators tomorrow morning (2025-11-15) with scheduled cron jobs
+2. ⏳ Compare execution results between SEO and GenAI orchestrators
+3. ⏳ If GenAI Orchestrator fails or behaves differently, investigate filter node synchronization
+4. ⏳ If both orchestrators work correctly, the 1-node difference may be inconsequential or related to a different node configuration
+
+**Linear Ticket Created**:
+- Title: "Investigate Filter Node Synchronization Between SEO and GenAI Orchestrators"
+- Priority: Medium (not urgent - will test tomorrow morning first)
+- Workflow IDs: gB6UEwFTeOdnAHPI (SEO) and B2tNNaSkbLD8gDxw (GenAI)
+
+---
+
 ## 🎯 **SESSION OUTCOME**
 
-**Status**: ✅ **COMPLETE**
+**Status**: ✅ **COMPLETE** (with ⚠️ potential bug identified for future investigation)
 
 **Key Achievements**:
 - ✅ Verified no synchronization needed (shared sub-workflow architecture)
@@ -206,8 +283,12 @@ On 2025-11-13, we fixed a bug in the "4-Account Email Router" Switch node by rem
 - ✅ Created daily log
 - ✅ Created shared sub-workflow architecture documentation
 - ✅ Identified deprecated workflows
+- ✅ Verified total orchestrator count (2 active, 3 inactive)
+- ⚠️ Identified potential filter node synchronization issue (1-node difference)
+- ✅ Created Linear ticket for tracking investigation
+- ✅ Documented testing strategy for tomorrow's scheduled executions
 - ✅ Committed all documentation updates to Git
 - ✅ Pushed changes to remote repository
 
-**Confidence Level**: **HIGH (100%)** - Architecture verification complete, documentation updated, Git repository clean
+**Confidence Level**: **HIGH (95%)** - Architecture verification complete, documentation updated, potential bug identified and tracked in Linear
 
