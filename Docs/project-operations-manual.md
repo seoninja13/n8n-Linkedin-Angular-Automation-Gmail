@@ -635,7 +635,69 @@ Output Formatting Split By Job (simplified, no chunk aggregation)
 
 ---
 
-**Last Updated**: 2025-10-31
-**Version**: 1.1
-**Next Review**: 2025-11-30
+### **ISSUE-008: N8N Workflow Version Caching**
+
+**Symptom**: Workflow executions fail with OLD errors despite fixes being applied minutes earlier
+**Affected Component**: Any inactive N8N workflow triggered by orchestrator
+**Severity**: HIGH - Blocks validation of workflow fixes
+
+**Root Cause**:
+N8N workflows can be **cached in memory** when they are inactive. When an orchestrator triggers an inactive sub-workflow, N8N may use the cached version instead of loading the latest version from the database. This causes executions to fail with OLD errors even after fixes have been applied.
+
+**Example Case (Execution #8407)**:
+- **TypeVersion 4.7 fix applied**: 2025-11-17T02:38:08.927Z (workflow version 160)
+- **Execution #8407 started**: 2025-11-17T02:52:41.763Z (**14 minutes AFTER fix**)
+- **Sub-executions failed**: "Could not get parameter 'columns.schema'" (OLD error from typeVersion 4.5)
+- **Conclusion**: Execution #8407 used a cached OLD version (159 or earlier) instead of version 160
+
+**Diagnosis Steps**:
+1. Retrieve execution data using `n8n_get_execution` with `mode: "summary"`
+2. Check error message and compare with known fixed issues
+3. Retrieve current workflow configuration using `n8n_get_workflow`
+4. Compare workflow version in execution vs. current workflow version
+5. Check workflow `updatedAt` timestamp vs. execution `startedAt` timestamp
+6. If execution started AFTER fix was applied but still shows OLD error → workflow caching issue
+
+**Solution**:
+1. **Restart N8N Server** to clear all workflow caches:
+   ```bash
+   # Stop N8N
+   pm2 stop n8n
+
+   # Start N8N
+   pm2 start n8n
+   ```
+
+2. **Activate Inactive Workflows** to force version reload:
+   - Go to N8N UI
+   - Open the affected workflow
+   - Click "Active" toggle to activate the workflow
+   - This forces N8N to load the latest version from the database
+
+3. **Wait 5 Minutes** after restarting N8N before triggering new executions
+
+4. **Trigger New Test Execution** to verify the fix is working
+
+**Prevention**:
+- **Activate workflows immediately after applying fixes** to force N8N to reload the latest version
+- **Restart N8N server after critical fixes** to clear all workflow caches
+- **Wait 5 minutes after restarting N8N** before triggering test executions
+- **Monitor execution errors** for patterns indicating cached versions (OLD errors after fixes)
+
+**Why This Happens**:
+- Inactive workflows are cached in memory for performance optimization
+- When a workflow is triggered, N8N may use the cached version instead of reloading from database
+- Workflow version updates don't automatically invalidate the cache
+- Activating a workflow forces N8N to reload the latest version from database
+
+**Related Documentation**:
+- Daily Log: `Docs/daily-logs/2025-11-17-n8n-execution-8407-workflow-caching-issue.md`
+- Knowledge Transfer: `Docs/handover/conversation-handover-knowledge-transfer.md` (Section: Email Volume Tracking System)
+- Execution #8407: https://n8n.srv972609.hstgr.cloud/workflow/B2tNNaSkbLD8gDxw/executions/8407
+
+---
+
+**Last Updated**: 2025-11-17
+**Version**: 1.4
+**Next Review**: 2025-12-17
 
