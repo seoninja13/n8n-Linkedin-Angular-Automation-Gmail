@@ -38,7 +38,68 @@ This manual provides standard operating procedures, troubleshooting guides, and 
 
 ## 📧 **EMAIL INFRASTRUCTURE**
 
-### **4-Account Email System (Current - 2025-11-12)**
+### **3-Gmail Account Email System (Current - 2025-11-18)**
+
+**Email Accounts**:
+- **Gmail #1**: dachevivo@gmail.com (10 emails/day, priority 1, established sender reputation)
+- **Gmail #2**: ivoddachev@gmail.com (3 emails/day, priority 2, warmup phase Week 1)
+- **Gmail #3**: ivodachevd@gmail.com (3 emails/day, priority 2, warmup phase Week 1) ✅ NEW
+- **Outlook #1**: dachevivo@outlook.com (DISABLED - rate limited 5-10 emails/day)
+- **Outlook #2**: dachevivo2@outlook.com (DISABLED - rate limited 5-10 emails/day)
+- **Outlook #3**: dachevivo3@outlook.com (DISABLED - rate limited 5-10 emails/day)
+
+**Daily Capacity**: 16 emails/day (current), 40 emails/day (after 4-week warmup)
+
+**Architecture Decision - Outlook Retirement (2025-11-18)**:
+Microsoft Outlook personal accounts have strict daily sending limits (5-10 emails/day), which blocked the system from scaling to the target volume of 13-15 emails/day. All Outlook accounts have been disabled in favor of a 3-Gmail account system, which provides:
+- Higher sending limits (100-500 emails/day after warmup)
+- Better deliverability for job application cold outreach
+- More trustworthy sender reputation (personal Gmail addresses)
+- Gradual warmup strategy (3/day → 15/day over 4 weeks)
+
+**Account Rotation Strategy**:
+- **Algorithm**: Google Sheets-based dynamic priority routing
+- **Configuration Storage**: Google Sheets "Email-Account-Config" sheet
+- **Selection Logic**: Priority-based (lower number = higher priority) with daily limit enforcement
+- **Distribution Logic**:
+  - Priority 1: gmail-dachevivo (10/day limit)
+  - Priority 2: gmail-ivoddachev (3/day limit)
+  - Priority 2: gmail-ivodachevd (3/day limit)
+  - When multiple accounts have same priority, first in Google Sheets table is selected
+  - Automatic daily counter reset based on lastResetDate field
+
+**N8N Credentials**:
+- **Gmail #1**: "Google account" (ID: w8nTWzWPswftVYqH) - dachevivo@gmail.com
+- **Gmail #2**: "Gmail - ivoddachev" - ivoddachev@gmail.com
+- **Gmail #3**: "Gmail - ivodachevd" - ivodachevd@gmail.com ✅ NEW
+- **Outlook #1**: "Microsoft Outlook account" (ID: nfaK9aEhGOnLLHC4) - dachevivo@outlook.com (DISABLED)
+- **Outlook #2**: "Microsoft Outlook account 2" - dachevivo2@outlook.com (DISABLED)
+- **Outlook #3**: "Microsoft Outlook account 3" - dachevivo3@outlook.com (DISABLED)
+
+**Google Sheets Configuration**:
+- **Document ID**: 1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g
+- **Document Name**: LinkedIn Outreach Tracking Dashboard
+- **Sheet Tab**: "Email-Account-Config"
+- **URL**: https://docs.google.com/spreadsheets/d/1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g/edit?gid=360476080#gid=360476080
+- **Columns**: 9 columns (accountName, enabled, dailyLimit, currentCount, lastResetDate, priority, emailAddress, credentialName, notes)
+- **Purpose**: Dynamic email account management - allows easy enable/disable and daily limit adjustments without workflow editing
+
+**Workflows**:
+- **Current Orchestrator**: LinkedIn-SEO-4-GmailOutlook-Orchestrator--Augment (ID: gB6UEwFTeOdnAHPI)
+- **Current Outreach Tracking Workshop**: LinkedIn-4-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment (ID: WUe4y8iYEXNAB6dq)
+- **Status**: Active, being upgraded to 3-Gmail account system (Steps 1-2 complete, Step 3 pending)
+
+**Weekly Warmup Schedule**:
+| Week | Gmail #1 (dachevivo) | Gmail #2 (ivoddachev) | Gmail #3 (ivodachevd) | Total Capacity |
+|------|----------------------|-----------------------|-----------------------|----------------|
+| 1 (Current) | 10/day | 3/day | 3/day | 16/day |
+| 2 | 12/day | 5/day | 5/day | 22/day |
+| 3 | 15/day | 8/day | 8/day | 31/day |
+| 4+ | 15/day | 15/day | 15/day | 45/day |
+
+**Action**: Update `dailyLimit` column in Google Sheets "Email-Account-Config" weekly - NO workflow changes needed
+
+### **Legacy 4-Account Email System (Deprecated - 2025-11-18)**
 
 **Email Accounts**:
 - **Gmail**: dachevivo@gmail.com (65.4% of emails, 17/26 positions)
@@ -46,52 +107,11 @@ This manual provides standard operating procedures, troubleshooting guides, and 
 - **Outlook #2**: dachevivo2@outlook.com (11.5% of emails, 3/26 positions)
 - **Outlook #3**: dachevivo3@outlook.com (11.5% of emails, 3/26 positions)
 
-**Daily Capacity**: 20 emails/day (up from 15 emails/day in legacy 2-account system)
+**Daily Capacity**: 20 emails/day
 
-**Account Rotation Strategy**:
-- **Algorithm**: Weighted Round-Robin with modulo 26 counter
-- **Counter Storage**: Google Sheets "Email Daily Tracking--4-Account" tab, row ID=1
-- **Counter Increment**: `(currentCounter + 1) % 26`
-- **Distribution Logic**:
-  - Positions 0-16 (17 positions) → Gmail (65.4%)
-  - Positions 17-19 (3 positions) → Outlook #1 (11.5%)
-  - Positions 20-22 (3 positions) → Outlook #2 (11.5%)
-  - Positions 23-25 (3 positions) → Outlook #3 (11.5%)
+**Deprecation Reason**: Outlook accounts hit rate limits (5-10 emails/day), blocking scale to 13-15 emails/day target. Replaced with 3-Gmail account system for higher capacity and better deliverability.
 
-**N8N Credentials**:
-- **Gmail**: "Gmail account" (existing)
-- **Outlook #1**: "Microsoft Outlook account" (ID: nfaK9aEhGOnLLHC4) - dachevivo@outlook.com
-- **Outlook #2**: "Microsoft Outlook account 2" - dachevivo2@outlook.com
-- **Outlook #3**: "Microsoft Outlook account 3" - dachevivo3@outlook.com
-
-**Google Sheets Tracking**:
-- **Document ID**: 1NgFM2ujALlcApbyAuYNWJ5Hyf0UkO0efQlGAzoifC8c
-- **Document Name**: LinkedIn Outreach Tracking Dashboard
-- **Sheet Tab**: "Email Daily Tracking--4-Account"
-- **Columns**: 30 columns (id, counter, executionDate, executionTime, totalEmails, gmailCount, outlook1Count, outlook2Count, outlook3Count, gmailPercentage, outlook1Percentage, outlook2Percentage, outlook3Percentage, gmailBounceRate, outlook1BounceRate, outlook2BounceRate, outlook3BounceRate, gmailHealth, outlook1Health, outlook2Health, outlook3Health, workflowId, executionId, aggregationTimestamp, dataSource, metricsVersion, draftCreatedAt, timezone, timezoneOffset, debugInfo)
-
-**Workflows**:
-- **NEW Orchestrator**: LinkedIn-SEO-4-GmailOutlook-Orchestrator--Augment (ID: gB6UEwFTeOdnAHPI)
-- **NEW Outreach Tracking Workshop**: LinkedIn-4-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment (ID: WUe4y8iYEXNAB6dq)
-- **LEGACY Orchestrator**: LinkedIn-SEO-GmailOutlook-Orchestrator--Augment (ID: fGpR7xvrOO7PBa0c)
-- **LEGACY Outreach Tracking Workshop**: LinkedIn-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment (ID: Vp9DpKF3xT2ysHhx)
-
-### **Legacy 2-Account Email System (Deprecated)**
-
-**Email Accounts**:
-- **Gmail**: dachevivo@gmail.com (80% of emails, 4/5 positions)
-- **Outlook #1**: dachevivo@outlook.com (20% of emails, 1/5 positions)
-
-**Daily Capacity**: 15 emails/day
-
-**Account Rotation Strategy**:
-- **Algorithm**: Weighted Round-Robin with modulo 5 counter
-- **Counter Storage**: Google Sheets "Email Daily Tracking" tab, row ID=1
-- **Distribution Logic**:
-  - Position 0 → Outlook (20%)
-  - Positions 1-4 → Gmail (80%)
-
-**Status**: DEPRECATED - Maintained for rollback purposes only
+**Status**: DEPRECATED - Outlook accounts disabled in Google Sheets "Email-Account-Config"
 
 ---
 

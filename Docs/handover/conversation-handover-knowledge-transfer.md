@@ -5,6 +5,78 @@
 
 ## 🚀 **CURRENT IMPLEMENTATION STATUS (2025-11-18)**
 
+### **3-Gmail Account Email System Implementation - IN PROGRESS**
+
+**Status**: ⏳ **STEPS 1-2 COMPLETE, STEP 3 PENDING** - New gmail-ivodachevd@gmail.com account integrated, Switch node configuration pending
+
+**Implementation Progress**:
+- ✅ **Step 1 Complete (2025-11-18)**: Gmail OAuth2 credential created for ivodachevd@gmail.com
+- ✅ **Step 2 Complete (2025-11-18)**: New Gmail nodes added to N8N workflow (Gmail MIME Builder-ivodachevd + Gmail - ivodachevd)
+- ✅ **Google Sheets Complete (2025-11-18)**: Email-Account-Config sheet configured with 3 Gmail accounts
+- ⏳ **Step 3 Pending**: Update "4-Account Email Router" Switch node to add Case 2 routing for gmail-ivodachevd
+- ⏳ **Step 4 Pending**: Testing the 3-Gmail account system (8 test scenarios)
+- ⏳ **Step 5 Pending**: Weekly warmup schedule management
+
+**Email Infrastructure Configuration (NEW - 3-Gmail System)**:
+- **Gmail #1**: dachevivo@gmail.com (10 emails/day, priority 1, established sender reputation)
+- **Gmail #2**: ivoddachev@gmail.com (3 emails/day, priority 2, warmup phase Week 1)
+- **Gmail #3**: ivodachevd@gmail.com (3 emails/day, priority 2, warmup phase Week 1) ✅ NEW
+- **Outlook #1**: dachevivo@outlook.com (DISABLED - rate limited 5-10 emails/day)
+- **Outlook #2**: dachevivo2@outlook.com (DISABLED - rate limited 5-10 emails/day)
+- **Outlook #3**: dachevivo3@outlook.com (DISABLED - rate limited 5-10 emails/day)
+- **Total Daily Capacity**: 16 emails/day (current), 40 emails/day (after 4-week warmup)
+
+**Architecture Decision - Outlook Retirement**:
+Microsoft Outlook personal accounts have strict daily sending limits (5-10 emails/day), which blocked the system from scaling to the target volume of 13-15 emails/day. All Outlook accounts have been disabled in favor of a 3-Gmail account system, which provides higher limits (100-500 emails/day after warmup) and better deliverability for job application cold outreach.
+
+**Google Sheets Configuration**:
+- **Document ID**: 1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g
+- **Sheet Name**: Email-Account-Config
+- **URL**: https://docs.google.com/spreadsheets/d/1Eiwf8LVWfkVeuaVSiicIp-GaX1Po95wCVAeMH7BUr6g/edit?gid=360476080#gid=360476080
+- **Structure**: 9 columns (accountName, enabled, dailyLimit, currentCount, lastResetDate, priority, emailAddress, credentialName, notes)
+- **Account Names**: gmail-dachevivo, gmail-ivoddachev, gmail-ivodachevd, outlook-dachevivo, outlook-dachevivo2, outlook-dachevivo3
+
+**N8N Workflow Details**:
+- **Workflow ID**: WUe4y8iYEXNAB6dq
+- **Workflow Name**: LinkedIn-4-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment
+- **New Nodes Added**:
+  - "Gmail MIME Builder-ivodachevd" (Code node, prepares MIME message)
+  - "Gmail - ivodachevd" (HTTP Request node, sends via Gmail API)
+- **Credential Created**: "Gmail - ivodachevd" (OAuth2, authenticated with ivodachevd@gmail.com)
+
+**Next Steps for New Conversation Thread**:
+1. **Complete Step 3**: Configure "4-Account Email Router" Switch node to add Case 2 for gmail-ivodachevd routing
+   - Add new Switch case: `{{ $json.selectedAccount === 'gmail-ivodachevd' }}`
+   - Connect Case 2 output to "Gmail MIME Builder-ivodachevd"
+   - Verify all 6 cases are configured correctly (3 Gmail + 3 Outlook)
+2. **Execute Step 4**: Run comprehensive testing (8 test scenarios)
+   - Test 1: Verify gmail-dachevivo is selected first (priority 1)
+   - Test 2: Verify gmail-ivoddachev is selected when gmail-dachevivo hits limit
+   - Test 3: Verify gmail-ivodachevd is selected when both gmail-dachevivo and gmail-ivoddachev hit limits
+   - Test 4: Verify error handling when all accounts exhausted
+   - Test 5: Verify priority tie-breaking (Gmail #2 vs #3)
+   - Test 6: Verify daily reset functionality
+   - Test 7: Verify account enable/disable functionality
+   - Test 8: Full day simulation (16 emails)
+3. **Implement Step 5**: Set up weekly warmup schedule tracking
+   - Week 1: 10/3/3 (current)
+   - Week 2: 12/5/5
+   - Week 3: 15/8/8
+   - Week 4+: 15/15/15
+
+**Key Technical Details**:
+- **Dynamic Account Selection**: Google Sheets-based configuration allows easy enable/disable and daily limit adjustments without workflow editing
+- **Priority-Based Routing**: Lower priority number = higher priority (gmail-dachevivo priority 1, gmail-ivoddachev/gmail-ivodachevd priority 2)
+- **Daily Counter Reset**: Automatic reset based on lastResetDate field (resets at midnight)
+- **Warmup Strategy**: Gradual increase in sending volume for new accounts (3/day → 15/day over 4 weeks)
+
+**Documentation References**:
+- Implementation Plan: Provided in conversation (Steps 1-5 with detailed instructions)
+- Google Sheets Config: Email-Account-Config sheet (6 accounts, 3 enabled, 3 disabled)
+- Daily Log: To be created in `Docs/daily-logs/2025-11-18-3-gmail-account-system-implementation.md`
+
+---
+
 ### **Counter Management Fix - N8N Code Node Credential Error Resolved**
 
 **Status**: ✅ **FIX IMPLEMENTED - PENDING USER TESTING** - Counter management restructured to use native Google Sheets nodes
