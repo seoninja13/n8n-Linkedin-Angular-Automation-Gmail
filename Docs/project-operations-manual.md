@@ -291,10 +291,74 @@ Apify actors can have `maxMemoryMbytes` settings in their `.actor/actor.json` co
 
 ---
 
-### **ISSUE-002: HTTP Request Node Authentication Errors**
+### **ISSUE-002: N8N Code Node Cannot Use Credentials Directly**
 
-**Symptom**: "Resource not found" (404) or "Unauthorized" (401) errors  
-**Affected Component**: Any workflow using HTTP Request nodes  
+**Symptom**: "Node type 'n8n-nodes-base.code' does not have any credentials defined" error
+**Affected Component**: Any workflow using Code nodes with `this.helpers.httpRequestWithAuthentication.call()`
+**Severity**: HIGH - BLOCKER
+
+**Root Cause**:
+N8N Code nodes do NOT support direct credential assignment in their node configuration. When a Code node tries to use `this.helpers.httpRequestWithAuthentication.call()` with a credential ID, N8N throws a validation error because the Code node type does not have a credentials dropdown or credential assignment mechanism.
+
+**Example Case (Execution #9171)**:
+- **Error Message**: "Node type 'n8n-nodes-base.code' does not have any credentials defined"
+- **Workflow**: LinkedIn-GenAI-4-GmailOutlook-Orchestrator--Augment (B2tNNaSkbLD8gDxw)
+- **Node**: "Assign Counter to Each Item" Code node (ID: assign-counter-to-items)
+- **Attempted Code**: `this.helpers.httpRequestWithAuthentication.call(this, 'googleSheetsOAuth2Api', { ... })`
+- **Result**: Workflow execution failed before reaching the Code node
+
+**Diagnosis Steps**:
+1. Retrieve execution data using `n8n_get_execution`
+2. Check error message for "does not have any credentials defined"
+3. Identify Code nodes attempting to use `this.helpers.httpRequestWithAuthentication.call()`
+4. Verify if Code node is trying to make API calls with credentials
+
+**Solution**:
+Restructure workflow to use **native N8N nodes for API calls** and **Code nodes ONLY for data transformation**:
+
+1. **Add native N8N nodes for API calls** (Google Sheets, HTTP Request, etc.)
+   - These nodes have credential dropdowns and support authentication
+   - Place them BEFORE or AFTER Code nodes in the workflow
+
+2. **Update Code nodes to remove API calls**
+   - Remove all `this.helpers.httpRequestWithAuthentication.call()` calls
+   - Use node references to access data from other nodes: `$('Node Name').all()`
+   - Focus Code nodes on data transformation logic only
+
+3. **Update workflow connections**
+   - Connect native nodes to Code nodes
+   - Ensure data flows correctly through the pipeline
+
+**Example Architecture (Counter Management Fix)**:
+```
+BEFORE (BROKEN):
+Switch → Code node (reads counter via API, assigns values, writes counter via API) → Outreach Tracking
+
+AFTER (FIXED):
+Switch → Google Sheets node (reads counter) → Code node (extracts counter row) → Code node (assigns values) → Google Sheets node (writes counter) → Outreach Tracking
+```
+
+**Key Architectural Pattern**:
+- ✅ **Use native N8N nodes for API calls** (Google Sheets, HTTP Request, Apify, etc.)
+- ✅ **Use Code nodes ONLY for data transformation** (no API calls, no credentials)
+- ✅ **Use node references to access non-connected data** (`$('Node Name').all()` syntax)
+
+**Prevention**:
+- Never attempt to use `this.helpers.httpRequestWithAuthentication.call()` in Code nodes
+- Always use native N8N nodes for API calls that require credentials
+- Design workflows with clear separation: API calls in native nodes, data transformation in Code nodes
+
+**Related Documentation**:
+- Daily Log: `Docs/daily-logs/2025-11-18-counter-management-fix.md`
+- Knowledge Transfer: `Docs/handover/conversation-handover-knowledge-transfer.md` (Section: Counter Management Fix)
+- Execution #9171: https://n8n.srv972609.hstgr.cloud/workflow/B2tNNaSkbLD8gDxw/executions/9171
+
+---
+
+### **ISSUE-003: HTTP Request Node Authentication Errors**
+
+**Symptom**: "Resource not found" (404) or "Unauthorized" (401) errors
+**Affected Component**: Any workflow using HTTP Request nodes
 **Severity**: HIGH
 
 **Root Cause**:
@@ -319,10 +383,10 @@ HTTP Header Auth credentials may have invalid header names (e.g., names containi
 
 ---
 
-### **ISSUE-003: Apify Actor Not Waiting for Completion**
+### **ISSUE-004: Apify Actor Not Waiting for Completion**
 
-**Symptom**: "Apify Get Dataset Items" node returns empty results  
-**Affected Component**: Contact Enrichment Workshop  
+**Symptom**: "Apify Get Dataset Items" node returns empty results
+**Affected Component**: Contact Enrichment Workshop
 **Severity**: HIGH
 
 **Root Cause**:
@@ -346,7 +410,7 @@ https://api.apify.com/v2/acts/{ACTOR_ID}/runs?waitForFinish=300
 
 ---
 
-### **ISSUE-004: N8N Code Node "Invalid Output Format" Error**
+### **ISSUE-005: N8N Code Node "Invalid Output Format" Error**
 
 **Symptom**: Code node fails with "Invalid output format" validation error  
 **Affected Component**: Any workflow using Code nodes with `runOnceForEachItem` mode  
@@ -697,7 +761,7 @@ N8N workflows can be **cached in memory** when they are inactive. When an orches
 
 ---
 
-**Last Updated**: 2025-11-17
-**Version**: 1.4
-**Next Review**: 2025-12-17
+**Last Updated**: 2025-11-18
+**Version**: 1.5
+**Next Review**: 2025-12-18
 
