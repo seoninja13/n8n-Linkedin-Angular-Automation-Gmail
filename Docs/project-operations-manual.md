@@ -1,8 +1,8 @@
 # Project Operations Manual
 **LinkedIn Automation Project - Standard Operating Procedures & Troubleshooting**
 
-**Last Updated**: 2025-11-13
-**Version**: 1.3
+**Last Updated**: 2025-11-19
+**Version**: 1.4
 
 ---
 
@@ -781,7 +781,108 @@ N8N workflows can be **cached in memory** when they are inactive. When an orches
 
 ---
 
-**Last Updated**: 2025-11-18
-**Version**: 1.5
-**Next Review**: 2025-12-18
+## 🔐 **N8N MCP SERVER AUTHENTICATION**
+
+### **Overview**
+
+The N8N MCP (Model Context Protocol) server provides programmatic access to N8N workflows through Augment Code's AI assistant. It uses JWT-based API key authentication to interact with the N8N instance.
+
+### **Configuration**
+
+**N8N Instance**: https://n8n.srv972609.hstgr.cloud
+
+**MCP Server Package**: `n8n-mcp` (NPM package by czlonkowski)
+
+**Configuration Files**:
+1. **Project Config**: `claude_desktop_config.json` (project root)
+2. **Claude Desktop Config**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+**MCP Server Configuration**:
+```json
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["-y", "n8n-mcp"],
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://n8n.srv972609.hstgr.cloud",
+        "N8N_API_KEY": "<API_KEY_HERE>"
+      }
+    }
+  }
+}
+```
+
+### **API Key Management**
+
+**API Key Type**: JWT (JSON Web Token)
+
+**Lifecycle**:
+- Default lifetime: ~29 days
+- Newer API keys may not have expiration (long-lived tokens)
+- API keys must be renewed before expiration to avoid service disruption
+
+**Generate New API Key**:
+1. Navigate to: https://n8n.srv972609.hstgr.cloud/settings/api
+2. Click "Create API Key"
+3. Copy the generated API key
+4. Update both configuration files (see below)
+
+**Update API Key**:
+1. **Manual Method**:
+   - Edit `claude_desktop_config.json` in project root
+   - Edit `%APPDATA%\Claude\claude_desktop_config.json`
+   - Replace `N8N_API_KEY` value with new API key
+   - Restart Claude Desktop
+
+2. **Automated Method**:
+   - Run `Scripts/update-claude-config.ps1` (provide new API key when prompted)
+   - Restart Claude Desktop
+
+### **Troubleshooting Authentication Failures**
+
+**Symptom**: All N8N MCP tool operations fail with "Failed to authenticate with n8n. Please check your API key" error
+
+**Diagnosis**:
+1. Check if API key has expired by decoding JWT token:
+   ```powershell
+   $token = "<JWT_TOKEN>"
+   $parts = $token.Split('.')
+   $payload = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($parts[1]))
+   $payloadObj = $payload | ConvertFrom-Json
+   $exp = $payloadObj.exp  # Expiration timestamp (Unix)
+   $iat = $payloadObj.iat  # Issued at timestamp (Unix)
+   ```
+
+2. Verify Claude Desktop config contains N8N MCP server configuration
+
+3. Test API key directly with REST API:
+   ```powershell
+   $apiKey = "<API_KEY>"
+   $headers = @{ "X-N8N-API-KEY" = $apiKey; "Accept" = "application/json" }
+   Invoke-RestMethod -Uri "https://n8n.srv972609.hstgr.cloud/api/v1/workflows?limit=5" -Method GET -Headers $headers
+   ```
+
+**Solution**:
+1. Generate new N8N API key (see above)
+2. Update both configuration files
+3. Restart Claude Desktop
+
+**Prevention**:
+- Monitor API key expiration dates
+- Set calendar reminders to renew keys before expiration
+- Use automation script for updates
+
+**Last Occurrence**: 2025-11-19 23:00:00 UTC (API key expired)
+**Resolution**: New API key generated and configs updated (2025-11-19 23:30 UTC)
+**Documentation**: `Docs/daily-logs/2025-11-19-n8n-mcp-authentication-fix.md`
+
+---
+
+**Last Updated**: 2025-11-19
+**Version**: 1.4
+**Next Review**: 2025-12-19
 

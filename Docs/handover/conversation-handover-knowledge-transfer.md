@@ -5,6 +5,31 @@
 
 ## 🚀 **CURRENT IMPLEMENTATION STATUS (2025-11-19)**
 
+### **Dual-Path Test Mode Architecture Verification - PENDING RESTART**
+
+**Status**: ⏳ **N8N MCP AUTHENTICATION FIXED - AWAITING CLAUDE DESKTOP RESTART**
+
+**Current Situation (2025-11-19 23:30 UTC)**:
+The N8N MCP server authentication failure has been successfully resolved. The expired API key (expired 2025-11-19 23:00:00 UTC) has been replaced with a new API key, and both the project config and Claude Desktop config have been updated. The user must restart Claude Desktop to activate the N8N MCP server before we can proceed with verifying the dual-path test mode architecture implementation in workflow WUe4y8iYEXNAB6dq.
+
+**Authentication Fix Details**:
+- **Root Cause**: N8N API key (JWT token) expired on 2025-11-19 23:00:00 UTC
+- **Solution**: New API key generated and configs updated
+- **New API Key Issued**: 2025-11-19 (Unix: 1763595436)
+- **Token Type**: Long-lived token (no expiration field)
+- **Configs Updated**: Both project config and Claude Desktop config
+- **Next Step**: User must restart Claude Desktop
+
+**After Restart - Next Task**:
+Verify the dual-path test mode architecture implementation in the N8N workflow "LinkedIn-4-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment" (ID: WUe4y8iYEXNAB6dq). The user has manually implemented 11 new nodes (Test Mode Router, Draft Creation Router, 3 Gmail MIME Builder Draft nodes, 3 Gmail Draft HTTP Request nodes, and 3 Outlook Draft nodes). We need to use N8N MCP tools to retrieve the workflow structure and verify all nodes and connections are correct.
+
+**Documentation**:
+- Daily Log: `Docs/daily-logs/2025-11-19-n8n-mcp-authentication-fix.md`
+- Architecture Docs: `Docs/architecture/dual-path-architecture-diagram.md`
+- Manual Implementation Guide: `Docs/MANUAL-IMPLEMENTATION-QUICK-START.md`
+
+---
+
 ### **N8N Pinned Data Error Investigation - IN PROGRESS**
 
 **Status**: ⚠️ **FIX APPLIED BUT ERROR PERSISTS** - Counter increment fix (v1.0.1) deployed successfully, but execution 11097 still fails with pinned data error despite code verification showing fix is present
@@ -9512,6 +9537,54 @@ During implementation, the user accidentally pasted the simplified "Output Forma
 2. Fix "Domain extraction and Apify input builder - 100 recs" node code
 3. Save workflow
 4. Request AI review to verify fixes
+
+---
+
+## 🔧 **TROUBLESHOOTING GUIDE**
+
+### **N8N MCP Authentication Failures**
+
+**Symptom**: All N8N MCP tool operations fail with "Failed to authenticate with n8n. Please check your API key" error
+
+**Root Cause**: N8N API key (JWT token) has expired
+
+**Diagnosis Steps**:
+1. Check if API key has expired by decoding JWT token:
+   ```powershell
+   $token = "<JWT_TOKEN>"
+   $parts = $token.Split('.')
+   $payload = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($parts[1]))
+   $payloadObj = $payload | ConvertFrom-Json
+   $exp = $payloadObj.exp  # Expiration timestamp (Unix)
+   $iat = $payloadObj.iat  # Issued at timestamp (Unix)
+   ```
+2. Verify Claude Desktop config contains N8N MCP server configuration at `%APPDATA%\Claude\claude_desktop_config.json`
+3. Test API key directly with REST API:
+   ```powershell
+   $headers = @{ "X-N8N-API-KEY" = $apiKey; "Accept" = "application/json" }
+   Invoke-RestMethod -Uri "https://n8n.srv972609.hstgr.cloud/api/v1/workflows?limit=5" -Method GET -Headers $headers
+   ```
+
+**Solution**:
+1. Generate new N8N API key at: https://n8n.srv972609.hstgr.cloud/settings/api
+2. Update project config: `claude_desktop_config.json` in project root
+3. Update Claude Desktop config: `%APPDATA%\Claude\claude_desktop_config.json`
+4. Restart Claude Desktop to activate changes
+
+**N8N API Key Lifecycle**:
+- N8N API keys are JWT tokens with expiration dates
+- Default lifetime: ~29 days
+- Newer API keys may not have expiration (long-lived tokens)
+- API keys must be renewed before expiration to avoid service disruption
+
+**Prevention**:
+- Monitor API key expiration dates
+- Set calendar reminders to renew keys before expiration
+- Use automation script: `Scripts/update-claude-config.ps1`
+
+**Last Occurrence**: 2025-11-19 23:00:00 UTC (API key expired)
+**Resolution**: New API key generated and configs updated (2025-11-19 23:30 UTC)
+**Documentation**: `Docs/daily-logs/2025-11-19-n8n-mcp-authentication-fix.md`
 5. Test simplified workflow end-to-end
 6. Verify downstream workflows (Resume Generation, Outreach Tracking) receive correct data
 
