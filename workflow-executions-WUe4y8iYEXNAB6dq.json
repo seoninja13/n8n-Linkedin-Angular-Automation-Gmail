@@ -1,0 +1,65 @@
+﻿{
+    "data":  [
+                 {
+                     "id":  "11711",
+                     "finished":  false,
+                     "mode":  "integrated",
+                     "retryOf":  null,
+                     "retrySuccessId":  null,
+                     "status":  "error",
+                     "startedAt":  "2025-11-19T17:44:23.856Z",
+                     "stoppedAt":  "2025-11-19T17:44:38.903Z",
+                     "workflowId":  "WUe4y8iYEXNAB6dq",
+                     "waitTill":  null
+                 },
+                 {
+                     "id":  "11708",
+                     "finished":  false,
+                     "mode":  "integrated",
+                     "retryOf":  null,
+                     "retrySuccessId":  null,
+                     "status":  "error",
+                     "startedAt":  "2025-11-19T17:44:10.666Z",
+                     "stoppedAt":  "2025-11-19T17:44:23.704Z",
+                     "workflowId":  "WUe4y8iYEXNAB6dq",
+                     "waitTill":  null
+                 },
+                 {
+                     "id":  "11706",
+                     "finished":  false,
+                     "mode":  "integrated",
+                     "retryOf":  null,
+                     "retrySuccessId":  null,
+                     "status":  "error",
+                     "startedAt":  "2025-11-19T17:43:56.844Z",
+                     "stoppedAt":  "2025-11-19T17:44:09.974Z",
+                     "workflowId":  "WUe4y8iYEXNAB6dq",
+                     "waitTill":  null
+                 },
+                 {
+                     "id":  "11704",
+                     "finished":  false,
+                     "mode":  "integrated",
+                     "retryOf":  null,
+                     "retrySuccessId":  null,
+                     "status":  "error",
+                     "startedAt":  "2025-11-19T17:43:42.863Z",
+                     "stoppedAt":  "2025-11-19T17:43:56.665Z",
+                     "workflowId":  "WUe4y8iYEXNAB6dq",
+                     "waitTill":  null
+                 },
+                 {
+                     "id":  "11699",
+                     "finished":  false,
+                     "mode":  "integrated",
+                     "retryOf":  null,
+                     "retrySuccessId":  null,
+                     "status":  "error",
+                     "startedAt":  "2025-11-19T17:43:28.946Z",
+                     "stoppedAt":  "2025-11-19T17:43:42.740Z",
+                     "workflowId":  "WUe4y8iYEXNAB6dq",
+                     "waitTill":  null
+                 }
+             ],
+    "nextCursor":  "eyJsYXN0SWQiOiIxMTY5OSIsImxpbWl0Ijo1fQ=="
+}

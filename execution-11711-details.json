@@ -1,0 +1,14 @@
+﻿{
+    "id":  "11711",
+    "finished":  false,
+    "mode":  "integrated",
+    "retryOf":  null,
+    "retrySuccessId":  null,
+    "status":  "error",
+    "createdAt":  "2025-11-19T17:44:23.829Z",
+    "startedAt":  "2025-11-19T17:44:23.856Z",
+    "stoppedAt":  "2025-11-19T17:44:38.903Z",
+    "deletedAt":  null,
+    "workflowId":  "WUe4y8iYEXNAB6dq",
+    "waitTill":  null
+}
