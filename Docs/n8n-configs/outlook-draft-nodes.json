@@ -1,0 +1,109 @@
+{
+  "description": "Complete configuration for all 3 Outlook Draft nodes",
+  "notes": [
+    "Each Outlook account requires ONE node (Outlook nodes handle MIME internally)",
+    "All nodes use operation: 'createDraft' instead of 'send'",
+    "The 'from' parameter specifies which Outlook account to use",
+    "All nodes use Microsoft Outlook OAuth2 credentials"
+  ],
+  "outlookDraftNodes": {
+    "account1_dachevivo": {
+      "name": "Outlook Draft - dachevivo",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [320, 0],
+      "id": "outlook-draft-dachevivo",
+      "parameters": {
+        "operation": "createDraft",
+        "from": "dachevivo@outlook.com",
+        "toRecipients": "={{ $json.recepientEmail }}",
+        "subject": "={{ $json.emailSubject }}",
+        "bodyContent": "={{ $json.emailBody }}",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "resume"
+              }
+            ]
+          }
+        }
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "nrD1wFbznQD78xNa",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    "account2_dachevivo2": {
+      "name": "Outlook Draft - dachevivo2",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [320, 200],
+      "id": "outlook-draft-dachevivo2",
+      "parameters": {
+        "operation": "createDraft",
+        "from": "dachevivo2@outlook.com",
+        "toRecipients": "={{ $json.recepientEmail }}",
+        "subject": "={{ $json.emailSubject }}",
+        "bodyContent": "={{ $json.emailBody }}",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "resume"
+              }
+            ]
+          }
+        }
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "nrD1wFbznQD78xNa",
+          "name": "Microsoft Outlook account 2"
+        }
+      }
+    },
+    "account3_dachevivo3": {
+      "name": "Outlook Draft - dachevivo3",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [320, 400],
+      "id": "outlook-draft-dachevivo3",
+      "parameters": {
+        "operation": "createDraft",
+        "from": "dachevivo3@outlook.com",
+        "toRecipients": "={{ $json.recepientEmail }}",
+        "subject": "={{ $json.emailSubject }}",
+        "bodyContent": "={{ $json.emailBody }}",
+        "additionalFields": {
+          "attachments": {
+            "attachments": [
+              {
+                "binaryPropertyName": "resume"
+              }
+            ]
+          }
+        }
+      },
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "wSLPm1S7vuBelc25",
+          "name": "Microsoft Outlook account 3"
+        }
+      }
+    }
+  },
+  "connections": {
+    "Draft Creation Router": {
+      "output3": "Outlook Draft - dachevivo",
+      "output4": "Outlook Draft - dachevivo2",
+      "output5": "Outlook Draft - dachevivo3"
+    },
+    "All Outlook Draft nodes": {
+      "output": "Aggregate Email Metrics"
+    }
+  }
+}
+
