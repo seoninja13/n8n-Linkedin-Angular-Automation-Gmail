@@ -33,6 +33,76 @@ This manual provides standard operating procedures, troubleshooting guides, and 
 - **Google Sheets**: Data storage and tracking
 - **Gmail/Outlook**: Email draft creation
 - **AI Services**: Google Gemini, Claude (resume customization, email generation)
+- **MCP Servers**: Model Context Protocol for workflow management via Augment Code
+
+---
+
+## 🔧 **N8N ADMIN MCP SERVER INTEGRATION**
+
+### **Overview**
+
+The N8N Admin MCP Server enables workflow management through natural language commands in Augment Code via 7 MCP tools.
+
+**Status**: ⚠️ IN PROGRESS - MCP server connected, sub-workflows need conversion
+
+### **MCP Server Configuration**
+
+- **Environment**: Augment Code (VS Code extension), NOT Claude Desktop
+- **Server Name**: `n8n-admin`
+- **Endpoint URL**: https://n8n.srv972609.hstgr.cloud/mcp/280d443c-acac-4af8-8ac6-8851f16ab1af
+- **Main Workflow**: Admin-MCP-Server--Augment (ID: kPhABZnv2pc7LMF0)
+- **Status**: ✅ Activated and connected
+
+### **Credentials**
+
+- **Bearer Token Credential**: ID `pQBC7RW51UVjpdA8` (name: "neverbounce APi Key")
+- **N8N API Credential**: ID `8Mpie43lyRFyX4zw` (name: "N8N API - Admin MCP")
+
+### **Available Tools** (7 total)
+
+1. `List_Workflows_N8N_Admin_MCP_Server` - List all workflows
+2. `Get_Workflow_N8N_Admin_MCP_Server` - Get specific workflow
+3. `Create_Workflow_N8N_Admin_MCP_Server` - Create new workflow
+4. `Update_Workflow_N8N_Admin_MCP_Server` - Update workflow
+5. `Delete_Workflow_N8N_Admin_MCP_Server` - Delete workflow
+6. `Activate_Workflow_N8N_Admin_MCP_Server` - Activate workflow
+7. `Deactivate_Workflow_N8N_Admin_MCP_Server` - Deactivate workflow
+
+### **Sub-Workflows** (7 total)
+
+All sub-workflows require conversion from `manualTrigger` to `executeWorkflowTrigger`:
+
+1. MCP-Get Many Workflows (ID: Q5pmP4961YnR9nJ9) - ❌ NEEDS CONVERSION
+2. MCP-Get One Workflow (ID: TBD) - ❌ NEEDS CONVERSION
+3. MCP-Create Workflow (ID: TBD) - ❌ NEEDS CONVERSION
+4. MCP-Update Workflow (ID: TBD) - ❌ NEEDS CONVERSION
+5. MCP-Delete Workflow (ID: TBD) - ❌ NEEDS CONVERSION
+6. MCP-Activate Workflow (ID: TBD) - ❌ NEEDS CONVERSION
+7. MCP-Deactivate Workflow (ID: TBD) - ❌ NEEDS CONVERSION
+
+### **Critical Requirement**
+
+**Sub-workflows MUST use `executeWorkflowTrigger`**, not `manualTrigger`:
+
+- ❌ **WRONG**: `n8n-nodes-base.manualTrigger` - Cannot be called by parent workflows
+- ✅ **CORRECT**: `n8n-nodes-base.executeWorkflowTrigger` - Can accept parameters from parent
+
+### **Usage Examples**
+
+Once sub-workflows are converted, use natural language commands in Augment Code:
+
+```
+"Can you list all my N8N workflows?"
+"Can you get the details of workflow ID kPhABZnv2pc7LMF0?"
+"Can you activate workflow [ID]?"
+"Can you deactivate workflow [ID]?"
+```
+
+### **Documentation**
+
+- **MCP Server Docs**: `Docs/mcp-servers/n8n-admin/README.md`
+- **Daily Log**: `Docs/daily-logs/2025-01-20-n8n-admin-mcp-server-integration.md`
+- **Main Workflow**: https://n8n.srv972609.hstgr.cloud/workflow/kPhABZnv2pc7LMF0
 
 ---
 
