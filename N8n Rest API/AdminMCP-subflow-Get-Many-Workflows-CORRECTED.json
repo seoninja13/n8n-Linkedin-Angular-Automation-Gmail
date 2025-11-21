@@ -1,0 +1,60 @@
+{
+  "name": "AdminMCP-subflow-Get-Many-Workflows",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        -48
+      ],
+      "id": "d5f11f51-9463-4067-aed4-00a002dcf53b",
+      "name": "Execute Workflow Trigger - From Admin MCP"
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "getAll",
+        "returnAll": true,
+        "filters": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -48
+      ],
+      "id": "4f038aa8-b7c7-4e90-b61c-1e98f1b0ff4f",
+      "name": "Get many workflows",
+      "credentials": {
+        "n8nApi": {
+          "id": "8Mpie43lyRFyX4zw",
+          "name": "N8N API - Admin MCP"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger - From Admin MCP": {
+      "main": [
+        [
+          {
+            "node": "Get many workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": true
+}
+

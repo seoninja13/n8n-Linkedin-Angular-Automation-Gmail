@@ -1,0 +1,68 @@
+{
+  "name": "Admin-MCP-Server--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "bearerAuth",
+        "path": "280d443c-acac-4af8-8ac6-8851f16ab1af"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [-1408, 64],
+      "id": "bad85ddd-b924-4996-8c40-c3ab435e03f8",
+      "name": "MCP Server Trigger",
+      "webhookId": "280d443c-acac-4af8-8ac6-8851f16ab1af",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "pQBC7RW51UVjpdA8",
+          "name": "neverbounce APi Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "list_workflows",
+        "description": "List all workflows in the N8N instance. Returns an array of workflow objects with id, name, active status, and metadata.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Q5pmP4961YnR9nJ9",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Q5pmP4961YnR9nJ9",
+          "cachedResultName": "MCP-Get Many Workflows"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, 64],
+      "id": "6bd61ac9-3075-4706-bf64-c753bc88c757",
+      "name": "List Workflows"
+    }
+  ],
+  "connections": {
+    "MCP Server Trigger": {
+      "ai_tool": [
+        [
+          {
+            "node": "List Workflows",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a02c5ffd88865af83d53faf4becd2bff31912fb1f816639f33606241c691c12b"
+  }
+}
+

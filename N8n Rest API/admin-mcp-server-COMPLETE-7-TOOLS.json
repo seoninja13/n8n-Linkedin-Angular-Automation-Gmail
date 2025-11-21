@@ -1,0 +1,250 @@
+{
+  "name": "Admin-MCP-Server--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "bearerAuth",
+        "path": "280d443c-acac-4af8-8ac6-8851f16ab1af"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [-1408, 64],
+      "id": "bad85ddd-b924-4996-8c40-c3ab435e03f8",
+      "name": "MCP Server Trigger",
+      "webhookId": "280d443c-acac-4af8-8ac6-8851f16ab1af",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "pQBC7RW51UVjpdA8",
+          "name": "neverbounce APi Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "list_workflows",
+        "description": "List all workflows in the N8N instance. Returns an array of workflow objects with id, name, active status, and metadata.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Q5pmP4961YnR9nJ9",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Q5pmP4961YnR9nJ9",
+          "cachedResultName": "MCP-Get Many Workflows"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, -100],
+      "id": "6bd61ac9-3075-4706-bf64-c753bc88c757",
+      "name": "List Workflows"
+    },
+    {
+      "parameters": {
+        "name": "get_workflow",
+        "description": "Get details of a specific workflow by ID. Requires workflowId parameter. Returns complete workflow object including nodes, connections, and settings.",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_GET_WORKFLOW_ID",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, 0],
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "name": "Get Workflow"
+    },
+    {
+      "parameters": {
+        "name": "create_workflow",
+        "description": "Create a new workflow in N8N. Requires workflow object with name, nodes, and connections. Returns the created workflow with assigned ID.",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_CREATE_WORKFLOW_ID",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, 100],
+      "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "name": "Create Workflow"
+    },
+    {
+      "parameters": {
+        "name": "update_workflow",
+        "description": "Update an existing workflow by ID. Requires workflowId and workflow object with updated properties. Returns the updated workflow.",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_UPDATE_WORKFLOW_ID",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, 200],
+      "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+      "name": "Update Workflow"
+    },
+    {
+      "parameters": {
+        "name": "delete_workflow",
+        "description": "Delete a workflow by ID. Requires workflowId parameter. Returns success confirmation.",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_DELETE_WORKFLOW_ID",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, 300],
+      "id": "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a",
+      "name": "Delete Workflow"
+    },
+    {
+      "parameters": {
+        "name": "activate_workflow",
+        "description": "Activate a workflow by ID to make it run automatically. Requires workflowId parameter. Returns success confirmation.",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_ACTIVATE_WORKFLOW_ID",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, 400],
+      "id": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b",
+      "name": "Activate Workflow"
+    },
+    {
+      "parameters": {
+        "name": "deactivate_workflow",
+        "description": "Deactivate a workflow by ID to stop it from running automatically. Requires workflowId parameter. Returns success confirmation.",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_DEACTIVATE_WORKFLOW_ID",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-1024, 500],
+      "id": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c",
+      "name": "Deactivate Workflow"
+    }
+  ],
+  "connections": {
+    "MCP Server Trigger": {
+      "ai_tool": [
+        [
+          {
+            "node": "List Workflows",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Get Workflow",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Create Workflow",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Update Workflow",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Delete Workflow",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Activate Workflow",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Deactivate Workflow",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a02c5ffd88865af83d53faf4becd2bff31912fb1f816639f33606241c691c12b"
+  }
+}
+

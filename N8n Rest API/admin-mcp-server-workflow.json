@@ -1,0 +1,213 @@
+{
+  "name": "Admin-MCP-Server--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/mcp-server/admin",
+        "authentication": "n8nApi"
+      },
+      "id": "mcp-server-trigger-node",
+      "name": "MCP Server Trigger",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "getAll",
+        "returnAll": true,
+        "filters": {
+          "activeWorkflows": false
+        }
+      },
+      "id": "list-workflows-tool",
+      "name": "List Workflows Tool",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 100],
+      "credentials": {
+        "n8nApi": {
+          "id": "REPLACE_WITH_YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "get",
+        "workflowId": {
+          "mode": "id",
+          "value": "={{ $json.workflowId }}"
+        }
+      },
+      "id": "get-workflow-tool",
+      "name": "Get Workflow Tool",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 200],
+      "credentials": {
+        "n8nApi": {
+          "id": "REPLACE_WITH_YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "create",
+        "workflowObject": "={{ $json.workflowObject }}"
+      },
+      "id": "create-workflow-tool",
+      "name": "Create Workflow Tool",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "credentials": {
+        "n8nApi": {
+          "id": "REPLACE_WITH_YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "update",
+        "workflowId": {
+          "mode": "id",
+          "value": "={{ $json.workflowId }}"
+        },
+        "workflowObject": "={{ $json.workflowObject }}"
+      },
+      "id": "update-workflow-tool",
+      "name": "Update Workflow Tool",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 400],
+      "credentials": {
+        "n8nApi": {
+          "id": "REPLACE_WITH_YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "delete",
+        "workflowId": {
+          "mode": "id",
+          "value": "={{ $json.workflowId }}"
+        }
+      },
+      "id": "delete-workflow-tool",
+      "name": "Delete Workflow Tool",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 500],
+      "credentials": {
+        "n8nApi": {
+          "id": "REPLACE_WITH_YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "activate",
+        "workflowId": {
+          "mode": "id",
+          "value": "={{ $json.workflowId }}"
+        }
+      },
+      "id": "activate-workflow-tool",
+      "name": "Activate Workflow Tool",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 600],
+      "credentials": {
+        "n8nApi": {
+          "id": "REPLACE_WITH_YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "deactivate",
+        "workflowId": {
+          "mode": "id",
+          "value": "={{ $json.workflowId }}"
+        }
+      },
+      "id": "deactivate-workflow-tool",
+      "name": "Deactivate Workflow Tool",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 700],
+      "credentials": {
+        "n8nApi": {
+          "id": "REPLACE_WITH_YOUR_N8N_API_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "MCP Server Trigger": {
+      "main": [
+        [
+          {
+            "node": "List Workflows Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delete Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Activate Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Deactivate Workflow Tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-20T12:00:00.000Z",
+  "versionId": "1"
+}
+

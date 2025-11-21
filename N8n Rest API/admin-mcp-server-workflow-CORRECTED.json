@@ -1,0 +1,160 @@
+{
+  "name": "Admin-MCP-Server--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [250, 400],
+      "id": "mcp-trigger-node-id",
+      "name": "MCP Server Trigger",
+      "webhookId": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+    },
+    {
+      "parameters": {
+        "name": "list_workflows",
+        "description": "List all workflows in the N8N instance. Returns an array of workflow objects with id, name, active status, and other metadata.",
+        "source": "database",
+        "workflowId": "REPLACE_WITH_LIST_WORKFLOWS_SUB_WORKFLOW_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [500, 100],
+      "id": "tool-list-workflows-id",
+      "name": "Call n8n Sub-Workflow Tool - List"
+    },
+    {
+      "parameters": {
+        "name": "get_workflow",
+        "description": "Get details of a specific workflow by ID. Requires workflowId parameter. Returns complete workflow object including nodes, connections, and settings.",
+        "source": "database",
+        "workflowId": "REPLACE_WITH_GET_WORKFLOW_SUB_WORKFLOW_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [500, 200],
+      "id": "tool-get-workflow-id",
+      "name": "Call n8n Sub-Workflow Tool - Get"
+    },
+    {
+      "parameters": {
+        "name": "create_workflow",
+        "description": "Create a new workflow in N8N. Requires workflow object with name, nodes, and connections. Returns the created workflow with assigned ID.",
+        "source": "database",
+        "workflowId": "REPLACE_WITH_CREATE_WORKFLOW_SUB_WORKFLOW_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [500, 300],
+      "id": "tool-create-workflow-id",
+      "name": "Call n8n Sub-Workflow Tool - Create"
+    },
+    {
+      "parameters": {
+        "name": "update_workflow",
+        "description": "Update an existing workflow by ID. Requires workflowId and workflow object with updated properties. Returns the updated workflow.",
+        "source": "database",
+        "workflowId": "REPLACE_WITH_UPDATE_WORKFLOW_SUB_WORKFLOW_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [500, 400],
+      "id": "tool-update-workflow-id",
+      "name": "Call n8n Sub-Workflow Tool - Update"
+    },
+    {
+      "parameters": {
+        "name": "delete_workflow",
+        "description": "Delete a workflow by ID. Requires workflowId parameter. Returns success confirmation.",
+        "source": "database",
+        "workflowId": "REPLACE_WITH_DELETE_WORKFLOW_SUB_WORKFLOW_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [500, 500],
+      "id": "tool-delete-workflow-id",
+      "name": "Call n8n Sub-Workflow Tool - Delete"
+    },
+    {
+      "parameters": {
+        "name": "activate_workflow",
+        "description": "Activate a workflow by ID to make it run automatically. Requires workflowId parameter. Returns success confirmation.",
+        "source": "database",
+        "workflowId": "REPLACE_WITH_ACTIVATE_WORKFLOW_SUB_WORKFLOW_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [500, 600],
+      "id": "tool-activate-workflow-id",
+      "name": "Call n8n Sub-Workflow Tool - Activate"
+    },
+    {
+      "parameters": {
+        "name": "deactivate_workflow",
+        "description": "Deactivate a workflow by ID to stop it from running automatically. Requires workflowId parameter. Returns success confirmation.",
+        "source": "database",
+        "workflowId": "REPLACE_WITH_DEACTIVATE_WORKFLOW_SUB_WORKFLOW_ID"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.1,
+      "position": [500, 700],
+      "id": "tool-deactivate-workflow-id",
+      "name": "Call n8n Sub-Workflow Tool - Deactivate"
+    }
+  ],
+  "connections": {
+    "MCP Server Trigger": {
+      "ai_tool": [
+        [
+          {
+            "node": "Call n8n Sub-Workflow Tool - List",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Call n8n Sub-Workflow Tool - Get",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Call n8n Sub-Workflow Tool - Create",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Call n8n Sub-Workflow Tool - Update",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Call n8n Sub-Workflow Tool - Delete",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Call n8n Sub-Workflow Tool - Activate",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Call n8n Sub-Workflow Tool - Deactivate",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "versionId": "1"
+}
+

@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "n8n-remote-trigger": {
+      "url": "https://n8n.srv972609.hstgr.cloud/mcp-test/280d443c-acac-4af8-8ac6-8851f16ab1af"
+    }
+  }
+}

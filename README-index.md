@@ -8,24 +8,33 @@ Last updated: 2025-01-20 (N8N Admin MCP Server Integration)
 
 ## 🎯 Current Project Status
 
-**N8N ADMIN MCP SERVER INTEGRATION IN PROGRESS** (2025-01-20)
+**N8N-MCP MCP SERVER VALIDATION - BLOCKED (AUGMENT CODE BUG)** (2025-11-21)
 
-The N8N Admin MCP Server has been successfully connected to Augment Code, enabling workflow management through natural language commands. All 7 workflow management tools are accessible, but sub-workflows require conversion from `manualTrigger` to `executeWorkflowTrigger` to function correctly.
+The n8n-mcp MCP server (NPM package by czlonkowski) has been configured in Augment Code, but a critical bug in Augment Code prevents environment variables from being passed to spawned MCP server processes. This blocks N8N API management tools from being available, limiting the server to Documentation Mode only (23 tools instead of 42 tools).
 
-**Key Milestones**:
-- MCP Server Configuration: ✅ Complete (endpoint activated, bearer token configured)
-- Authentication: ✅ Working (HTTP 403 errors resolved)
+**Key Findings**:
+- Root Cause: ❌ Augment Code NOT passing environment variables to spawned processes
+- n8n-mcp Server: ✅ Works correctly (42 tools when environment variables are provided)
+- N8N API: ✅ Accessible and authenticated (API key is valid)
+- Workaround: ✅ Direct N8N REST API access via PowerShell scripts
+- Bug Report: ✅ Created and ready to send to Augment Code support
+
+**Diagnostic Suite Created**:
+- 7 PowerShell scripts for testing and workaround
+- 4 documentation files (validation report, diagnostic workflow, quick reference, bug report)
+- All sensitive information sanitized (API keys, URLs redacted)
+
+**Workaround Solution**:
+- Use `list-workflows-simple.ps1` for workflow listing
+- Use `test-n8n-api-connection.ps1` for API connectivity testing
+- Direct N8N REST API access bypasses Augment Code MCP server
+
+**Next Milestone**: Send bug report to Augment Code support, use PowerShell workaround until bug is fixed
+
+**Previous Status - N8N ADMIN MCP SERVER INTEGRATION** (2025-01-20):
 - MCP Server Connection: ✅ Established (Augment Code connected successfully)
 - Tool Availability: ✅ Verified (all 7 tools accessible)
 - Sub-Workflow Conversion: ❌ Pending (all 7 sub-workflows need conversion)
-
-**MCP Server Details**:
-- Endpoint: https://n8n.srv972609.hstgr.cloud/mcp/280d443c-acac-4af8-8ac6-8851f16ab1af
-- Main Workflow: Admin-MCP-Server--Augment (ID: kPhABZnv2pc7LMF0)
-- Tools Available: 7 (list, get, create, update, delete, activate, deactivate workflows)
-- Status: ⚠️ Tools accessible but returning errors due to sub-workflow trigger configuration
-
-**Next Milestone**: Convert all 7 sub-workflows to use `executeWorkflowTrigger`, then test all tools end-to-end
 
 **Previous Status - 4-ACCOUNT EMAIL SYSTEM** (2025-11-12):
 - Email Infrastructure: 1 Gmail + 3 Outlook accounts (20 emails/day capacity)
@@ -45,6 +54,24 @@ The N8N Admin MCP Server has been successfully connected to Augment Code, enabli
 ---
 
 ## Recent Major Milestones
+
+- 🔴 **2025-11-21**: n8n-mcp MCP Server Validation - Augment Code Bug Discovered (BLOCKED)
+  - **Status**: 🔴 BLOCKED - Augment Code environment variable bug
+  - **Objective**: Enable N8N workflow management through n8n-mcp MCP server in Augment Code
+  - **Root Cause**: Augment Code NOT passing environment variables to spawned MCP server processes
+  - **Evidence**: Manual test shows 42 tools, Augment Code shows 23 tools
+  - **Diagnostic Suite**: 7 PowerShell scripts created for testing and workaround
+  - **Validation Report**: Comprehensive 150-line validation report with phase-by-phase results
+  - **Bug Report**: Sanitized bug report ready to send to support@augmentcode.com
+  - **Workaround**: Direct N8N REST API access via PowerShell scripts
+  - **N8N API Status**: ✅ Accessible and authenticated (API key valid)
+  - **n8n-mcp Server**: ✅ Works correctly when environment variables are provided
+  - **Scripts Created**: test-n8n-api-connection.ps1, test-n8n-mcp-manual.ps1, list-workflows-simple.ps1, etc.
+  - **Daily Log**: Docs/daily-logs/2025-11-21-n8n-mcp-validation.md
+  - **Validation Report**: n8n-mcp-validation-report.md
+  - **Bug Report**: augment-code-bug-report.txt
+  - **Next Steps**: Send bug report, use PowerShell workaround, monitor Augment Code updates
+  - See: Docs/handover/conversation-handover-knowledge-transfer.md (Section: n8n-mcp MCP Server Validation)
 
 - 🟡 **2025-01-20**: N8N Admin MCP Server Integration (IN PROGRESS)
   - **Status**: 🟡 MCP SERVER CONNECTED - Sub-workflows need conversion

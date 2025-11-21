@@ -1,0 +1,202 @@
+{
+  "name": "Admin-MCP-Server--Augment",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "7a8f3d2e-9c4b-4e1a-b5f6-8d7c9e2a1b3c"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "id": "4f5e6d7c-8b9a-4c3d-9e2f-1a0b3c4d5e6f",
+      "name": "MCP Server Trigger",
+      "webhookId": "7a8f3d2e-9c4b-4e1a-b5f6-8d7c9e2a1b3c"
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "getAll",
+        "returnAll": true,
+        "filters": {
+          "activeWorkflows": false
+        }
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 100],
+      "id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "name": "List Workflows Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "PLACEHOLDER_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "get",
+        "workflowId": "={{ $json.workflowId }}"
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 200],
+      "id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+      "name": "Get Workflow Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "PLACEHOLDER_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "create",
+        "workflowObject": "={{ $json.workflowObject }}"
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "id": "3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+      "name": "Create Workflow Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "PLACEHOLDER_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "update",
+        "workflowId": "={{ $json.workflowId }}",
+        "workflowObject": "={{ $json.workflowObject }}"
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 400],
+      "id": "4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a",
+      "name": "Update Workflow Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "PLACEHOLDER_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "delete",
+        "workflowId": "={{ $json.workflowId }}"
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 500],
+      "id": "5e6f7a8b-9c0d-4e1f-2a3b-4c5d6e7f8a9b",
+      "name": "Delete Workflow Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "PLACEHOLDER_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "activate",
+        "workflowId": "={{ $json.workflowId }}"
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 600],
+      "id": "6f7a8b9c-0d1e-4f2a-3b4c-5d6e7f8a9b0c",
+      "name": "Activate Workflow Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "PLACEHOLDER_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "deactivate",
+        "workflowId": "={{ $json.workflowId }}"
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [500, 700],
+      "id": "7a8b9c0d-1e2f-4a3b-4c5d-6e7f8a9b0c1d",
+      "name": "Deactivate Workflow Tool",
+      "credentials": {
+        "n8nApi": {
+          "id": "PLACEHOLDER_CREDENTIAL_ID",
+          "name": "n8n API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "MCP Server Trigger": {
+      "main": [
+        [
+          {
+            "node": "List Workflows Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delete Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Activate Workflow Tool",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Deactivate Workflow Tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-20T12:00:00.000Z",
+  "versionId": "1",
+  "meta": {
+    "instanceId": "a02c5ffd88865af83d53faf4becd2bff31912fb1f816639f33606241c691c12b"
+  }
+}
+

@@ -1,0 +1,36 @@
+{
+  "name": "List-Workflows-Operation",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "workflow",
+        "operation": "getMany",
+        "returnAll": true,
+        "filters": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "323b74c9-6c4c-475c-a22e-5aefd329f9ba",
+      "name": "Get many workflows",
+      "credentials": {
+        "n8nApi": {
+          "id": "8Mpie43lyRFyX4zw",
+          "name": "N8N API - Admin MCP"
+        }
+      }
+    }
+  ],
+  "connections": {},
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-20T00:00:00.000Z",
+  "versionId": "1"
+}
+

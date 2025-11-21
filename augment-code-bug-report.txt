@@ -1,0 +1,178 @@
+SUBJECT: Bug Report - MCP Server Environment Variables Not Passed to Spawned Processes
+
+---
+
+Dear Augment Code Support Team,
+
+I am reporting a critical bug in Augment Code's MCP (Model Context Protocol) server integration where environment variables configured in the MCP Settings Panel are not being passed to spawned MCP server processes.
+
+## BUG SUMMARY
+
+MCP servers configured with environment variables in Augment Code's Settings Panel do not receive those environment variables when spawned, causing MCP servers to initialize in limited/fallback mode instead of full functionality mode.
+
+## AFFECTED COMPONENT
+
+- Augment Code MCP Client
+- MCP Settings Panel (Settings → MCP section)
+- Environment variable passing to spawned processes
+
+## DETAILED DESCRIPTION
+
+When configuring an MCP server (specifically `n8n-mcp` from npm) with environment variables through Augment Code's Settings Panel, the environment variables are not passed to the spawned `npx` process. This causes the MCP server to initialize without the required configuration, resulting in limited functionality.
+
+**Specific MCP Server Tested:** `n8n-mcp` (https://github.com/czlonkowski/n8n-mcp)
+
+The n8n-mcp server requires two environment variables to enable N8N API management tools:
+- `N8N_API_URL` - The N8N instance URL
+- `N8N_API_KEY` - The N8N API authentication key
+
+When these environment variables are NOT passed, the server initializes with 23 tools (documentation mode only).
+When these environment variables ARE passed, the server initializes with 42 tools (full mode with N8N API management).
+
+## STEPS TO REPRODUCE
+
+1. Install n8n-mcp package: `npx -y n8n-mcp`
+
+2. Configure MCP server in Augment Code Settings Panel with this JSON:
+```json
+{
+  "mcpServers": {
+    "n8nmcp-npx": {
+      "command": "npx",
+      "args": ["-y", "n8n-mcp"],
+      "env": {
+        "N8N_API_URL": "[N8N_INSTANCE_URL]",
+        "N8N_API_KEY": "[REDACTED_API_KEY]",
+        "LOG_LEVEL": "debug",
+        "MCP_MODE": "stdio"
+      }
+    }
+  }
+}
+```
+
+3. Restart VS Code (Reload Window)
+
+4. Check Augment Output panel (View → Output → Select "Augment")
+
+5. Observe the initialization message
+
+## EXPECTED BEHAVIOR
+
+The MCP server should receive the environment variables and initialize with full functionality:
+
+```
+[INFO] MCP server initialized with 42 tools (n8n API: configured)
+```
+
+All 42 tools should be available, including N8N API management tools like:
+- n8n_list_workflows_n8n-mcp-npx
+- n8n_get_workflow_n8n-mcp-npx
+- n8n_create_workflow_n8n-mcp-npx
+- etc.
+
+## ACTUAL BEHAVIOR
+
+The MCP server does NOT receive the environment variables and initializes in limited mode:
+
+```
+[INFO] MCP server initialized with 23 tools (n8n API: not configured)
+```
+
+Only 23 documentation/template tools are available. N8N API management tools are missing.
+
+## EVIDENCE
+
+### Manual PowerShell Test (Environment Variables Work)
+
+When running the MCP server manually with explicit environment variables:
+
+```powershell
+$env:N8N_API_URL = "[N8N_INSTANCE_URL]"
+$env:N8N_API_KEY = "[REDACTED_API_KEY]"
+$env:LOG_LEVEL = "debug"
+npx -y n8n-mcp
+```
+
+**Result:** ✅ SUCCESS
+```
+[INFO] MCP server initialized with 42 tools (n8n API: configured)
+```
+
+### Augment Code MCP (Environment Variables NOT Passed)
+
+When running through Augment Code with the same environment variables configured in Settings Panel:
+
+**Result:** ❌ FAILED
+```
+[INFO] MCP server initialized with 23 tools (n8n API: not configured)
+```
+
+### Comparison Table
+
+| Test Method | Environment Variables | Initialization Message | Tools Available |
+|-------------|----------------------|------------------------|-----------------|
+| Manual PowerShell | ✅ Set explicitly | 42 tools (configured) | ✅ All tools available |
+| Augment Code MCP | ❓ Configured in settings | 23 tools (not configured) | ❌ Limited tools only |
+
+## SYSTEM INFORMATION
+
+- **Operating System:** Windows 10/11 (x64)
+- **Node.js Version:** v22.15.0
+- **npm Version:** Latest
+- **Augment Code Version:** [Current version installed]
+- **VS Code Version:** [Current version installed]
+- **MCP Server Tested:** n8n-mcp (latest from npm)
+
+## IMPACT ASSESSMENT
+
+**Severity:** HIGH
+
+This bug prevents MCP servers that require environment variables from functioning correctly in Augment Code. Many MCP servers use environment variables for:
+- API authentication (API keys, tokens)
+- Service endpoints (URLs, hostnames)
+- Feature flags and configuration
+- Logging levels and debugging
+
+Without environment variable support, these MCP servers cannot provide their full functionality, significantly limiting their usefulness in Augment Code.
+
+## SUGGESTED FIX
+
+Ensure that the `env` object from the MCP configuration JSON is properly passed to the spawned process. In Node.js, this typically involves:
+
+```javascript
+const { spawn } = require('child_process');
+
+const mcpProcess = spawn(command, args, {
+  env: {
+    ...process.env,  // Inherit parent environment
+    ...config.env     // Add MCP-specific environment variables
+  }
+});
+```
+
+## WORKAROUND
+
+Until this bug is fixed, users can work around the issue by:
+1. Setting environment variables globally in the system
+2. Using alternative MCP clients that properly pass environment variables (e.g., Claude Desktop)
+3. Using direct API calls instead of MCP tools (when applicable)
+
+## ADDITIONAL NOTES
+
+- The MCP configuration JSON format appears correct (matches Claude Desktop's format)
+- The `command` and `args` fields work correctly (the MCP server starts)
+- Only the `env` field is not being passed to the spawned process
+- This issue likely affects ALL MCP servers that require environment variables, not just n8n-mcp
+
+## REQUEST
+
+Please investigate and fix the environment variable passing mechanism in Augment Code's MCP client implementation. This is a critical feature for MCP server functionality.
+
+If you need any additional information, logs, or testing, please let me know.
+
+Thank you for your attention to this matter.
+
+Best regards,
+[Your Name]
+
