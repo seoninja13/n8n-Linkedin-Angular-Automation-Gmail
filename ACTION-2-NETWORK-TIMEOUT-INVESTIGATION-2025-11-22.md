@@ -1,8 +1,8 @@
 # Action 2: Network Timeout Investigation - Report
 
-**Date**: 2025-11-22  
-**Action**: Investigate network timeout issue preventing Admin Gateway webhook testing  
-**Status**: ⚠️ **PARTIAL** - Issue confirmed, root cause analysis in progress
+**Date**: 2025-11-22
+**Action**: Investigate network timeout issue preventing Admin Gateway webhook testing
+**Status**: 🔴 **ROOT CAUSE IDENTIFIED** - Webhook response mode configuration issue
 
 ---
 
@@ -218,7 +218,46 @@ If you have access to Postman or similar REST client:
 
 ---
 
-**Action 2 Status**: ⚠️ **PARTIAL** - Requires user input to proceed  
-**Blocking Issue**: Cannot access N8N execution logs from Augment Code  
-**Next Step**: User to check N8N web interface for execution logs
+## 🔴 UPDATE: ROOT CAUSE IDENTIFIED (2025-11-22)
+
+### **Critical Finding from User**:
+The last 10 executions of the N8N Admin Gateway workflow show as **SUCCESSFUL** in the N8N web interface, but external callers (PowerShell, curl) still experience timeouts and receive no response.
+
+### **Root Cause Analysis**:
+**Issue**: Webhook response mode `lastNode` may be ambiguous with multiple terminal paths in the workflow.
+
+**Evidence**:
+- ✅ Workflow executions complete successfully (all nodes execute without errors)
+- ❌ External callers receive no response (response delivery fails)
+- ⚠️ Webhook Trigger configured with `responseMode: "lastNode"`
+- ⚠️ Multiple HTTP Request nodes all connect to single Return Response node
+- ⚠️ N8N may be confused about which node is the "last node"
+
+**Detailed Analysis**: See `ROOT-CAUSE-ANALYSIS-RESPONSE-DELIVERY-2025-11-22.md`
+
+### **Recommended Solution**:
+Change Webhook Trigger response mode from `lastNode` to `responseNode` with explicit node selection:
+
+```json
+"parameters": {
+  "httpMethod": "POST",
+  "path": "admin-gateway",
+  "authentication": "headerAuth",
+  "responseMode": "responseNode",  // ← CHANGE FROM "lastNode"
+  "responseNodeName": "Return Response",  // ← ADD THIS
+  "options": {}
+}
+```
+
+### **Next Steps**:
+1. **Verify Return Response Node Execution**: User to check if Return Response node appears in successful execution details
+2. **Implement Solution**: Update Webhook Trigger configuration to use `responseNode` mode
+3. **Test Fix**: Re-test webhook endpoint to verify responses are delivered
+
+---
+
+**Action 2 Status**: 🔴 **ROOT CAUSE IDENTIFIED** - Solution ready for implementation
+**Root Cause**: Webhook response mode `lastNode` ambiguity
+**Solution**: Change to `responseNode` mode with explicit node selection
+**Next Step**: Verify Return Response node execution, then implement fix
 
