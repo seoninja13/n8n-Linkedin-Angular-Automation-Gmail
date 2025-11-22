@@ -13,6 +13,7 @@
    - Documents 90% completion (4/7 operations working)
    - Identifies remaining 10% work needed
    - Includes comprehensive functionality analysis
+   - **CRITICAL**: Clarifies that Admin Gateway manages ALL workflows in the N8N instance, not just itself
    - **Use this for all current status information**
 
 ### **Accurate Supporting Documentation**
@@ -121,10 +122,12 @@ Consider moving outdated files to `Docs/archive/admin-gateway-old/` directory:
 
 ## 🎯 QUICK REFERENCE
 
-**Need current status?** → `N8N-ADMIN-GATEWAY-STATUS-REPORT-2025-11-22.md`  
-**Need test results?** → `ADMIN-GATEWAY-COMPREHENSIVE-TEST-RESULTS.md` (reference only)  
-**Need to understand the fix?** → `WEBHOOK-RESPONSE-MODE-FIX.md`  
+**Need current status?** → `N8N-ADMIN-GATEWAY-STATUS-REPORT-2025-11-22.md` ⭐
+**Need test results?** → `ADMIN-GATEWAY-COMPREHENSIVE-TEST-RESULTS.md` (reference only)
+**Need to understand the fix?** → `WEBHOOK-RESPONSE-MODE-FIX.md`
 **Need historical context?** → `Docs/daily-logs/2025-11-22-admin-gateway-testing.md`
+
+**CRITICAL UNDERSTANDING**: The Admin Gateway is a management proxy for ALL workflows in the N8N instance, not just itself. Each operation (List, Get, Create, Update, Delete, Activate, Deactivate) operates on ANY workflow by workflow ID.
 
 **Everything else is outdated** - Do not use for current implementation decisions.
 

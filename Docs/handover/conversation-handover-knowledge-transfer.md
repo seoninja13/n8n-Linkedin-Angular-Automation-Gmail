@@ -71,6 +71,17 @@ Use N8N REST API directly via PowerShell scripts (`list-workflows-simple.ps1`, `
 
 **Status**: ✅ **POC READY** - 4 of 7 CRUD operations tested and verified working, core architecture solid
 
+**🎯 CRITICAL UNDERSTANDING: Operational Scope**
+The N8N Admin Gateway is a **MANAGEMENT PROXY for ALL workflows in the ENTIRE N8N instance**, not just itself:
+- **List Workflows**: Returns ALL workflows in the N8N instance
+- **Get Workflow**: Retrieves ANY workflow by ID
+- **Create Workflow**: Creates NEW workflows in the instance
+- **Update Workflow**: Updates ANY workflow by ID
+- **Delete Workflow**: Deletes ANY workflow by ID (node exists but not connected)
+- **Activate/Deactivate Workflow**: Activates/deactivates ANY workflow by ID (not implemented)
+
+**Analogy**: The Admin Gateway is like a building's front desk - it's ONE location that can access information about ALL apartments (workflows) in the building (N8N instance).
+
 **Current Situation (2025-11-22 - Updated)**:
 The N8N Admin Gateway workflow is operational with 4 of 7 CRUD operations fully functional (List, Get, Create, Update). Core architecture (Webhook → Parse → Route → Execute → Respond) is 100% complete and working correctly. Remaining 3 operations (Delete, Activate, Deactivate) are partially implemented: Delete node exists but not connected, Activate/Deactivate nodes missing.
 
@@ -86,11 +97,12 @@ N8N MCP Access Gateway and Admin Gateway Webhook are **TWO SEPARATE SYSTEMS**:
    - **Status**: ✅ Operational (limited by API key permissions)
 
 2. **Admin Gateway Webhook** (Execution Layer):
-   - **Purpose**: Executable workflow that performs CRUD operations via N8N REST API
+   - **Purpose**: Management proxy for ALL workflows in the ENTIRE N8N instance via N8N REST API
    - **Endpoint**: `https://n8n.srv972609.hstgr.cloud/webhook/admin-gateway`
    - **Authentication**: Header-Auth with value `CpVT9i5oU3jtIMkUJEU6X8uowOw71Z2x`
    - **Method**: HTTP POST with JSON payload
-   - **Operations Implemented**: 4 of 7 (List ✅, Get ✅, Create ✅, Update ✅, Delete ⚠️ not connected, Activate ❌ missing, Deactivate ❌ missing)
+   - **Operational Scope**: Manages ALL workflows in the N8N instance, not just the Admin Gateway itself
+   - **Operations Implemented**: 4 of 7 (List ALL workflows ✅, Get ANY workflow ✅, Create NEW workflows ✅, Update ANY workflow ✅, Delete ANY workflow ⚠️ not connected, Activate ANY workflow ❌ missing, Deactivate ANY workflow ❌ missing)
    - **Status**: ✅ **POC READY** (90% complete)
 
 **Testing Results** (2025-11-22):
@@ -103,10 +115,11 @@ N8N MCP Access Gateway and Admin Gateway Webhook are **TWO SEPARATE SYSTEMS**:
 - ✅ **Verification**: Return Response node fix confirmed - all operations return actual data, not empty objects
 
 **Known Limitations**:
-- ⚠️ **API Key Permission Restrictions**: The N8N API key has READ and CREATE permissions but lacks LIST and CROSS-USER permissions
-- **Impact**: MCP Access Gateway can only see workflows created by the same user/scope
-- **Workaround**: Use direct workflow ID lookup via `get_workflow_details_N8N_MCP_Access_Gateway(workflowId)` or Admin Gateway webhook
-- **Status**: Requires admin action to expand API key permissions (optional)
+- ⚠️ **MCP Access Gateway API Key Restrictions**: The N8N MCP Access Gateway API key has READ and CREATE permissions but lacks LIST and CROSS-USER permissions
+- **Impact**: MCP Access Gateway can only see workflows created by the same user/scope (currently shows only 1 workflow)
+- **Important**: This limitation does NOT apply to the Admin Gateway webhook, which uses different authentication (N8N REST API credentials) and should have access to ALL workflows in the instance
+- **Workaround**: Use direct workflow ID lookup via `get_workflow_details_N8N_MCP_Access_Gateway(workflowId)` or Admin Gateway webhook's "List Workflows" operation
+- **Status**: Requires admin action to expand MCP Access Gateway API key permissions (optional)
 
 **Testing Methodology - MANDATORY**:
 1. Use N8N MCP Access Gateway tools for workflow discovery/verification (NOT PowerShell terminal commands)
