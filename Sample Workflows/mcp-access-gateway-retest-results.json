@@ -1,0 +1,116 @@
+{
+  "test_metadata": {
+    "test_date": "2025-11-22",
+    "test_time": "Current session",
+    "tool_used": "search_workflows_N8N_MCP_Access_Gateway",
+    "parameters": {
+      "limit": 200
+    },
+    "purpose": "Verify N8N MCP Access Gateway workflow access scope"
+  },
+  "results": {
+    "workflow_count": 1,
+    "workflows_returned": [
+      {
+        "id": "1Zl6AzNunb0ewnNh",
+        "name": "N8N Admin Gateway",
+        "description": null,
+        "active": true,
+        "createdAt": "2025-11-22T04:52:15.701Z",
+        "updatedAt": "2025-11-22T19:04:39.000Z",
+        "triggerCount": 1,
+        "nodes": [
+          {
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook"
+          },
+          {
+            "name": "Parse Operation",
+            "type": "n8n-nodes-base.function"
+          },
+          {
+            "name": "Route Operation",
+            "type": "n8n-nodes-base.switch"
+          },
+          {
+            "name": "List Workflows",
+            "type": "n8n-nodes-base.httpRequest"
+          },
+          {
+            "name": "Get Workflow",
+            "type": "n8n-nodes-base.httpRequest"
+          },
+          {
+            "name": "Create Workflow",
+            "type": "n8n-nodes-base.httpRequest"
+          },
+          {
+            "name": "Update Workflow",
+            "type": "n8n-nodes-base.httpRequest"
+          },
+          {
+            "name": "Delete Workflow (Safe Mode)",
+            "type": "n8n-nodes-base.httpRequest"
+          },
+          {
+            "name": "Return Response",
+            "type": "n8n-nodes-base.respondToWebhook"
+          },
+          {
+            "name": "Format response",
+            "type": "n8n-nodes-base.code"
+          }
+        ]
+      }
+    ]
+  },
+  "comparison": {
+    "mcp_access_gateway_count": 1,
+    "admin_gateway_webhook_count": 100,
+    "difference": 99,
+    "percentage_visible": "1%"
+  },
+  "analysis": {
+    "issue_confirmed": true,
+    "issue_description": "N8N MCP Access Gateway shows only 1 workflow instead of all 100 workflows in the N8N instance",
+    "severity": "HIGH - Prevents MCP Access Gateway from being PRIMARY integration method",
+    "impact": "Cannot use MCP Access Gateway as main entrance to N8N instance due to limited visibility"
+  },
+  "root_cause_investigation": {
+    "possible_causes": [
+      "API key permission restrictions (most likely)",
+      "MCP server configuration limiting scope",
+      "N8N instance access control settings",
+      "Workflow visibility/sharing settings"
+    ],
+    "evidence": {
+      "api_key_used": "Same API key used for both MCP Access Gateway and Admin Gateway Webhook",
+      "admin_gateway_shows_100": true,
+      "mcp_access_gateway_shows_1": true,
+      "conclusion": "API key has different permission levels when accessed via MCP protocol vs direct REST API"
+    }
+  },
+  "recommendations": {
+    "immediate": [
+      "Document this as KNOWN LIMITATION in N8N Operations Manual",
+      "Update architecture documentation to reflect actual behavior (not intended behavior)",
+      "Adjust integration method priority based on ACTUAL capabilities, not intended capabilities"
+    ],
+    "long_term": [
+      "Investigate API key permission configuration in N8N instance",
+      "Check if MCP Access Gateway can be configured to use different API key with broader permissions",
+      "Consider whether MCP Access Gateway limitation is acceptable for intended use cases"
+    ]
+  },
+  "decision": {
+    "can_mcp_access_gateway_be_primary": false,
+    "reason": "Only shows 1% of workflows (1 out of 100)",
+    "recommended_priority": [
+      "PRIMARY: N8N Admin Gateway Webhook (REST API - shows all 100 workflows)",
+      "SECONDARY: N8N MCP Access Gateway (MCP protocol - limited to 1 workflow, use for quick lookups only)",
+      "TERTIARY: Direct N8N REST API (last resort - granular control)"
+    ],
+    "note": "This priority is based on ACTUAL capabilities, not intended architecture. If the 1-workflow limitation can be fixed, priority should be reconsidered."
+  }
+}
+

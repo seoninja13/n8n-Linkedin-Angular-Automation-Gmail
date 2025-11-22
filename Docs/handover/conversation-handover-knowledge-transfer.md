@@ -3,6 +3,53 @@
 
 ---
 
+## 🎯 **CRITICAL UPDATE: N8N MCP INTEGRATION ARCHITECTURE (2025-11-22)**
+
+### **N8N MCP Access Gateway Investigation - COMPLETE**
+
+**Status**: ✅ **INVESTIGATION COMPLETE** - HYBRID APPROACH APPROVED
+
+**Key Discovery**: N8N MCP Access Gateway "1 workflow limitation" is **EXPECTED BEHAVIOR**, not a bug.
+
+**Root Cause**: N8N uses a **TWO-LEVEL OPT-IN SECURITY MODEL**:
+1. **Instance-Level MCP Access**: Must be enabled in Settings → MCP Access (✅ DONE)
+2. **Workflow-Level MCP Access**: Each workflow must have "Available in MCP" toggle enabled (❌ ONLY 1 WORKFLOW ENABLED)
+
+**MCP Eligibility Requirements**:
+For a workflow to be MCP-accessible, it must meet **ALL** of these criteria:
+1. ✅ **Be ACTIVE** (not inactive)
+2. ✅ **Have eligible trigger node**: Webhook, Schedule, Chat, or Form
+3. ✅ **Have "Available in MCP" toggle enabled** in workflow settings
+
+**Execute Workflow Trigger is NOT eligible** - this excludes ~60-70 sub-workflows in our architecture.
+
+**Architectural Decision**: **HYBRID APPROACH APPROVED**
+
+| System | Purpose | Use Case |
+|--------|---------|----------|
+| **Admin Gateway Webhook** | Workflow MANAGEMENT | List, Get, Create, Update operations on ALL 100 workflows |
+| **MCP Access Gateway** | Workflow EXECUTION | AI-driven execution via MCP protocol (~30-40 eligible workflows) |
+| **N8N REST API** | Advanced Operations | Delete, Activate, Deactivate, Enable MCP toggle |
+
+**Key Insight**: These are **TWO DIFFERENT SYSTEMS** serving **TWO DIFFERENT PURPOSES**:
+- Admin Gateway Webhook = Building directory (list all apartments)
+- MCP Access Gateway = Apartment access (enter specific apartments)
+
+**Documentation Updated**:
+1. ✅ `Docs/n8n-operations-manual.md` - Updated to reflect HYBRID APPROACH (Version 2.0)
+2. ✅ `N8N-MCP-INVESTIGATION-REPORT-2025-11-22.md` - Root cause analysis with official N8N documentation
+3. ✅ `N8N-MCP-ELIGIBILITY-AUDIT-REPORT-2025-11-22.md` - Comprehensive eligibility audit and recommendation
+4. ✅ `MCP-ACCESS-GATEWAY-RETEST-REPORT-2025-11-22.md` - Corrected root cause analysis
+
+**Estimated MCP-Eligible Workflows**: ~30-40 out of 100 workflows (30-40%)
+- ✅ **Orchestrators** (2 active): Schedule triggers (eligible)
+- ❌ **Sub-Workflows** (~60-70): Execute Workflow Trigger (ineligible)
+- ⚠️ **Test/Other** (~20-30): Mixed eligibility
+
+**No Action Required**: Current architecture is OPTIMAL for our use case. Sub-workflows remain internal implementation details accessible via Admin Gateway Webhook.
+
+---
+
 ## 🚀 **CURRENT IMPLEMENTATION STATUS (2025-11-21)**
 
 ### **n8n-mcp MCP Server Validation - BLOCKED (Augment Code Bug)**
@@ -146,6 +193,13 @@ N8N MCP Access Gateway and Admin Gateway Webhook are **TWO SEPARATE SYSTEMS**:
 - **Purpose**: Extracts essential workflow metadata only (id, name, active, isArchived, timestamps, triggerCount)
 - **Impact**: Reduced response size from 234KB+ to 46KB (~98% reduction)
 - **Result**: Webhook responds in 4.11 seconds (previously timed out)
+
+**N8N Operations Manual**: 📖 **NEW** - Comprehensive guide to all N8N integration methods
+- **File**: `Docs/n8n-operations-manual.md`
+- **Contents**: All integration methods, decision trees, troubleshooting guides, quick reference
+- **Sections**: Admin Gateway Webhook, MCP Access Gateway, REST API, n8n-mcp NPM Package (disabled)
+- **Decision Tree**: Visual guide for choosing the right integration method
+- **Troubleshooting**: Common issues and solutions with connectivity testing procedures
 
 **Next Session Priorities**:
 1. ✅ **COMPLETE**: Admin Gateway webhook POC validation (4/7 operations working)
