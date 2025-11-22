@@ -1,0 +1,151 @@
+﻿{
+    "updatedAt":  "2025-11-21T14:32:20.000Z",
+    "createdAt":  "2025-11-20T21:16:22.765Z",
+    "id":  "KTxnDVNDeDxHNLEt",
+    "name":  "AdminMCP-subflow-Get-WorkFlow--Augment",
+    "description":  null,
+    "active":  false,
+    "isArchived":  false,
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "operation":  "get",
+                                         "workflowId":  {
+                                                            "__rl":  true,
+                                                            "value":  "={{ $json.workflowId }}",
+                                                            "mode":  "id"
+                                                        },
+                                         "requestOptions":  {
+
+                                                            }
+                                     },
+                      "type":  "n8n-nodes-base.n8n",
+                      "typeVersion":  1,
+                      "position":  [
+                                       48,
+                                       -16
+                                   ],
+                      "id":  "249522e2-fd65-45ab-aa51-8f97573906fe",
+                      "name":  "Get a workflow",
+                      "credentials":  {
+                                          "n8nApi":  {
+                                                         "id":  "8Mpie43lyRFyX4zw",
+                                                         "name":  "N8N API - Admin MCP"
+                                                     }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "inputSource":  "passthrough"
+                                     },
+                      "type":  "n8n-nodes-base.executeWorkflowTrigger",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       -176,
+                                       -16
+                                   ],
+                      "id":  "be9d6ae4-13e3-4628-9a2e-a81d5eba183f",
+                      "name":  "Execute Workflow Trigger - From Admin MCP"
+                  }
+              ],
+    "connections":  {
+                        "Execute Workflow Trigger - From Admin MCP":  {
+                                                                          "main":  [
+                                                                                       [
+                                                                                           {
+                                                                                               "node":  "Get a workflow",
+                                                                                               "type":  "main",
+                                                                                               "index":  0
+                                                                                           }
+                                                                                       ]
+                                                                                   ]
+                                                                      }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "staticData":  null,
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "pinData":  {
+
+                },
+    "versionId":  "036fb0b7-cb07-4146-93df-42ac136c2bf0",
+    "versionCounter":  11,
+    "triggerCount":  0,
+    "shared":  [
+                   {
+                       "updatedAt":  "2025-11-20T21:16:22.771Z",
+                       "createdAt":  "2025-11-20T21:16:22.771Z",
+                       "role":  "workflow:owner",
+                       "workflowId":  "KTxnDVNDeDxHNLEt",
+                       "projectId":  "1nA39eVus9AACl1f",
+                       "project":  {
+                                       "updatedAt":  "2025-08-23T16:23:23.630Z",
+                                       "createdAt":  "2025-08-23T16:02:53.713Z",
+                                       "id":  "1nA39eVus9AACl1f",
+                                       "name":  "Ivo Dachev \u003cdachevivo@gmail.com\u003e",
+                                       "type":  "personal",
+                                       "icon":  null,
+                                       "description":  null,
+                                       "projectRelations":  [
+                                                                {
+                                                                    "updatedAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "createdAt":  "2025-08-23T16:02:53.713Z",
+                                                                    "userId":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                    "projectId":  "1nA39eVus9AACl1f",
+                                                                    "user":  {
+                                                                                 "updatedAt":  "2025-11-22T02:20:51.000Z",
+                                                                                 "createdAt":  "2025-08-23T16:02:52.851Z",
+                                                                                 "id":  "0aa3f394-4258-4544-8488-960d18baca6d",
+                                                                                 "email":  "dachevivo@gmail.com",
+                                                                                 "firstName":  "Ivo",
+                                                                                 "lastName":  "Dachev",
+                                                                                 "personalizationAnswers":  {
+                                                                                                                "version":  "v4",
+                                                                                                                "personalization_survey_submitted_at":  "2025-08-23T16:24:15.627Z",
+                                                                                                                "personalization_survey_n8n_version":  "1.107.4",
+                                                                                                                "automationGoalDevops":  [
+                                                                                                                                             "cloud-infrastructure-orchestration"
+                                                                                                                                         ],
+                                                                                                                "companySize":  "\u003c20",
+                                                                                                                "companyType":  "digital-agency",
+                                                                                                                "role":  "it",
+                                                                                                                "reportedSource":  "youtube"
+                                                                                                            },
+                                                                                 "settings":  {
+                                                                                                  "userActivated":  true,
+                                                                                                  "easyAIWorkflowOnboarded":  true,
+                                                                                                  "dismissedCallouts":  {
+                                                                                                                            "preBuiltAgentsCalloutHttpRequest":  true,
+                                                                                                                            "preBuiltAgentsCallout":  true,
+                                                                                                                            "preBuiltAgentsCalloutGoogleSheets":  true,
+                                                                                                                            "preBuiltAgentsModalCallout":  true
+                                                                                                                        },
+                                                                                                  "firstSuccessfulWorkflowId":  "HuZ10YOgOiTlYGrM",
+                                                                                                  "userActivatedAt":  1757356687300,
+                                                                                                  "npsSurvey":  {
+                                                                                                                    "responded":  true,
+                                                                                                                    "lastShownAt":  1757703111289
+                                                                                                                }
+                                                                                              },
+                                                                                 "disabled":  false,
+                                                                                 "mfaEnabled":  false,
+                                                                                 "lastActiveAt":  "2025-11-21",
+                                                                                 "isPending":  false
+                                                                             }
+                                                                }
+                                                            ]
+                                   }
+                   }
+               ],
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-11-20T21:15:05.105Z",
+                     "createdAt":  "2025-11-20T21:15:05.105Z",
+                     "id":  "R5XaQoaOGfJuPryM",
+                     "name":  "Amin MCP Subflow"
+                 }
+             ]
+}

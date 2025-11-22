@@ -1,0 +1,98 @@
+{
+  "id": "kPhABZnv2pc7LMF0",
+  "name": "Admin-MCP-Server--Augment",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "3b6fbdc8-a9ea-4b3e-ba22-19d67c02bef5"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [-800, -288],
+      "id": "e4a88b20-6894-4f16-9ecc-6c83c3824dbb",
+      "name": "MCP Server Trigger",
+      "webhookId": "3b6fbdc8-a9ea-4b3e-ba22-19d67c02bef5"
+    },
+    {
+      "parameters": {
+        "description": "List all workflows in the N8N instance. Returns an array of workflow objects with id, name, active status, and metadata.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Q5pmP4961YnR9nJ9",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Q5pmP4961YnR9nJ9",
+          "cachedResultName": "AdminMCP-subflow-Get-Many-Workflows"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-896, -80],
+      "id": "6bf36844-6b66-4daf-be97-9dc70fd85a20",
+      "name": "List Workflows"
+    },
+    {
+      "parameters": {
+        "description": "Get details of a specific workflow by ID. Requires workflowId parameter. Returns complete workflow object including nodes, connections, and settings.",
+        "workflowId": {
+          "__rl": true,
+          "value": "KTxnDVNDeDxHNLEt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/KTxnDVNDeDxHNLEt",
+          "cachedResultName": "AdminMCP-subflow-Get-WorkFlow--Augment"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [-528, -80],
+      "id": "15006383-4021-4ec4-aee6-c3537504f025",
+      "name": "Get a Workflow"
+    }
+  ],
+  "connections": {
+    "List Workflows": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a Workflow": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": []
+}
