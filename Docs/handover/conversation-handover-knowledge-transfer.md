@@ -50,7 +50,97 @@ For a workflow to be MCP-accessible, it must meet **ALL** of these criteria:
 
 ---
 
-## 🚀 **CURRENT IMPLEMENTATION STATUS (2025-11-21)**
+## 🚀 **CURRENT IMPLEMENTATION STATUS (2025-11-23)**
+
+### **N8N Workflow Execution Diagnostics - COMPLETE**
+
+**Status**: ✅ **DIAGNOSTIC WORK COMPLETE** - Two critical execution errors diagnosed and documented
+
+**Session Summary (2025-11-23)**:
+Completed comprehensive diagnostic analysis of two N8N workflow executions with critical errors. Both root causes identified, fixes documented, and handover documentation prepared.
+
+---
+
+#### **Execution 12400 Analysis - Duplicate Detection Bypass**
+
+**Status**: ✅ **ROOT CAUSE IDENTIFIED** - Awaiting user action to clear tracking sheet
+
+**Objective**: Diagnose why no email drafts were created despite testMode=TRUE configuration
+
+**Initial Hypothesis (INCORRECT)**: Sub-workflow is INACTIVE causing cached/stale version execution
+
+**Corrected Analysis**:
+- ❌ **Retracted incorrect root cause** (sub-workflow inactive state)
+- ✅ **Identified correct root cause**: All 11 job applications were detected as DUPLICATES
+- ✅ **Workflow flow analysis**: Duplicates take "Duplicate" path which bypasses Test Mode fix nodes entirely
+- ✅ **Architectural understanding corrected**: Sub-workflows with Execute Workflow Trigger nodes are DESIGNED to remain INACTIVE
+
+**Key Learning**: Sub-workflows using Execute Workflow Trigger are triggered by parent workflows, NOT by external events. Inactive state is correct behavior, not a bug.
+
+**Workflow Flow**:
+```
+If - Duplicate or not (Switch Node)
+    ├─ Output 0 (Duplicate) → Merge Duplicate and Email → Status Update → STOP ❌
+    └─ Output 1 (Not Duplicate) → AI Email Generation → ... → Test Mode Fix → Test Mode Router → Draft Creation ✅
+```
+
+**Files Created**:
+1. ✅ `Docs/incidents/EXECUTION-12400-CORRECT-DIAGNOSTIC-REPORT.md` - Complete correct analysis
+2. ✅ `subexecution-12433-data.json` - Sub-execution data proving duplicate detection
+3. ✅ `find-subexecution-ids.ps1` - Script to find and analyze sub-executions
+
+**Next Action Required**: User must clear tracking sheet and trigger new test execution with non-duplicate items
+
+---
+
+#### **Execution 12567 Analysis - Google Sheets "Could not get parameter" Error**
+
+**Status**: ✅ **ROOT CAUSE IDENTIFIED** - Fix ready for implementation
+
+**Objective**: Diagnose "Could not get parameter" error in "Email Tracking Dashboard" node
+
+**Root Cause**: N8N Google Sheets v4.7 serialization bug - missing `resource` parameter
+
+**Analysis Findings**:
+- ✅ **Error message misleading**: Says "Could not get parameter: columns.schema" but real issue is missing `resource` parameter
+- ✅ **Workflow configuration**: `resource` parameter is **EMPTY** (blank) in current saved workflow
+- ✅ **Execution stack**: `resource: "sheet"` is **PRESENT** in execution stack data
+- ✅ **Known issue confirmed**: Matches Issue #5 in Common Errors Database
+
+**Technical Details**:
+- **Node**: Email Tracking Dashboard (Google Sheets v4.7)
+- **Node ID**: a05da1bd-c207-42b4-9a9a-a5b2319fc8bf
+- **Workflow**: LinkedIn-4-GmailOutlook-sub-flow-Workshop-OutreachTracking--Augment (WUe4y8iYEXNAB6dq)
+- **Error Location**: `appendOrUpdate.operation.ts:319:23`
+
+**Why Error is Misleading**:
+Without the `resource` parameter, the node cannot properly initialize. When N8N tries to access `columns.schema` at line 319, it fails because the node is in an invalid state. The error message points to the symptom (columns.schema access failure) rather than the root cause (missing resource parameter).
+
+**Fix Required**: Add `"resource": "sheet"` to node parameters or re-select "Sheet" in UI and save
+
+**Files Created**:
+1. ✅ `Docs/incidents/EXECUTION-12567-DIAGNOSTIC-REPORT.md` - Complete diagnostic report with fix
+2. ✅ `execution-12567-full-data.json` - Full execution data (26,915 lines)
+3. ✅ `workflow-WUe4y8iYEXNAB6dq-current.json` - Current workflow configuration (2,315 lines)
+4. ✅ `diagnose-execution-12567.ps1` - PowerShell diagnostic script
+
+**Next Action Required**: Implement fix via N8N UI (re-select "Sheet" and save) or N8N MCP Admin tools
+
+---
+
+#### **Documentation Updates**
+
+**Common Errors Database Updated**:
+- ✅ `Docs/troubleshooting/COMMON-ERRORS-KNOWN-ISSUES.md` - Added Issues #5 and #6
+- **Issue #5**: Google Sheets Node Missing 'resource' Parameter (N8N v4.7 serialization bug)
+- **Issue #6**: Sub-Workflow Inactive State Misunderstanding (architectural clarification)
+- **Total Issues**: 7 known issues documented
+
+**Handover Documentation Created**:
+- ✅ `Docs/daily-logs/2025-11-23-execution-diagnostics.md` - Complete daily log
+- ✅ `Docs/handover/2025-11-23-session-handover.md` - Executive summary and task status
+
+---
 
 ### **n8n-mcp MCP Server Validation - BLOCKED (Augment Code Bug)**
 
@@ -59,42 +149,13 @@ For a workflow to be MCP-accessible, it must meet **ALL** of these criteria:
 **Current Situation (2025-11-21)**:
 The n8n-mcp MCP server (NPM package by czlonkowski) has been configured in Augment Code, but Augment Code has a critical bug where environment variables configured in the MCP Settings Panel are NOT being passed to spawned MCP server processes. This prevents the n8n-mcp server from accessing N8N API management tools, limiting it to Documentation Mode only (23 tools instead of 42 tools).
 
-**Root Cause Identified**:
-Augment Code is NOT passing the `N8N_API_URL` and `N8N_API_KEY` environment variables from the MCP configuration to the spawned `npx n8n-mcp` process, despite these variables being correctly configured in the Settings Panel.
-
-**Evidence**:
-- ✅ Manual PowerShell test with explicit environment variables: **42 tools (n8n API: configured)**
-- ❌ Augment Code MCP server with configured environment variables: **23 tools (n8n API: not configured)**
-- ✅ N8N API connection test: **PASSED** (API key is valid, instance is accessible)
-- ✅ n8n-mcp server functionality: **CONFIRMED** (works correctly when environment variables are provided)
-
-**Diagnostic Suite Created** (7 PowerShell scripts):
-1. ✅ `test-n8n-api-connection.ps1` - Tests N8N REST API connectivity (WORKING)
-2. ✅ `test-n8n-mcp-manual.ps1` - Tests n8n-mcp server with explicit environment variables (WORKING)
-3. ✅ `check-n8n-mcp-version.ps1` - Checks package version and update commands
-4. ✅ `run-all-diagnostics.ps1` - Runs all tests in sequence
-5. ✅ `list-workflows-simple.ps1` - Simple workflow listing via N8N REST API (WORKING)
-6. ✅ `list-n8n-workflows-direct.ps1` - Detailed workflow listing with formatting
-7. ✅ `augment-n8n-mcp-config.json` - Corrected MCP configuration for import
-
-**Documentation Created**:
-1. ✅ `n8n-mcp-validation-report.md` - Comprehensive validation report (150 lines)
-2. ✅ `n8n-mcp-diagnostic-workflow.md` - Detailed diagnostic workflow
-3. ✅ `README-n8n-mcp-diagnostics.md` - Quick reference guide
-4. ✅ `augment-code-bug-report.txt` - Sanitized bug report for Augment Code support (179 lines)
-
 **Workaround Solution**:
 Use N8N REST API directly via PowerShell scripts (`list-workflows-simple.ps1`, `test-n8n-api-connection.ps1`) to bypass the Augment Code MCP server until the environment variable bug is fixed.
 
-**Bug Report Status**:
-- ✅ Bug report created and sanitized (all API keys and URLs redacted)
-- ✅ Ready to send to support@augmentcode.com
-- ⏳ Awaiting Augment Code bug fix
-
 **N8N Instance Status**:
 - **URL**: https://n8n.srv972609.hstgr.cloud
-- **API Key**: Valid and working
-- **Workflows**: 0 (empty instance or different project)
+- **API Key**: Valid and working (JWT token expires periodically, current key valid as of 2025-11-23)
+- **Workflows**: ~100 workflows (LinkedIn automation system)
 - **Accessibility**: ✅ Confirmed accessible via REST API
 
 **Next Session Priorities**:
