@@ -234,7 +234,84 @@ If - Duplicate or not (Switch Node)
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-11-23  
+---
+
+## **TEST MODE & EMAIL ROUTING ISSUES**
+
+### **Issue 8: Test Mode Not Working - Emails Sent Instead of Drafts**
+
+**Status**: 🔴 **CRITICAL BUG** - Under investigation
+
+**Symptoms**:
+- testMode = TRUE in Google Sheets Email-Account-Config
+- Emails are SENT to recipients (production mode)
+- Expected behavior: Create Gmail DRAFTS (test mode)
+- No drafts created in Gmail Drafts folder
+
+**Root Cause**:
+- ❓ **UNKNOWN** - Investigation incomplete (as of 2025-11-24)
+- testMode configuration is CORRECT in Google Sheets (all accounts have testMode=TRUE)
+- Test Mode Router Switch node may be broken or misconfigured
+- OR testMode value is corrupted/lost between nodes
+- OR workflow routing connections are incorrect
+
+**Workflow Flow** (Expected):
+```
+Dynamic Priority-Based Account Selector (outputs testMode: true)
+  ↓
+Test Mode Router (Switch Node)
+  ├─ Output 0 (testMode=true)  → Draft Creation Router → CREATE DRAFTS ✅
+  └─ Output 1 (testMode=false) → 6-Account Email Router → SEND EMAILS ❌
+```
+
+**Workflow Flow** (Actual - Execution 12991):
+```
+Dynamic Priority-Based Account Selector (outputs testMode: ???)
+  ↓
+Test Mode Router (routes to Output 1 instead of Output 0) ← PROBLEM
+  ↓
+6-Account Email Router
+  ↓
+Gmail MIME Builder (production)
+  ↓
+EMAILS SENT (not drafts) ❌
+```
+
+**Investigation Status**:
+- ✅ Confirmed Google Sheets configuration is correct (testMode=TRUE for all accounts)
+- ✅ Confirmed execution 12991 sent 11 emails (via sub-executions 13006-13026+)
+- ✅ Analyzed workflow code (Account Selector should output testMode=true)
+- ❌ Unable to retrieve execution data to verify testMode values at each node
+- ❌ Root cause not yet identified
+
+**Next Steps**:
+1. Retrieve sub-execution 13006 data to check testMode values
+2. Verify testMode at Account Selector output
+3. Verify testMode at Test Mode Router input
+4. Check which Switch output was used (0=Draft, 1=Send)
+5. Identify exact point where routing failed
+6. Fix routing logic
+7. Test with manual execution
+
+**Temporary Workaround**:
+- **DEACTIVATE orchestrators** until issue is fixed
+- Manually create drafts for each job application
+- Review and send drafts manually
+
+**Impact**:
+- 🔴 **CRITICAL** - System is UNSAFE
+- User has NO safety net to prevent bad emails
+- Risk of sending more duplicate/incorrect emails
+- User reputation damage (6+ duplicate emails sent to same contacts)
+
+**Reference**:
+- Execution 12991 analysis
+- Docs/incidents/EXECUTION-12991-DUPLICATE-EMAIL-DIAGNOSTIC.md
+- Docs/daily-logs/2025-11-24-duplicate-email-incident-investigation.md
+
+---
+
+**Document Version**: 1.1
+**Last Updated**: 2025-11-24
 **Maintainer**: AI Agent (Augment Code)
 
